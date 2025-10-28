@@ -1,36 +1,36 @@
-import { useState } from 'react'
-import './App.css'
+import { useAuth } from '@/hooks/useAuth';
 
 function App() {
-    const [count, setCount] = useState(0)
+    const { user, isAuthenticated, setAuth, logout } = useAuth();
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="p-8">
-                    <div className="text-center">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                            TaskSystem
-                        </h1>
-                        <p className="text-lg text-gray-600 mb-8">
-                            Professional Project Management System
-                        </p>
-                        <button
-                            onClick={() => setCount((count) => count + 1)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
-                        >
-                            Count: {count}
-                        </button>
-                        <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-                            <p className="text-sm text-gray-600">
-                                🚀 React + Vite + Tailwind CSS + PWA
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
+        <div className="p-10">
+            <h1 className="font-bold text-2xl mb-6">Test AuthStore Zustand + useAuth</h1>
 
-export default App
+            {isAuthenticated ? (
+                <div>
+                    <p className="mb-4">Witaj, {user?.firstName} {user?.lastName}!</p>
+                    <button
+                        className="bg-blue-600 text-white px-4 py-2 rounded"
+                        onClick={logout}
+                    >
+                        Wyloguj się
+                    </button>
+                </div>
+            ) : (
+                <button
+                    className="bg-green-600 text-white px-4 py-2 rounded"
+                    onClick={() =>
+                        setAuth(
+                            { firstName: "Jan", lastName: "Kowalski", email: "jan@nowy.pl" },
+                            "mock-access-token"
+                        )
+                    }
+                >
+                    Zaloguj przykładowego usera
+                </button>
+            )}
+        </div>
+    );
+}
+export default App;
