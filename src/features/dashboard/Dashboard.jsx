@@ -3,9 +3,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Plus, FolderKanban, CheckSquare, Users, TrendingUp, MoreVertical, Target, Clock } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Plus, FolderKanban, CheckSquare, Users, TrendingUp, MoreVertical, Target } from "lucide-react";
 
 const stats = [
     { title: "Total Projects", value: "12", icon: FolderKanban, change: "+2 this month", trend: "up" },
@@ -22,6 +22,8 @@ const recentProjects = [
         progress: 75,
         team: ["JD", "SM", "AK"],
         status: "inprogress",
+        completedIssues: 15,
+        totalIssues: 20,
     },
     {
         id: 2,
@@ -30,6 +32,8 @@ const recentProjects = [
         progress: 45,
         team: ["MT", "LK", "RB"],
         status: "inprogress",
+        completedIssues: 9,
+        totalIssues: 20,
     },
     {
         id: 3,
@@ -38,6 +42,8 @@ const recentProjects = [
         progress: 90,
         team: ["JD", "SM"],
         status: "done",
+        completedIssues: 18,
+        totalIssues: 20,
     },
 ];
 

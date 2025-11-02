@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, Search, MoreVertical, Users, Target } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const projects = [
     {
