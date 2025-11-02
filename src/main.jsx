@@ -3,13 +3,14 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-
 // Importy podstron (dopasuj ścieżki do siebie)
 import Index from "@/features/Index";
 import NotFound from "@/features/NotFound";
 import Dashboard from "@/features/dashboard/Dashboard";
 import Board from "@/features/boards/Board";
 import Projects from "@/features/projects/Projects";
+import Issues from "@/features/issues/Issues";
+import Profile from "@/features/Profile/Profile.jsx"; // lub "@/features/profile/Profile" jeśli taki masz
 import LoginForm from "@/features/auth/LoginForm";
 import RegisterForm from "@/features/auth/RegisterForm";
 
@@ -26,6 +27,8 @@ root.render(
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/board" element={<Board />} />
                 <Route path="/projects" element={<Projects />} />
+                <Route path="/issues" element={<Issues />} />      {/* Dodane Issues */}
+                <Route path="/profile" element={<Profile />} />    {/* Dodane Profile */}
                 <Route path="/login" element={<LoginForm />} />
                 <Route path="/register" element={<RegisterForm />} />
                 {/* Fallback - 404 */}

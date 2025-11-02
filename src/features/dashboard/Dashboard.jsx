@@ -1,12 +1,16 @@
-import React from "react";
+import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FolderKanban, CheckSquare, Users, TrendingUp, MoreVertical, Target, Clock } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
+import { FolderKanban, CheckSquare, Users, TrendingUp, Plus, Clock } from "lucide-react";
+import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
+import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
+import { useProjectStore } from "@/store/projectStore";
+import { useIssueStore } from "@/store/issueStore";
 
+// Statystyki
 const stats = [
     { title: "Total Projects", value: "12", icon: FolderKanban, change: "+2 this month", trend: "up" },
     { title: "Active Issues", value: "48", icon: CheckSquare, change: "+8 this week", trend: "up" },
@@ -14,6 +18,7 @@ const stats = [
     { title: "Completion Rate", value: "87%", icon: TrendingUp, change: "+5%", trend: "up" },
 ];
 
+// Recent projects mock (może być zamieniony na dane z Zustand/store/API)
 const recentProjects = [
     {
         id: 1,
@@ -22,8 +27,6 @@ const recentProjects = [
         progress: 75,
         team: ["JD", "SM", "AK"],
         status: "inprogress",
-        completedIssues: 15,
-        totalIssues: 20,
     },
     {
         id: 2,
@@ -32,8 +35,6 @@ const recentProjects = [
         progress: 45,
         team: ["MT", "LK", "RB"],
         status: "inprogress",
-        completedIssues: 9,
-        totalIssues: 20,
     },
     {
         id: 3,
@@ -42,11 +43,10 @@ const recentProjects = [
         progress: 90,
         team: ["JD", "SM"],
         status: "done",
-        completedIssues: 18,
-        totalIssues: 20,
     },
 ];
 
+// Recent issues mock (tak samo - można później podpiąć pod store/API)
 const recentIssues = [
     { id: 1, title: "Fix login bug", priority: "high", status: "todo", assignee: "JD", dueDate: "Today" },
     { id: 2, title: "Update documentation", priority: "medium", status: "inprogress", assignee: "SM", dueDate: "Tomorrow" },
@@ -55,27 +55,36 @@ const recentIssues = [
 ];
 
 export default function Dashboard() {
+    const [createProjectOpen, setCreateProjectOpen] = useState(false);
+    const [createIssueOpen, setCreateIssueOpen] = useState(false);
+    const projects = useProjectStore((state) => state.projects); // Dla prawdziwych danych
+    const issues = useIssueStore((state) => state.issues);
+
     return (
         <AppLayout>
             <div className="space-y-8 animate-fade-in">
+                {/* Nagłówek */}
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
                         <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
-                        <p className="text-muted-foreground mt-2">Welcome back! Here's what's happening today.</p>
+                        <p className="text-muted-foreground mt-2">
+                            Welcome back! Here's what's happening today.
+                        </p>
                     </div>
                     <div className="flex gap-3">
-                        <Button variant="outline">
+                        <Button variant="outline" onClick={() => setCreateProjectOpen(true)}>
                             <FolderKanban className="mr-2 h-4 w-4" />
                             New Project
                         </Button>
-                        <Button variant="gradient">
+                        <Button variant="gradient" onClick={() => setCreateIssueOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
                             New Issue
                         </Button>
                     </div>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                {/* Statystyki */}
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                     {stats.map((stat, index) => (
                         <Card key={index} className="overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-card to-card/50">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -93,6 +102,7 @@ export default function Dashboard() {
                     ))}
                 </div>
 
+                {/* Recent Projects */}
                 <div>
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-2xl font-bold">Recent Projects</h2>
@@ -101,57 +111,38 @@ export default function Dashboard() {
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {recentProjects.map((project) => (
                             <Card key={project.id} className="overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer">
-                                <div className={`h-2 bg-gradient-to-r from-purple-500 to-blue-500`}/>
-                                <CardHeader className="relative">
+                                <CardHeader>
                                     <div className="flex items-start justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg`}>
-                                                <Target className="h-6 w-6 text-white" />
-                                            </div>
-                                            <div>
-                                                <CardTitle className="text-lg group-hover:text-primary transition-colors">{project.name}</CardTitle>
-                                                <Badge variant={project.status}>{project.status}</Badge>
-                                            </div>
-                                        </div>
-                                        <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
+                                        <CardTitle className="text-lg">{project.name}</CardTitle>
+                                        <Badge variant={project.status}>{project.status}</Badge>
                                     </div>
-                                    <CardDescription className="mt-3 line-clamp-2">{project.description}</CardDescription>
+                                    <CardDescription className="mt-2">{project.description}</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div>
-                                        <div className="flex items-center justify-between mb-2 text-sm">
-                                            <span className="text-muted-foreground">Progress</span>
-                                            <span className="font-medium">{project.progress}%</span>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {/* Progress */}
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2 text-sm">
+                                                <span className="text-muted-foreground">Progress</span>
+                                                <span className="font-medium">{project.progress}%</span>
+                                            </div>
+                                            <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-300"
+                                                    style={{ width: `${project.progress}%` }}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                                            <div
-                                                className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500"
-                                                style={{ width: `${project.progress}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center gap-2 text-muted-foreground">
-                                            <Target className="h-4 w-4" />
-                                            <span>{project.completedIssues}/{project.totalIssues} issues</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-muted-foreground">
-                                            <Users className="h-4 w-4" />
-                                            <span>{project.team.length} members</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 pt-2 border-t border-border">
-                                        <span className="text-sm text-muted-foreground">Team:</span>
-                                        <div className="flex -space-x-2">
-                                            {project.team.map((member, idx) => (
-                                                <Avatar key={idx} className="h-8 w-8 border-2 border-card">
-                                                    <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-blue-500 text-white">
-                                                        {member}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                            ))}
+                                        {/* Team */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-muted-foreground">Team:</span>
+                                            <div className="flex -space-x-2">
+                                                {project.team.map((member, idx) => (
+                                                    <Avatar key={idx} className="h-8 w-8 border-2 border-card">
+                                                        <AvatarFallback className="text-xs bg-primary text-primary-foreground">{member}</AvatarFallback>
+                                                    </Avatar>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -160,6 +151,7 @@ export default function Dashboard() {
                     </div>
                 </div>
 
+                {/* Recent Issues */}
                 <div>
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-2xl font-bold">Recent Issues</h2>
@@ -212,6 +204,9 @@ export default function Dashboard() {
                     </Card>
                 </div>
             </div>
+
+            <CreateProjectModal open={createProjectOpen} onOpenChange={setCreateProjectOpen} />
+            <CreateIssueModal open={createIssueOpen} onOpenChange={setCreateIssueOpen} />
         </AppLayout>
     );
 }
