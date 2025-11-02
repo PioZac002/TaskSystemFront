@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
     LayoutDashboard,
@@ -25,21 +25,20 @@ export const Sidebar = () => {
     return (
         <aside
             className={cn(
-                "relative flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300",
+                "relative hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300",
                 collapsed ? "w-16" : "w-64"
             )}
         >
             {/* Logo */}
             <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-                {!collapsed && (
+                {!collapsed ? (
                     <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent">
                             <CheckSquare className="h-5 w-5 text-primary-foreground" />
                         </div>
                         <span className="text-lg font-bold text-sidebar-foreground">TaskSystem</span>
                     </div>
-                )}
-                {collapsed && (
+                ) : (
                     <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent mx-auto">
                         <CheckSquare className="h-5 w-5 text-primary-foreground" />
                     </div>

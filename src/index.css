@@ -44,17 +44,15 @@
 }
 
 /* Dark mode */
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-background: #030712;
-    --color-foreground: #f9fafb;
-    --color-card: #111827;
-    --color-card-foreground: #f9fafb;
-    --color-muted: #1f2937;
-    --color-muted-foreground: #9ca3af;
-    --color-border: #374151;
-    --color-input: #374151;
-  }
+.dark {
+  --color-background: #030712;
+  --color-foreground: #f9fafb;
+  --color-card: #111827;
+  --color-card-foreground: #f9fafb;
+  --color-muted: #1f2937;
+  --color-muted-foreground: #9ca3af;
+  --color-border: #374151;
+  --color-input: #374151;
 }
 
 /* Custom Utilities dla Tailwind v4 */
