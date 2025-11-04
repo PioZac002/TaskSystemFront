@@ -1,3 +1,4 @@
+// LoginForm.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,22 +7,36 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckSquare } from "lucide-react";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/authStore";
+import { authService } from "@/services/authService";
 
 export default function LoginForm() {
     const navigate = useNavigate();
+    const setAuth = useAuthStore((state) => state.setAuth);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    console.log("accessToken przed requestem:", localStorage.getItem('accessToken'));
+    const handleLogin = async (e) => {
 
-    const handleLogin = (e) => {
         e.preventDefault();
+        if (!email || !password) {
+            toast.error("Fill in all fields");
+            return;
+        }
         setLoading(true);
-
-        setTimeout(() => {
-            setLoading(false);
+        try {
+            const data = await authService.login(email, password);
+            setAuth({ id: data.userId, email }, data.accessToken); // dopasuj do backendu, jeśli wraca user info
             toast.success("Logged in successfully!");
             navigate("/dashboard");
-        }, 1000);
+            console.log("accessToken PO request:", localStorage.getItem('accessToken'));
+
+        } catch (err) {
+            toast.error(err.message || "Login failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

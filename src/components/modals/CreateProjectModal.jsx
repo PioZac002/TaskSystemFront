@@ -8,19 +8,19 @@ import { useProjectStore } from "@/store/projectStore";
 import { toast } from "@/hooks/use-toast";
 
 export function CreateProjectModal({ open, onOpenChange }) {
-    const [name, setName] = useState("");
+    const [shortName, setShortName] = useState("");
     const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
     const addProject = useProjectStore((state) => state.addProject);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!name.trim()) {
-            toast({ title: "Error", description: "Project name is required", variant: "destructive" });
+        if (!shortName.trim()) {
+            toast({ title: "Error", description: "Project short name is required", variant: "destructive" });
             return;
         }
         addProject({
-            name,
+            shortName,
             description,
             status: 'active',
             progress: 0,
@@ -28,7 +28,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
             dueDate,
         });
         toast({ title: "Success", description: "Project created successfully" });
-        setName("");
+        setShortName("");
         setDescription("");
         setDueDate("");
         onOpenChange(false);
@@ -45,12 +45,12 @@ export function CreateProjectModal({ open, onOpenChange }) {
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Project Name *</Label>
+                        <Label htmlFor="shortName">Project Short Name *</Label>
                         <Input
-                            id="name"
+                            id="shortName"
                             placeholder="Website Redesign"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            value={shortName}
+                            onChange={(e) => setShortName(e.target.value)}
                         />
                     </div>
                     <div className="space-y-2">

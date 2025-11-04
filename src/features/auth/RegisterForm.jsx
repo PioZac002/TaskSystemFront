@@ -6,30 +6,49 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckSquare } from "lucide-react";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/authStore";
+import { authService } from "@/services/authService";
 
 export default function RegisterForm() {
     const navigate = useNavigate();
-    const [name, setName] = useState("");
+    const setAuth = useAuthStore((state) => state.setAuth);
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const handleRegister = (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
-
+        if (!firstName || !lastName || !email || !password || !confirmPassword) {
+            toast.error("Fill in all fields");
+            return;
+        }
         if (password !== confirmPassword) {
             toast.error("Passwords don't match!");
             return;
         }
-
         setLoading(true);
 
-        setTimeout(() => {
-            setLoading(false);
+        try {
+            const data = await authService.register({
+                firstName,
+                lastName,
+                email,
+                password
+            });
+            setAuth(
+                { id: data.userId, email, firstName, lastName },
+                data.accessToken
+            );
             toast.success("Account created successfully!");
             navigate("/dashboard");
-        }, 1000);
+        } catch (err) {
+            toast.error(err.message || "Registration failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -41,19 +60,33 @@ export default function RegisterForm() {
                     </div>
                     <div>
                         <CardTitle className="text-3xl font-bold">Create account</CardTitle>
-                        <CardDescription className="text-base mt-2">Start managing your tasks efficiently</CardDescription>
+                        <CardDescription className="text-base mt-2">
+                            Start managing your tasks efficiently
+                        </CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleRegister} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
+                            <Label htmlFor="firstName">First Name</Label>
                             <Input
-                                id="name"
+                                id="firstName"
                                 type="text"
-                                placeholder="John Doe"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                placeholder="John"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                                required
+                                className="bg-background"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="lastName">Last Name</Label>
+                            <Input
+                                id="lastName"
+                                type="text"
+                                placeholder="Doe"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
                                 required
                                 className="bg-background"
                             />
