@@ -1,137 +1,45 @@
 import { create } from "zustand";
+import issueApi from "@/services/issueApi"; // ten plik tworzysz wg wcześniejszego wzoru
 
-// Definicja pól (dla czytelności, możesz ją usunąć jeśli nie chcesz podpowiedzi)
-const defaultIssues = [
-    {
-        id: "1",
-        title: "Design new landing page",
-        description: "Create wireframes and mockups for the new landing page",
-        status: "todo",
-        priority: "high",
-        assignee: "JD",
-        projectId: "1",
-        comments: 3,
-        dueDate: "2 days",
-        labels: ["design", "frontend"],
-        createdAt: "2024-01-20",
-    },
-    {
-        id: "2",
-        title: "Setup CI/CD pipeline",
-        description: "Configure automated deployment workflow",
-        status: "todo",
-        priority: "medium",
-        assignee: "MT",
-        projectId: "1",
-        comments: 1,
-        dueDate: "5 days",
-        labels: ["devops"],
-        createdAt: "2024-01-21",
-    },
-    {
-        id: "3",
-        title: "Implement authentication",
-        description: "Add JWT-based authentication system",
-        status: "inprogress",
-        priority: "high",
-        assignee: "SM",
-        projectId: "1",
-        comments: 7,
-        dueDate: "Today",
-        labels: ["backend", "security"],
-        createdAt: "2024-01-18",
-    },
-    {
-        id: "4",
-        title: "Create API documentation",
-        description: "Document all REST API endpoints",
-        status: "inprogress",
-        priority: "medium",
-        assignee: "AK",
-        projectId: "2",
-        comments: 2,
-        dueDate: "3 days",
-        labels: ["documentation"],
-        createdAt: "2024-01-19",
-    },
-    {
-        id: "5",
-        title: "Optimize database queries",
-        description: "Improve query performance and add indexes",
-        status: "inprogress",
-        priority: "low",
-        assignee: "LK",
-        projectId: "2",
-        comments: 0,
-        dueDate: "1 week",
-        labels: ["backend", "performance"],
-        createdAt: "2024-01-22",
-    },
-    {
-        id: "6",
-        title: "Mobile responsive fixes",
-        description: "Fix responsive layout issues on mobile devices",
-        status: "review",
-        priority: "high",
-        assignee: "RB",
-        projectId: "1",
-        comments: 5,
-        dueDate: "Today",
-        labels: ["frontend", "bug"],
-        createdAt: "2024-01-17",
-    },
-    {
-        id: "7",
-        title: "User profile page",
-        description: "Complete user profile management interface",
-        status: "done",
-        priority: "medium",
-        assignee: "JD",
-        projectId: "1",
-        comments: 8,
-        dueDate: "Completed",
-        labels: ["frontend"],
-        createdAt: "2024-01-10",
-    },
-    {
-        id: "8",
-        title: "Payment gateway integration",
-        description: "Integrate Stripe payment processing",
-        status: "done",
-        priority: "high",
-        assignee: "MT",
-        projectId: "2",
-        comments: 12,
-        dueDate: "Completed",
-        labels: ["backend", "payment"],
-        createdAt: "2024-01-12",
-    },
-];
+export const useIssueStore = create((set, get) => ({
+    issues: [],
+    loading: false,
+    error: null,
 
-export const useIssueStore = create((set) => ({
-    issues: defaultIssues,
-    addIssue: (issue) =>
-        set((state) => ({
-            issues: [
-                ...state.issues,
-                {
-                    ...issue,
-                    id: Date.now().toString(),
-                    createdAt: new Date().toISOString(),
-                    comments: 0,
-                },
-            ],
-        })),
-    updateIssue: (id, data) =>
-        set((state) => ({
-            issues: state.issues.map((i) => (i.id === id ? { ...i, ...data } : i)),
-        })),
-    deleteIssue: (id) =>
-        set((state) => ({
-            issues: state.issues.filter((i) => i.id !== id),
-        })),
-    moveIssue: (id, status) =>
-        set((state) => ({
-            issues: state.issues.map((i) => (i.id === id ? { ...i, status } : i)),
-        })),
+    // Pobiera wszystkie issue z backendu
+    fetchIssues: async () => {
+        set({ loading: true, error: null });
+        try {
+            const data = await issueApi.getAll();
+            set({ issues: data, loading: false });
+        } catch (e) {
+            set({ error: "Failed to fetch issues", loading: false });
+        }
+    },
+
+    // Dodaje issue do backendu i lokalnie odświeża listę
+    addIssue: async (issue) => {
+        set({ loading: true, error: null });
+        try {
+            // Ustal priorytety i status zgodnie z backendem!
+            const backendIssue = {
+                ...issue,
+                priority: (issue.priority || "medium").toUpperCase(), // backend: "LOW", "MEDIUM", "HIGH"
+                status: issue.status ? issue.status.toUpperCase() : "NEW",
+                authorId: 0, // wstaw tak, by pobierać ID użytkownika zalogowanego!
+                assigneeId: issue.assigneeId || 0, // opcjonalnie
+            };
+            await issueApi.create(backendIssue);
+            await get().fetchIssues();
+        } catch (e) {
+            set({ error: "Failed to add issue", loading: false });
+        } finally {
+            set({ loading: false });
+        }
+    },
+
+    // Update, delete, move -- do uzupełnienia w przyszłości
+    updateIssue: async (id, data) => {},
+    deleteIssue: async (id) => {},
+    moveIssue: async (id, status) => {},
 }));

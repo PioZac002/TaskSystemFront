@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Plus, Search, Filter, Clock, MessageSquare } from "lucide-react";
 import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
+import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 
 export default function Issues() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -17,20 +18,31 @@ export default function Issues() {
     const [filterPriority, setFilterPriority] = useState("all");
     const [filterProject, setFilterProject] = useState("all");
     const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [detailsOpen, setDetailsOpen] = useState(false);
+    const [selectedIssueId, setSelectedIssueId] = useState(null);
 
-    const issues = useIssueStore((state) => state.issues);
+    const { issues, loading, error, fetchIssues } = useIssueStore();
     const projects = useProjectStore((state) => state.projects);
+
+    useEffect(() => {
+        fetchIssues();
+    }, [fetchIssues]);
 
     const filteredIssues = issues.filter((issue) => {
         const matchesSearch =
             issue.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            issue.description.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = filterStatus === "all" || issue.status === filterStatus;
-        const matchesPriority = filterPriority === "all" || issue.priority === filterPriority;
-        const matchesProject = filterProject === "all" || issue.projectId === filterProject;
+            (issue.description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = filterStatus === "all" || issue.status?.toLowerCase() === filterStatus;
+        const matchesPriority = filterPriority === "all" || issue.priority?.toLowerCase() === filterPriority;
+        const matchesProject = filterProject === "all" || String(issue.projectId) === String(filterProject);
 
         return matchesSearch && matchesStatus && matchesPriority && matchesProject;
     });
+
+    const handleOpenDetails = (id) => {
+        setSelectedIssueId(id);
+        setDetailsOpen(true);
+    };
 
     return (
         <AppLayout>
@@ -76,8 +88,8 @@ export default function Issues() {
                                     <SelectContent>
                                         <SelectItem value="all">All Projects</SelectItem>
                                         {projects.map((project) => (
-                                            <SelectItem key={project.id} value={project.id}>
-                                                {project.name}
+                                            <SelectItem key={project.id} value={String(project.id)}>
+                                                {project.shortName || project.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -114,7 +126,11 @@ export default function Issues() {
 
                 {/* Issues List */}
                 <div className="space-y-3">
-                    {filteredIssues.length === 0 ? (
+                    {loading ? (
+                        <Card><CardContent className="p-8 text-center text-muted-foreground">Loading issues...</CardContent></Card>
+                    ) : error ? (
+                        <Card><CardContent className="p-8 text-center text-destructive">{error}</CardContent></Card>
+                    ) : filteredIssues.length === 0 ? (
                         <Card className="border-border/50">
                             <CardContent className="flex flex-col items-center justify-center py-12">
                                 <p className="text-muted-foreground text-lg">No issues found</p>
@@ -128,6 +144,7 @@ export default function Issues() {
                         filteredIssues.map((issue) => (
                             <Card
                                 key={issue.id}
+                                onClick={() => handleOpenDetails(issue.id)}
                                 className="group hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.01] border-border/50 bg-gradient-to-br from-card to-card/80"
                             >
                                 <CardContent className="p-4 md:p-6">
@@ -135,11 +152,11 @@ export default function Issues() {
                                         {/* Status Badge */}
                                         <Badge
                                             variant={
-                                                issue.status === "todo"
+                                                issue.status?.toLowerCase() === "todo"
                                                     ? "todo"
-                                                    : issue.status === "inprogress"
+                                                    : issue.status?.toLowerCase() === "inprogress"
                                                         ? "inprogress"
-                                                        : issue.status === "review"
+                                                        : issue.status?.toLowerCase() === "review"
                                                             ? "warning"
                                                             : "done"
                                             }
@@ -162,9 +179,9 @@ export default function Issues() {
                                                 </h3>
                                                 <Badge
                                                     variant={
-                                                        issue.priority === "high"
+                                                        issue.priority?.toLowerCase() === "high"
                                                             ? "destructive"
-                                                            : issue.priority === "medium"
+                                                            : issue.priority?.toLowerCase() === "medium"
                                                                 ? "warning"
                                                                 : "secondary"
                                                     }
@@ -174,9 +191,8 @@ export default function Issues() {
                                                 </Badge>
                                             </div>
                                             <p className="text-sm text-muted-foreground line-clamp-2">{issue.description}</p>
-
                                             {/* Labels */}
-                                            {issue.labels.length > 0 && (
+                                            {Array.isArray(issue.labels) && issue.labels.length > 0 && (
                                                 <div className="flex flex-wrap gap-1">
                                                     {issue.labels.map((label, idx) => (
                                                         <Badge key={idx} variant="outline" className="text-xs px-2 py-0">
@@ -186,7 +202,6 @@ export default function Issues() {
                                                 </div>
                                             )}
                                         </div>
-
                                         {/* Meta */}
                                         <div className="flex md:flex-col items-center md:items-end gap-3 md:gap-2 text-xs text-muted-foreground">
                                             <div className="flex items-center gap-1">
@@ -195,7 +210,7 @@ export default function Issues() {
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <MessageSquare className="h-3 w-3" />
-                                                {issue.comments}
+                                                {issue.comments || 0}
                                             </div>
                                             <Avatar className="h-8 w-8">
                                                 <AvatarFallback className="bg-primary text-primary-foreground text-xs">
@@ -212,6 +227,11 @@ export default function Issues() {
             </div>
 
             <CreateIssueModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
+            <IssueDetailsModal
+                open={detailsOpen}
+                onOpenChange={setDetailsOpen}
+                issueId={selectedIssueId}
+            />
         </AppLayout>
     );
 }

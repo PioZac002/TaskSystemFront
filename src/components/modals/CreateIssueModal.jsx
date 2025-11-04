@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { toast } from "@/hooks/use-toast";
+import apiClient from "@/services/apiClient";
 
 export function CreateIssueModal({ open, onOpenChange }) {
     const [title, setTitle] = useState("");
@@ -15,13 +16,24 @@ export function CreateIssueModal({ open, onOpenChange }) {
     const [priority, setPriority] = useState("medium");
     const [status, setStatus] = useState("todo");
     const [projectId, setProjectId] = useState("");
-    const [assignee, setAssignee] = useState("");
+    const [assigneeId, setAssigneeId] = useState("");
     const [dueDate, setDueDate] = useState("");
+    const [users, setUsers] = useState([]);
 
     const addIssue = useIssueStore((state) => state.addIssue);
     const projects = useProjectStore((state) => state.projects);
 
-    const handleSubmit = (e) => {
+    // Fetch users (assignees)
+    useEffect(() => {
+        if (open) {
+            apiClient.get("/api/v1/user/all").then(res => setUsers(res.data)).catch(() => setUsers([]));
+        }
+    }, [open]);
+
+    // Optionally also fetch projects if nie masz gwarancji, że są w zustandzie
+    // useEffect(() => { /* fetch projects if needed */ }, [open]);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!title.trim()) {
             toast({ title: "Error", description: "Issue title is required", variant: "destructive" });
@@ -31,15 +43,14 @@ export function CreateIssueModal({ open, onOpenChange }) {
             toast({ title: "Error", description: "Please select a project", variant: "destructive" });
             return;
         }
-
-        addIssue({
+        await addIssue({
             title,
             description,
             status,
             priority,
-            assignee: assignee || "UN",
+            assigneeId,     // to jest id usera, nie string
             projectId,
-            dueDate: dueDate || "No due date",
+            dueDate,
             labels: [],
         });
 
@@ -49,7 +60,7 @@ export function CreateIssueModal({ open, onOpenChange }) {
         setPriority("medium");
         setStatus("todo");
         setProjectId("");
-        setAssignee("");
+        setAssigneeId("");
         setDueDate("");
         onOpenChange(false);
     };
@@ -59,29 +70,16 @@ export function CreateIssueModal({ open, onOpenChange }) {
             <DialogContent className="sm:max-w-[550px] animate-scale-in max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-2xl">Create New Issue</DialogTitle>
-                    <DialogDescription>
-                        Add a new task or issue to track
-                    </DialogDescription>
+                    <DialogDescription>Add a new task or issue to track</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
                         <Label htmlFor="title">Title *</Label>
-                        <Input
-                            id="title"
-                            placeholder="Fix login bug"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                        />
+                        <Input id="title" placeholder="Fix login bug" value={title} onChange={e => setTitle(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="description">Description</Label>
-                        <Textarea
-                            id="description"
-                            placeholder="Describe the issue..."
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            rows={3}
-                        />
+                        <Textarea id="description" placeholder="Describe the issue..." value={description} onChange={e => setDescription(e.target.value)} rows={3} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -92,8 +90,8 @@ export function CreateIssueModal({ open, onOpenChange }) {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {projects.map((project) => (
-                                        <SelectItem key={project.id} value={project.id}>
-                                            {project.name}
+                                        <SelectItem key={project.id} value={String(project.id)}>
+                                            {project.shortName || project.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -130,31 +128,26 @@ export function CreateIssueModal({ open, onOpenChange }) {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="assignee">Assignee</Label>
-                            <Input
-                                id="assignee"
-                                placeholder="JD"
-                                value={assignee}
-                                onChange={(e) => setAssignee(e.target.value)}
-                                maxLength={2}
-                            />
+                            <Select value={assigneeId} onValueChange={setAssigneeId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select user" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {users.map((user) => (
+                                        <SelectItem key={user.id} value={String(user.id)}>
+                                            {user.firstName} {user.lastName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="dueDate">Due Date</Label>
-                        <Input
-                            id="dueDate"
-                            type="date"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
-                        />
+                        <Input id="dueDate" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
                     </div>
                     <div className="flex gap-3 pt-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => onOpenChange(false)}
-                            className="flex-1"
-                        >
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
                             Cancel
                         </Button>
                         <Button type="submit" variant="gradient" className="flex-1">
