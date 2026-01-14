@@ -1,47 +1,65 @@
-import { useState,useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import apiClient from "@/services/apiClient"; // Upewnij się, że ten plik istnieje
+import apiClient from "@/services/apiClient";
+import { Badge } from "@/components/ui/badge";
 
-function ProjectDetailsModal({ open, onOpenChange, projectId }) {
+function formatDate(dateString) {
+    if (!dateString) return "";
+    const d = new Date(dateString);
+    return d.toLocaleString("pl-PL", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+export function ProjectDetailsModal({ open, onOpenChange, projectId }) {
     const [project, setProject] = useState(null);
-    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (open && projectId != null) {
-            setLoading(true);
-            apiClient
-                .get(`/api/v1/project/${projectId}`)
-                .then((res) => setProject(res.data))
-                .finally(() => setLoading(false));
+        if (open && projectId) {
+            apiClient.get(`/api/v1/project/${projectId}`)
+                .then(res => setProject(res.data));
         }
     }, [open, projectId]);
 
-    return (
+    if (!project) return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] animate-scale-in">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl">Project Details</DialogTitle>
-                </DialogHeader>
-                {loading ? (
-                    <div className="text-muted-foreground">Loading...</div>
-                ) : project ? (
-                    <div className="space-y-2">
-                        <div>
-                            <span className="font-semibold text-lg">{project.shortName}</span>
-                            <div className="text-sm text-muted-foreground">{project.description}</div>
-                        </div>
-                        <div>
-                            <span className="font-medium">Created at: </span>
-                            {project.createdAt}
-                        </div>
-                        {/* Możesz tu dodatkowo dodać inne szczegóły: issues, status, itd. */}
-                    </div>
-                ) : (
-                    <div className="text-destructive">No data.</div>
-                )}
+            <DialogContent>
+                <div className="text-muted-foreground">Loading...</div>
             </DialogContent>
         </Dialog>
     );
 
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[600px] animate-scale-in overflow-y-auto max-h-[90vh]">
+                <DialogHeader>
+                    <DialogTitle>{project.shortName}</DialogTitle>
+                    <DialogDescription>
+                        {project.description}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                    <div>
+                        <span className="font-medium">Created at: </span>
+                        {formatDate(project.createdAt)}
+                    </div>
+                    <div className="mt-4">
+                        <h3 className="font-semibold mb-2">Issues in this project:</h3>
+                        {project.issues && project.issues.length ? (
+                            <div className="space-y-2">
+                                {project.issues.map(issue => (
+                                    <div key={issue.id} className="flex gap-2 items-center p-2 rounded-md border border-border">
+                                        <div>{issue.key}</div>
+                                        <span className="font-medium">{issue.title}</span>
+                                        <Badge variant={issue.status === "DONE" ? "done" : "inprogress"}>{issue.status}</Badge>
+                                        <span>| {formatDate(issue.createdAt)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-muted-foreground">No issues assigned to this project.</div>
+                        )}
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
 }
-export { ProjectDetailsModal };

@@ -13,8 +13,8 @@ import apiClient from "@/services/apiClient";
 export function CreateIssueModal({ open, onOpenChange }) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [priority, setPriority] = useState("medium");
-    const [status, setStatus] = useState("todo");
+    const [priority, setPriority] = useState("normal");
+    const [status, setStatus] = useState("NEW");
     const [projectId, setProjectId] = useState("");
     const [assigneeId, setAssigneeId] = useState("");
     const [dueDate, setDueDate] = useState("");
@@ -23,15 +23,11 @@ export function CreateIssueModal({ open, onOpenChange }) {
     const addIssue = useIssueStore((state) => state.addIssue);
     const projects = useProjectStore((state) => state.projects);
 
-    // Fetch users (assignees)
     useEffect(() => {
         if (open) {
             apiClient.get("/api/v1/user/all").then(res => setUsers(res.data)).catch(() => setUsers([]));
         }
     }, [open]);
-
-    // Optionally also fetch projects if nie masz gwarancji, że są w zustandzie
-    // useEffect(() => { /* fetch projects if needed */ }, [open]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -43,22 +39,26 @@ export function CreateIssueModal({ open, onOpenChange }) {
             toast({ title: "Error", description: "Please select a project", variant: "destructive" });
             return;
         }
+        if (!assigneeId) {
+            toast({ title: "Error", description: "Please select an assignee", variant: "destructive" });
+            return;
+        }
+
         await addIssue({
             title,
             description,
-            status,
-            priority,
-            assigneeId,     // to jest id usera, nie string
-            projectId,
-            dueDate,
-            labels: [],
+            status: status.toUpperCase(),
+            priority: priority.toUpperCase() === "MEDIUM" ? "NORMAL" : priority.toUpperCase(),
+            assigneeId: Number(assigneeId),
+            projectId: Number(projectId),
+            dueDate: dueDate || null,
         });
 
         toast({ title: "Success", description: "Issue created successfully" });
         setTitle("");
         setDescription("");
-        setPriority("medium");
-        setStatus("todo");
+        setPriority("normal");
+        setStatus("NEW");
         setProjectId("");
         setAssigneeId("");
         setDueDate("");
@@ -70,16 +70,18 @@ export function CreateIssueModal({ open, onOpenChange }) {
             <DialogContent className="sm:max-w-[550px] animate-scale-in max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-2xl">Create New Issue</DialogTitle>
-                    <DialogDescription>Add a new task or issue to track</DialogDescription>
+                    <DialogDescription>
+                        Add a new task or issue to track
+                    </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
                         <Label htmlFor="title">Title *</Label>
-                        <Input id="title" placeholder="Fix login bug" value={title} onChange={e => setTitle(e.target.value)} />
+                        <Input id="title" value={title} onChange={e => setTitle(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" placeholder="Describe the issue..." value={description} onChange={e => setDescription(e.target.value)} rows={3} />
+                        <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -104,9 +106,9 @@ export function CreateIssueModal({ open, onOpenChange }) {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="low">Low</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
                                     <SelectItem value="high">High</SelectItem>
+                                    <SelectItem value="normal">Normal</SelectItem>
+                                    <SelectItem value="low">Low</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -119,15 +121,15 @@ export function CreateIssueModal({ open, onOpenChange }) {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="todo">To Do</SelectItem>
-                                    <SelectItem value="inprogress">In Progress</SelectItem>
-                                    <SelectItem value="review">Review</SelectItem>
-                                    <SelectItem value="done">Done</SelectItem>
+                                    <SelectItem value="NEW">To Do</SelectItem>
+                                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                    <SelectItem value="REVIEW">Review</SelectItem>
+                                    <SelectItem value="DONE">Done</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="assignee">Assignee</Label>
+                            <Label htmlFor="assignee">Assignee *</Label>
                             <Select value={assigneeId} onValueChange={setAssigneeId}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select user" />

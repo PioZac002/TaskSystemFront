@@ -33,11 +33,10 @@ export function IssueDetailsModal({ open, onOpenChange, issueId }) {
                     title: issueRes.data.title || "",
                     description: issueRes.data.description || "",
                     status: issueRes.data.status || "NEW",
-                    priority: issueRes.data.priority || "MEDIUM",
+                    priority: issueRes.data.priority || "NORMAL",
                     dueDate: issueRes.data.dueDate ? issueRes.data.dueDate.slice(0, 10) : "",
                     assigneeId: issueRes.data.assigneeId ? String(issueRes.data.assigneeId) : "",
                 });
-                setUsers(usersRes.data);
             };
             getData();
             setEdit(false);
@@ -48,59 +47,56 @@ export function IssueDetailsModal({ open, onOpenChange, issueId }) {
 
     const handleSave = async () => {
         try {
-            // 1. Aktualizacja tytułu jeśli się zmienił
+            if (!issue) return;
+            // Zmiana tytułu
             if (form.title !== issue.title) {
                 await apiClient.put("/api/v1/issue/rename", {
-                    issueId,
+                    issueId: Number(issue.id),
                     newTitle: form.title,
                 });
             }
-            // 2. Aktualizacja statusu
+            // Zmiana statusu (Uwaga: pole musi być "NewStatus")
             if (form.status !== issue.status) {
                 await apiClient.put("/api/v1/issue/update-status", {
-                    issueId,
+                    issueId: Number(issue.id),
                     NewStatus: form.status,
                 });
             }
-            // 3. Aktualizacja priorytetu
+            // Zmiana priorytetu
             if (form.priority !== issue.priority) {
                 await apiClient.put("/api/v1/issue/update-priority", {
-                    issueId,
+                    issueId: Number(issue.id),
                     NewPriority: form.priority,
                 });
             }
-            // 4. Aktualizacja terminu
+            // Zmiana due date
             if (
                 form.dueDate &&
                 (!issue.dueDate || form.dueDate.slice(0, 10) !== issue.dueDate.slice(0, 10))
             ) {
                 await apiClient.put("/api/v1/issue/update-due-date", {
-                    issueId,
+                    issueId: Number(issue.id),
                     dueDate: form.dueDate,
                 });
             }
-            // 5. Aktualizacja assignee (osoba przypisana)
+            // Asignee (int)
             if (form.assigneeId && String(form.assigneeId) !== String(issue.assigneeId)) {
                 await apiClient.put("/api/v1/issue/assign-team", {
-                    issueId,
+                    issueId: Number(issue.id),
                     assigneeId: Number(form.assigneeId),
                 });
             }
-            // 6. Aktualizacja opisu (jeśli masz endpoint PUT do description)
-            if (form.description !== issue.description && form.description.trim() !== "") {
-                // Dodaj swój endpoint do aktualizacji opisu, np:
-                // await apiClient.put("/api/v1/issue/update-description", { issueId, description: form.description })
-            }
+            // TODO: Jeśli masz endpoint do opisu – dodaj
             toast({ title: "Success", description: "Issue updated" });
             setEdit(false);
-            // Odśwież dane po updejcie
-            const refreshed = await apiClient.get(`/api/v1/issue/id/${issueId}`);
+            // Odśwież dane po update
+            const refreshed = await apiClient.get(`/api/v1/issue/id/${issue.id}`);
             setIssue(refreshed.data);
             setForm({
                 title: refreshed.data.title || "",
                 description: refreshed.data.description || "",
                 status: refreshed.data.status || "NEW",
-                priority: refreshed.data.priority || "MEDIUM",
+                priority: refreshed.data.priority || "NORMAL",
                 dueDate: refreshed.data.dueDate ? refreshed.data.dueDate.slice(0, 10) : "",
                 assigneeId: refreshed.data.assigneeId ? String(refreshed.data.assigneeId) : "",
             });
@@ -167,9 +163,9 @@ export function IssueDetailsModal({ open, onOpenChange, issueId }) {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="LOW">Low</SelectItem>
-                                    <SelectItem value="MEDIUM">Medium</SelectItem>
                                     <SelectItem value="HIGH">High</SelectItem>
+                                    <SelectItem value="NORMAL">Normal</SelectItem>
+                                    <SelectItem value="LOW">Low</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
