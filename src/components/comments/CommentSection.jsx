@@ -48,11 +48,19 @@ export function CommentSection({ issueId, currentUserId }) {
             });
             return;
         }
+        if (!currentUserId) {
+            toast({ 
+                title: "Error", 
+                description: "You must be logged in to comment", 
+                variant: "destructive" 
+            });
+            return;
+        }
         try {
             await createComment({
                 issueId,
                 content: newComment,
-                authorId: currentUserId || 1
+                authorId: currentUserId
             });
             setNewComment("");
             toast({ title: "Success", description: "Comment added successfully" });
