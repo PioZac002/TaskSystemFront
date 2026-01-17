@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 import { Separator } from "@/components/ui/Separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/AlertDialog";
 import { useCommentStore } from "@/store/commentStore";
@@ -36,6 +36,7 @@ export function CommentSection({ issueId, currentUserId }) {
         if (issueId) {
             fetchCommentsByIssueId(issueId);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [issueId]);
 
     const handleAddComment = async () => {

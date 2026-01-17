@@ -4,9 +4,9 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { LayoutDashboard, FolderKanban, ListTodo, Trello, UserCircle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import {
     DropdownMenu,
     DropdownMenuContent,

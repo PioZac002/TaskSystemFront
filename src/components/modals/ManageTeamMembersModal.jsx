@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/Dialog";
+import { Button } from "@/components/ui/Button";
+import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Separator } from "@/components/ui/Separator";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useTeamStore } from "@/store/teamStore";
@@ -29,13 +29,14 @@ export function ManageTeamMembersModal({ open, onOpenChange, teamId }) {
             loadTeamMembers();
             fetchUsers();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, teamId]);
 
     const loadTeamMembers = async () => {
         try {
             const members = await teamApi.getUsersByTeamId(teamId);
             setTeamMembers(members);
-        } catch (error) {
+        } catch {
             toast({ 
                 title: "Error", 
                 description: "Failed to load team members", 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { CreateTeamModal } from "@/components/modals/CreateTeamModal";
 import { ManageTeamMembersModal } from "@/components/modals/ManageTeamMembersModal";
@@ -22,6 +22,7 @@ export default function TeamManagement() {
 
     useEffect(() => {
         fetchTeams();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleManageMembers = (teamId) => {
