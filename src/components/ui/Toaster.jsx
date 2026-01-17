@@ -1,6 +1,6 @@
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ToastProvider, Toast, ToastClose, ToastDescription, ToastTitle, ToastViewport } from "@/components/ui/toast";
+import { ToastProvider, Toast, ToastClose, ToastDescription, ToastTitle, ToastViewport } from "@/components/ui/Toast";
 
 export function Toaster() {
     const { toasts } = useToast();

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/Textarea";
+import { Badge } from "@/components/ui/Badge";
 import { useAuthStore } from "@/store/authStore"; // Używasz tego store
 import { toast } from "@/hooks/use-toast";
 import { User, Mail, Briefcase, Lock, Save } from "lucide-react";

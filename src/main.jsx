@@ -10,9 +10,11 @@ import Dashboard from "@/features/dashboard/Dashboard";
 import Board from "@/features/boards/Board";
 import Projects from "@/features/projects/Projects";
 import Issues from "@/features/issues/Issues";
-import Profile from "@/features/Profile/Profile.jsx"; // lub "@/features/profile/Profile" jeśli taki masz
+import Profile from "@/features/profile/Profile.jsx";
 import LoginForm from "@/features/auth/LoginForm";
 import RegisterForm from "@/features/auth/RegisterForm";
+import UserManagement from "@/features/users/UserManagement";
+import TeamManagement from "@/features/teams/TeamManagement";
 
 // (opcjonalnie) import dark mode/theme-provider jeśli korzystasz np. z "next-themes"
 // Możesz dodać własny ThemeProvider jeśli jest potrzebny.
@@ -29,6 +31,8 @@ root.render(
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/issues" element={<Issues />} />      {/* Dodane Issues */}
                 <Route path="/profile" element={<Profile />} />    {/* Dodane Profile */}
+                <Route path="/users" element={<UserManagement />} />
+                <Route path="/teams" element={<TeamManagement />} />
                 <Route path="/login" element={<LoginForm />} />
                 <Route path="/register" element={<RegisterForm />} />
                 {/* Fallback - 404 */}
