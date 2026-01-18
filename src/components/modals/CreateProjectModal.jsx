@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { useProjectStore } from "@/store/projectStore";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export function CreateProjectModal({ open, onOpenChange }) {
     const [shortName, setShortName] = useState("");
@@ -16,7 +16,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!shortName.trim()) {
-            toast({ title: "Error", description: "Project short name is required", variant: "destructive" });
+            toast.error("Project short name is required");
             return;
         }
         addProject({
@@ -27,7 +27,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
             team: [],
             dueDate,
         });
-        toast({ title: "Success", description: "Project created successfully" });
+        toast.success("Project created successfully");
         setShortName("");
         setDescription("");
         setDueDate("");

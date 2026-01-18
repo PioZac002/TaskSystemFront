@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { useTeamStore } from "@/store/teamStore";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export function CreateTeamModal({ open, onOpenChange }) {
     const [name, setName] = useState("");
@@ -13,24 +13,16 @@ export function CreateTeamModal({ open, onOpenChange }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!name.trim() || name.trim().length < 3) {
-            toast({ 
-                title: "Error", 
-                description: "Team name must be at least 3 characters", 
-                variant: "destructive" 
-            });
+            toast.error("Team name must be at least 3 characters");
             return;
         }
         try {
             await createTeam({ name });
-            toast({ title: "Success", description: "Team created successfully" });
+            toast.success("Team created successfully");
             setName("");
             onOpenChange(false);
         } catch (error) {
-            toast({ 
-                title: "Error", 
-                description: error.message || "Failed to create team", 
-                variant: "destructive" 
-            });
+            toast.error(error.message || "Failed to create team");
         }
     };
 

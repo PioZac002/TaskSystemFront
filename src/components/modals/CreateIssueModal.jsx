@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import apiClient from "@/services/apiClient";
 
 export function CreateIssueModal({ open, onOpenChange }) {
@@ -32,15 +32,15 @@ export function CreateIssueModal({ open, onOpenChange }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!title.trim()) {
-            toast({ title: "Error", description: "Issue title is required", variant: "destructive" });
+            toast.error("Issue title is required");
             return;
         }
         if (!projectId) {
-            toast({ title: "Error", description: "Please select a project", variant: "destructive" });
+            toast.error("Please select a project");
             return;
         }
         if (!assigneeId) {
-            toast({ title: "Error", description: "Please select an assignee", variant: "destructive" });
+            toast.error("Please select an assignee");
             return;
         }
 
@@ -54,7 +54,7 @@ export function CreateIssueModal({ open, onOpenChange }) {
             dueDate: dueDate || null,
         });
 
-        toast({ title: "Success", description: "Issue created successfully" });
+        toast.success("Issue created successfully");
         setTitle("");
         setDescription("");
         setPriority("normal");
