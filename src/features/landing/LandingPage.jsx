@@ -1,17 +1,18 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
-import { 
-    Zap, 
-    Shield, 
-    Users, 
-    Rocket, 
-    Code, 
-    Layers, 
-    CheckCircle, 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+    Zap,
+    Shield,
+    Users,
+    Rocket,
+    Code,
+    Layers,
+    CheckCircle,
     ArrowRight,
     MessageSquare,
-    BarChart3
+    BarChart3,
+    Github
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -26,34 +27,34 @@ export default function LandingPage() {
 
     const features = [
         {
-            icon: Rocket,
+            icon:  Rocket,
             title: "Project Management",
-            description: "Manage your projects efficiently with intuitive tools and real-time collaboration features."
+            description: "Organize projects with intuitive tools and streamlined workflows designed for modern teams."
         },
         {
             icon: CheckCircle,
             title: "Issue Tracking",
-            description: "Track tasks, bugs, and features with customizable workflows and priority levels."
+            description: "Track tasks, bugs, and features with customizable workflows and smart priority management."
         },
         {
             icon: Users,
             title: "Team Collaboration",
-            description: "Work together seamlessly with team management, assignments, and shared workspaces."
+            description: "Seamless collaboration with team assignments, shared workspaces, and role-based access."
         },
         {
-            icon: Zap,
+            icon:  Zap,
             title: "Real-time Updates",
-            description: "Stay synchronized with instant notifications and live updates across your team."
+            description: "Stay in sync with instant notifications and live updates across your entire team."
         },
         {
             icon: MessageSquare,
-            title: "Comments & Discussion",
-            description: "Communicate effectively with threaded discussions and inline comments on tasks."
+            title: "Smart Comments",
+            description: "Contextual discussions with threaded comments and inline feedback on every task."
         },
         {
             icon: BarChart3,
-            title: "Advanced Analytics",
-            description: "Gain insights with powerful analytics and reporting features (coming soon)."
+            title: "Analytics Dashboard",
+            description: "Data-driven insights with comprehensive reporting and team performance metrics."
         }
     ];
 
@@ -61,107 +62,167 @@ export default function LandingPage() {
         {
             number: "01",
             title: "Create Account",
-            description: "Sign up in seconds and start your journey to better project management."
+            description: "Sign up in seconds with email or social login."
         },
         {
             number: "02",
-            title: "Create Project",
-            description: "Set up your first project with custom workflows and team members."
+            title: "Setup Project",
+            description: "Configure workflows and invite your team members."
         },
         {
             number: "03",
-            title: "Start Managing",
-            description: "Track tasks, collaborate with your team, and achieve your goals faster."
+            title: "Start Shipping",
+            description: "Track progress and deliver results faster than ever."
         }
     ];
 
     const techStack = [
-        "React",
-        "Vite",
-        "Tailwind CSS",
-        "ASP.NET Core",
-        "PostgreSQL",
-        "JWT Auth"
+        { name:  "React 18", icon: Code },
+        { name: "TypeScript", icon: Code },
+        { name: "Tailwind CSS", icon:  Layers },
+        { name: "ASP.NET Core", icon: Shield },
+        { name: "PostgreSQL", icon: Layers },
+        { name: "JWT Auth", icon: Shield }
     ];
 
     return (
-        <div className="min-h-screen bg-background overflow-x-hidden">
-            {/* Hero Section */}
-            <section className="relative min-h-screen flex items-center justify-center px-4 py-20 overflow-hidden">
-                {/* Animated Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 via-purple-600/10 to-indigo-600/10"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.1),transparent_50%)]"></div>
-                
-                {/* Floating shapes */}
-                <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-float"></div>
-                <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
-                <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '4s' }}></div>
-
-                <div className="relative z-10 max-w-6xl mx-auto text-center space-y-8 animate-fade-in">
-                    <div className="inline-block">
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-lg border border-white/20 mb-6">
-                            <Zap className="h-4 w-4 text-yellow-400" />
-                            <span className="text-sm font-medium">Modern Task Management</span>
+        <div className="min-h-screen bg-white dark:bg-slate-950">
+            {/* Navigation */}
+            <nav className="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center h-16">
+                        <div className="flex items-center gap-2">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 dark:bg-white">
+                                <Layers className="h-5 w-5 text-white dark:text-slate-900" />
+                            </div>
+                            <span className="text-xl font-bold text-slate-900 dark:text-white">TaskSystem</span>
+                        </div>
+                        <div className="hidden md:flex items-center gap-8">
+                            <button onClick={() => scrollToSection('features')} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                                Features
+                            </button>
+                            <button onClick={() => scrollToSection('how-it-works')} className="text-slate-600 dark: text-slate-400 hover: text-slate-900 dark: hover:text-white transition-colors">
+                                How it works
+                            </button>
+                            <button onClick={() => scrollToSection('tech-stack')} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover: text-white transition-colors">
+                                Technology
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="ghost"
+                                onClick={() => navigate('/login')}
+                                className="text-slate-700 dark:text-slate-300"
+                            >
+                                Sign in
+                            </Button>
+                            <Button
+                                onClick={() => navigate('/register')}
+                                className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100"
+                            >
+                                Get Started
+                            </Button>
                         </div>
                     </div>
-                    
-                    <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent leading-tight animate-slide-in-up">
-                        Manage Tasks Like Never Before
-                    </h1>
-                    
-                    <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
-                        A powerful, intuitive platform for teams to collaborate, track progress, and deliver exceptional results together.
-                    </p>
-                    
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
-                        <Button 
-                            size="lg" 
-                            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
-                            onClick={() => navigate('/register')}
-                        >
-                            Get Started
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                        <Button 
-                            size="lg" 
-                            variant="outline"
-                            className="border-2 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 hover:scale-105"
-                            onClick={() => scrollToSection('features')}
-                        >
-                            Learn More
-                        </Button>
+                </div>
+            </nav>
+
+            {/* Hero Section */}
+            <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center max-w-4xl mx-auto space-y-8">
+                        <div className="inline-flex items-center gap-2 px-4 py-1. 5 rounded-full border border-slate-200 dark: border-slate-800 bg-slate-50 dark:bg-slate-900">
+                            <Zap className="h-4 w-4 text-slate-900 dark:text-white" />
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                Modern Task Management Platform
+                            </span>
+                        </div>
+
+                        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight">
+                            Ship faster with
+                            <span className="block mt-2 bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
+                                better task management
+                            </span>
+                        </h1>
+
+                        <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                            Streamline your workflow with an intuitive platform designed for modern teams.
+                            Track progress, collaborate seamlessly, and deliver exceptional results.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+                            <Button
+                                size="lg"
+                                className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-8"
+                                onClick={() => navigate('/register')}
+                            >
+                                Start for free
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                            <Button
+                                size="lg"
+                                variant="outline"
+                                className="border-slate-300 dark:border-slate-700 px-8"
+                                onClick={() => scrollToSection('features')}
+                            >
+                                See how it works
+                            </Button>
+                        </div>
+
+                        <div className="pt-8 flex items-center justify-center gap-8 text-sm text-slate-500 dark:text-slate-500">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4" />
+                                <span>No credit card required</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4" />
+                                <span>Free forever plan</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Hero Image Placeholder */}
+                    <div className="mt-20 rounded-xl border border-slate-200 dark: border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 shadow-2xl">
+                        <div className="aspect-video rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                            <div className="text-center space-y-2">
+                                <Layers className="h-16 w-16 mx-auto text-slate-400 dark:text-slate-600" />
+                                <p className="text-slate-500 dark:text-slate-500 text-sm">Dashboard Preview</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* Features Section */}
-            <section id="features" className="py-20 px-4 relative">
+            <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark: bg-slate-900/50">
                 <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16 space-y-4 animate-fade-in">
-                        <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                            Powerful Features
+                    <div className="text-center mb-16 space-y-4">
+                        <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white tracking-tight">
+                            Everything you need
                         </h2>
-                        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                            Everything you need to manage projects and tasks effectively
+                        <p className="text-xl text-slate-600 dark: text-slate-400 max-w-2xl mx-auto">
+                            Powerful features designed to help your team work smarter, not harder
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {features.map((feature, index) => (
-                            <Card 
+                            <Card
                                 key={index}
-                                className="group relative overflow-hidden bg-white/5 backdrop-blur-lg border border-white/10 hover:border-purple-500/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 animate-fade-in"
-                                style={{ animationDelay: `${index * 0.1}s` }}
+                                className="group border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-lg transition-all duration-300"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <CardContent className="p-6 relative">
-                                    <div className="flex items-start gap-4">
-                                        <div className="p-3 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg group-hover:shadow-purple-500/50 transition-shadow duration-300">
-                                            <feature.icon className="h-6 w-6" />
+                                <CardContent className="p-6">
+                                    <div className="space-y-4">
+                                        <div className="h-12 w-12 rounded-lg bg-slate-100 dark:bg-slate-900 flex items-center justify-center group-hover:bg-slate-900 dark:group-hover:bg-white transition-colors">
+                                            <feature.icon className="h-6 w-6 text-slate-700 dark:text-slate-300 group-hover:text-white dark:group-hover:text-slate-900 transition-colors" />
                                         </div>
-                                        <div className="flex-1">
-                                            <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                                            <p className="text-muted-foreground">{feature.description}</p>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                                                {feature.title}
+                                            </h3>
+                                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                                                {feature.description}
+                                            </p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -172,37 +233,39 @@ export default function LandingPage() {
             </section>
 
             {/* How It Works Section */}
-            <section id="how-it-works" className="py-20 px-4 relative bg-gradient-to-b from-transparent via-purple-500/5 to-transparent">
+            <section id="how-it-works" className="py-24 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16 space-y-4 animate-fade-in">
-                        <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                            How It Works
+                    <div className="text-center mb-16 space-y-4">
+                        <h2 className="text-4xl sm: text-5xl font-bold text-slate-900 dark:text-white tracking-tight">
+                            Get started in minutes
                         </h2>
-                        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                            Get started in three simple steps
+                        <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+                            Three simple steps to transform your team's productivity
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
                         {/* Connection Line */}
-                        <div className="hidden md:block absolute top-16 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600"></div>
-                        
+                        <div className="hidden md:block absolute top-12 left-[16. 66%] right-[16.66%] h-px bg-slate-200 dark:bg-slate-800"></div>
+
                         {steps.map((step, index) => (
-                            <div 
+                            <div
                                 key={index}
-                                className="relative text-center space-y-4 animate-fade-in"
-                                style={{ animationDelay: `${index * 0.2}s` }}
+                                className="relative text-center space-y-4"
                             >
                                 <div className="relative inline-block">
-                                    <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 flex items-center justify-center text-4xl font-bold text-white shadow-2xl shadow-purple-500/50 hover:scale-110 transition-transform duration-300">
-                                        {step.number}
-                                    </div>
-                                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-                                        <CheckCircle className="h-5 w-5 text-white" />
+                                    <div className="w-24 h-24 mx-auto rounded-full border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-center relative z-10">
+                                        <span className="text-3xl font-bold text-slate-900 dark:text-white">
+                                            {step.number}
+                                        </span>
                                     </div>
                                 </div>
-                                <h3 className="text-2xl font-bold">{step.title}</h3>
-                                <p className="text-muted-foreground">{step.description}</p>
+                                <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                                    {step.title}
+                                </h3>
+                                <p className="text-slate-600 dark:text-slate-400">
+                                    {step.description}
+                                </p>
                             </div>
                         ))}
                     </div>
@@ -210,27 +273,26 @@ export default function LandingPage() {
             </section>
 
             {/* Tech Stack Section */}
-            <section id="tech-stack" className="py-20 px-4 relative">
+            <section id="tech-stack" className="py-24 px-4 sm: px-6 lg:px-8 bg-slate-50 dark: bg-slate-900/50">
                 <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16 space-y-4 animate-fade-in">
-                        <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                            Built With Modern Tech
+                    <div className="text-center mb-16 space-y-4">
+                        <h2 className="text-4xl sm: text-5xl font-bold text-slate-900 dark:text-white tracking-tight">
+                            Built with modern technology
                         </h2>
-                        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                            Powered by cutting-edge technologies
+                        <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+                            Powered by industry-leading tools and frameworks
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap justify-center gap-4">
-                        {techStack.map((tech, index) => (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {techStack. map((tech, index) => (
                             <div
                                 key={index}
-                                className="px-6 py-3 rounded-full bg-white/5 backdrop-blur-lg border border-white/10 hover:border-purple-500/50 hover:bg-gradient-to-r hover:from-violet-600/10 hover:to-indigo-600/10 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-purple-500/20 animate-fade-in"
-                                style={{ animationDelay: `${index * 0.1}s` }}
+                                className="p-6 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-md transition-all duration-300 text-center"
                             >
-                                <span className="font-medium text-lg flex items-center gap-2">
-                                    <Code className="h-5 w-5 text-purple-500" />
-                                    {tech}
+                                <tech.icon className="h-8 w-8 mx-auto mb-3 text-slate-700 dark:text-slate-300" />
+                                <span className="text-sm font-medium text-slate-900 dark:text-white">
+                                    {tech.name}
                                 </span>
                             </div>
                         ))}
@@ -239,32 +301,32 @@ export default function LandingPage() {
             </section>
 
             {/* CTA Section */}
-            <section className="py-20 px-4 relative">
-                <div className="max-w-4xl mx-auto text-center space-y-8">
-                    <Card className="overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 border-none shadow-2xl shadow-purple-500/50 animate-fade-in">
-                        <CardContent className="p-12">
-                            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                                Ready to Transform Your Workflow?
+            <section className="py-24 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto">
+                    <Card className="border-slate-200 dark:border-slate-800 bg-slate-900 dark:bg-white overflow-hidden">
+                        <CardContent className="p-12 text-center">
+                            <h2 className="text-4xl sm:text-5xl font-bold text-white dark:text-slate-900 mb-6 tracking-tight">
+                                Ready to get started?
                             </h2>
-                            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-                                Join teams worldwide who are already managing their projects better with TaskSystem.
+                            <p className="text-xl text-slate-300 dark:text-slate-600 mb-8 max-w-2xl mx-auto">
+                                Join teams worldwide who are already shipping faster with TaskSystem
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <Button 
+                                <Button
                                     size="lg"
-                                    className="bg-white text-purple-600 hover:bg-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover: bg-slate-100 dark:hover:bg-slate-800 px-8"
                                     onClick={() => navigate('/register')}
                                 >
-                                    Create Free Account
+                                    Create free account
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
-                                <Button 
+                                <Button
                                     size="lg"
                                     variant="outline"
-                                    className="border-2 border-white text-white hover:bg-white/10 transition-all duration-300 hover:scale-105"
+                                    className="border-slate-700 dark:border-slate-300 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-8"
                                     onClick={() => navigate('/login')}
                                 >
-                                    Sign In
+                                    Sign in
                                 </Button>
                             </div>
                         </CardContent>
@@ -273,25 +335,56 @@ export default function LandingPage() {
             </section>
 
             {/* Footer */}
-            <footer className="py-8 px-4 border-t border-border/50 backdrop-blur-lg">
+            <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-200 dark:border-slate-800">
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-violet-600 to-indigo-600">
-                                <Layers className="h-5 w-5 text-white" />
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 dark:bg-white">
+                                    <Layers className="h-4 w-4 text-white dark:text-slate-900" />
+                                </div>
+                                <span className="text-lg font-bold text-slate-900 dark:text-white">TaskSystem</span>
                             </div>
-                            <span className="text-lg font-bold">TaskSystem</span>
+                            <p className="text-sm text-slate-600 dark: text-slate-400">
+                                Modern task management for modern teams
+                            </p>
                         </div>
-                        <p className="text-muted-foreground">
-                            © 2026 TaskSystem. Built with ❤️ for better productivity.
+                        <div>
+                            <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Product</h4>
+                            <ul className="space-y-2 text-sm">
+                                <li><a href="#features" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Features</a></li>
+                                <li><a href="#" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Pricing</a></li>
+                                <li><a href="#" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Roadmap</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Resources</h4>
+                            <ul className="space-y-2 text-sm">
+                                <li><a href="#" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Documentation</a></li>
+                                <li><a href="#" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">API Reference</a></li>
+                                <li><a href="#" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Support</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Company</h4>
+                            <ul className="space-y-2 text-sm">
+                                <li><a href="#" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">About</a></li>
+                                <li><a href="#" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Blog</a></li>
+                                <li><a href="https://github.com" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1">
+                                    <Github className="h-4 w-4" />
+                                    GitHub
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <p className="text-sm text-slate-600 dark: text-slate-400">
+                            © 2026 TaskSystem. All rights reserved.
                         </p>
-                        <div className="flex gap-6">
-                            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                                GitHub
-                            </a>
-                            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                                Documentation
-                            </a>
+                        <div className="flex gap-6 text-sm">
+                            <a href="#" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Privacy</a>
+                            <a href="#" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Terms</a>
+                            <a href="#" className="text-slate-600 dark: text-slate-400 hover: text-slate-900 dark: hover:text-white">Cookies</a>
                         </div>
                     </div>
                 </div>
