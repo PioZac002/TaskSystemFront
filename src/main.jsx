@@ -2,9 +2,10 @@ import "@/index.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 
 // Importy podstron (dopasuj ścieżki do siebie)
-import Index from "@/features/Index";
+import LandingPage from "@/features/landing/LandingPage";
 import NotFound from "@/features/NotFound";
 import Dashboard from "@/features/dashboard/Dashboard";
 import Board from "@/features/boards/Board";
@@ -15,6 +16,7 @@ import LoginForm from "@/features/auth/LoginForm";
 import RegisterForm from "@/features/auth/RegisterForm";
 import UserManagement from "@/features/users/UserManagement";
 import TeamManagement from "@/features/teams/TeamManagement";
+import ProtectedRoute from "@/components/layout/ProtectedRoute";
 
 // (opcjonalnie) import dark mode/theme-provider jeśli korzystasz np. z "next-themes"
 // Możesz dodać własny ThemeProvider jeśli jest potrzebny.
@@ -24,17 +26,18 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
     <React.StrictMode>
         <BrowserRouter>
+            <Toaster position="top-right" richColors />
             <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/board" element={<Board />} />
-                <Route path="/projects" element={<Projects />} />
-                <Route path="/issues" element={<Issues />} />      {/* Dodane Issues */}
-                <Route path="/profile" element={<Profile />} />    {/* Dodane Profile */}
-                <Route path="/users" element={<UserManagement />} />
-                <Route path="/teams" element={<TeamManagement />} />
+                <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginForm />} />
                 <Route path="/register" element={<RegisterForm />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/board" element={<ProtectedRoute><Board /></ProtectedRoute>} />
+                <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+                <Route path="/issues" element={<ProtectedRoute><Issues /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+                <Route path="/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
                 {/* Fallback - 404 */}
                 <Route path="*" element={<NotFound />} />
             </Routes>

@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { CreateTeamModal } from "@/components/modals/CreateTeamModal";
 import { ManageTeamMembersModal } from "@/components/modals/ManageTeamMembersModal";
 import { useTeamStore } from "@/store/teamStore";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Users, FolderKanban, Plus, UserPlus } from "lucide-react";
 
 export default function TeamManagement() {
@@ -31,10 +31,7 @@ export default function TeamManagement() {
     };
 
     const handleViewIssues = (teamId) => {
-        toast({ 
-            title: "View Issues", 
-            description: `Viewing issues for team ${teamId}` 
-        });
+        toast.info(`Viewing issues for team ${teamId}`);
     };
 
     const getInitials = (firstName, lastName) => {

@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 import { Separator } from "@/components/ui/Separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/AlertDialog";
 import { useCommentStore } from "@/store/commentStore";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { MessageSquare, Send, Trash2 } from "lucide-react";
 
 function formatDate(dateString) {
@@ -41,19 +41,11 @@ export function CommentSection({ issueId, currentUserId }) {
 
     const handleAddComment = async () => {
         if (!newComment.trim()) {
-            toast({ 
-                title: "Error", 
-                description: "Comment cannot be empty", 
-                variant: "destructive" 
-            });
+            toast.error("Comment cannot be empty");
             return;
         }
         if (!currentUserId) {
-            toast({ 
-                title: "Error", 
-                description: "You must be logged in to comment", 
-                variant: "destructive" 
-            });
+            toast.error("You must be logged in to comment");
             return;
         }
         try {
@@ -63,13 +55,9 @@ export function CommentSection({ issueId, currentUserId }) {
                 authorId: currentUserId
             });
             setNewComment("");
-            toast({ title: "Success", description: "Comment added successfully" });
+            toast.success("Comment added");
         } catch (error) {
-            toast({ 
-                title: "Error", 
-                description: error.message || "Failed to add comment", 
-                variant: "destructive" 
-            });
+            toast.error(error.message || "Failed to add comment");
         }
     };
 
@@ -82,13 +70,9 @@ export function CommentSection({ issueId, currentUserId }) {
         if (!commentToDelete) return;
         try {
             await deleteComment(commentToDelete.id);
-            toast({ title: "Success", description: "Comment deleted successfully" });
+            toast.success("Comment deleted");
         } catch (error) {
-            toast({ 
-                title: "Error", 
-                description: error.message || "Failed to delete comment", 
-                variant: "destructive" 
-            });
+            toast.error(error.message || "Failed to delete comment");
         } finally {
             setDeleteDialogOpen(false);
             setCommentToDelete(null);

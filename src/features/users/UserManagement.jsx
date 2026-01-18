@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/AlertDialog";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useUserStore } from "@/store/userStore";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Users, RefreshCw, Trash2, Search } from "lucide-react";
 
 export default function UserManagement() {
@@ -29,7 +29,7 @@ export default function UserManagement() {
 
     const handleRefresh = () => {
         fetchUsers();
-        toast({ title: "Refreshing", description: "Loading users..." });
+        toast.success('Refreshing users...');
     };
 
     const confirmDelete = (user) => {
@@ -41,13 +41,9 @@ export default function UserManagement() {
         if (!userToDelete) return;
         try {
             await deleteUser(userToDelete.id);
-            toast({ title: "Success", description: "User deleted successfully" });
+            toast.success('User deleted successfully');
         } catch (error) {
-            toast({ 
-                title: "Error", 
-                description: error.message || "Failed to delete user", 
-                variant: "destructive" 
-            });
+            toast.error('Failed to delete user: ' + (error.message || 'Unknown error'));
         } finally {
             setDeleteDialogOpen(false);
             setUserToDelete(null);
@@ -57,9 +53,9 @@ export default function UserManagement() {
     const filteredUsers = users.filter((user) => {
         const search = searchTerm.toLowerCase();
         return (
-            user.email.toLowerCase().includes(search) ||
-            user.lastName.toLowerCase().includes(search) ||
-            user.firstName.toLowerCase().includes(search)
+            (user.email?.toLowerCase() || '').includes(search) ||
+            (user.lastName?.toLowerCase() || '').includes(search) ||
+            (user.firstName?.toLowerCase() || '').includes(search)
         );
     });
 

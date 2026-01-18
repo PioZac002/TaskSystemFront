@@ -5,12 +5,17 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Separator } from "@/components/ui/Separator";
 import apiClient from "@/services/apiClient";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { CommentSection } from "@/components/comments/CommentSection";
+import { Trash2 } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
 
-export function IssueDetailsModal({ open, onOpenChange, issueId }) {
+export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted }) {
     const [issue, setIssue] = useState(null);
     const [users, setUsers] = useState([]);
+    const [teams, setTeams] = useState([]);
     const [edit, setEdit] = useState(false);
     const [form, setForm] = useState({
         title: "",
@@ -19,16 +24,21 @@ export function IssueDetailsModal({ open, onOpenChange, issueId }) {
         priority: "",
         dueDate: "",
         assigneeId: "",
+        teamId: "",
     });
+    const user = useAuthStore((state) => state.user);
 
     useEffect(() => {
         if (open && issueId) {
             const getData = async () => {
-                const [issueRes, usersRes] = await Promise.all([
+                const [issueRes, usersRes, teamsRes] = await Promise.all([
                     apiClient.get(`/api/v1/issue/id/${issueId}`),
                     apiClient.get("/api/v1/user/all"),
+                    apiClient.get("/api/v1/team/all").catch(() => ({ data: [] })),
                 ]);
                 setIssue(issueRes.data);
+                setUsers(usersRes.data);
+                setTeams(teamsRes.data);
                 setForm({
                     title: issueRes.data.title || "",
                     description: issueRes.data.description || "",
@@ -36,6 +46,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId }) {
                     priority: issueRes.data.priority || "NORMAL",
                     dueDate: issueRes.data.dueDate ? issueRes.data.dueDate.slice(0, 10) : "",
                     assigneeId: issueRes.data.assigneeId ? String(issueRes.data.assigneeId) : "",
+                    teamId: issueRes.data.teamId ? String(issueRes.data.teamId) : "",
                 });
             };
             getData();
@@ -86,8 +97,8 @@ export function IssueDetailsModal({ open, onOpenChange, issueId }) {
                     assigneeId: Number(form.assigneeId),
                 });
             }
-            // TODO: Jeśli masz endpoint do opisu – dodaj
-            toast({ title: "Success", description: "Issue updated" });
+            // Save complete - show success message
+            toast.success("Issue updated successfully");
             setEdit(false);
             // Odśwież dane po update
             const refreshed = await apiClient.get(`/api/v1/issue/id/${issue.id}`);
@@ -99,9 +110,25 @@ export function IssueDetailsModal({ open, onOpenChange, issueId }) {
                 priority: refreshed.data.priority || "NORMAL",
                 dueDate: refreshed.data.dueDate ? refreshed.data.dueDate.slice(0, 10) : "",
                 assigneeId: refreshed.data.assigneeId ? String(refreshed.data.assigneeId) : "",
+                teamId: refreshed.data.teamId ? String(refreshed.data.teamId) : "",
             });
-        } catch (e) {
-            toast({ title: "Error", description: "Failed to save changes", variant: "destructive" });
+        } catch {
+            toast.error("Failed to save changes");
+        }
+    };
+
+    const handleDeleteIssue = async () => {
+        if (!window.confirm('Are you sure you want to delete this issue? This action cannot be undone.')) return;
+        
+        try {
+            await apiClient.delete(`/api/v1/issue/${issue.id}`);
+            toast.success('Issue deleted successfully');
+            onOpenChange(false);
+            if (onIssueDeleted) {
+                onIssueDeleted(issue.id);
+            }
+        } catch {
+            toast.error('Failed to delete issue');
         }
     };
 
@@ -197,20 +224,52 @@ export function IssueDetailsModal({ open, onOpenChange, issueId }) {
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div>
+                            <Label>Team</Label>
+                            <Select
+                                disabled={!edit}
+                                value={form.teamId}
+                                onValueChange={v => handleChange("teamId", v)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select team" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {teams.map(team => (
+                                        <SelectItem key={team.id} value={String(team.id)}>
+                                            {team.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
-                    <div>
-                        <Button
-                            variant="outline"
-                            onClick={() => setEdit(e => !e)}
-                            className="mr-2"
-                        >{edit ? "Cancel" : "Edit"}</Button>
-                        {edit && (
+                    <div className="flex justify-between items-center">
+                        <div>
                             <Button
-                                variant="gradient"
-                                onClick={handleSave}
-                            >Save</Button>
-                        )}
+                                variant="outline"
+                                onClick={() => setEdit(e => !e)}
+                                className="mr-2"
+                            >{edit ? "Cancel" : "Edit"}</Button>
+                            {edit && (
+                                <Button
+                                    variant="gradient"
+                                    onClick={handleSave}
+                                >Save</Button>
+                            )}
+                        </div>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDeleteIssue}
+                        >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Issue
+                        </Button>
                     </div>
+
+                    {/* Comments Section */}
+                    <Separator className="my-6" />
+                    <CommentSection issueId={issueId} currentUserId={user?.id} />
                 </div>
             </DialogContent>
         </Dialog>
