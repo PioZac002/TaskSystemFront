@@ -283,7 +283,7 @@ export default function LandingPage() {
                             <span className="text-lg font-bold">TaskSystem</span>
                         </div>
                         <p className="text-muted-foreground">
-                            © 2024 TaskSystem. Built with ❤️ for better productivity.
+                            © 2026 TaskSystem. Built with ❤️ for better productivity.
                         </p>
                         <div className="flex gap-6">
                             <a href="#" className="text-muted-foreground hover:text-primary transition-colors">

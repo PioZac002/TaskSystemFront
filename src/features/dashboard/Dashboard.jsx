@@ -241,9 +241,7 @@ export default function Dashboard() {
                                                             variant={
                                                                 issue.priority === "high"
                                                                     ? "destructive"
-                                                                    : issue.priority === "normal"
-                                                                        ? "secondary"
-                                                                        : "secondary"
+                                                                    : "secondary"
                                                             }
                                                             className="text-xs"
                                                         >

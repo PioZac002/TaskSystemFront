@@ -97,7 +97,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
                     assigneeId: Number(form.assigneeId),
                 });
             }
-            // Assign team
+            // Save complete - show success message
             toast.success("Issue updated successfully");
             setEdit(false);
             // Odśwież dane po update
