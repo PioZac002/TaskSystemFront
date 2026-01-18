@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Bell, Search, LogOut, Settings, Menu, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, FolderKanban, ListTodo, Trello, UserCircle } from "lucide-react";
+import { LayoutDashboard, FolderKanban, ListTodo, Trello, UserCircle, Users } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
@@ -22,7 +22,8 @@ const navItems = [
     { title: "Projects", url: "/projects", icon: FolderKanban },
     { title: "Issues", url: "/issues", icon: ListTodo },
     { title: "Board", url: "/board", icon: Trello },
-    { title: "Profile", url: "/profile", icon: UserCircle },
+    { title: "Teams", url: "/teams", icon: Users },
+    { title: "Users", url: "/users", icon: UserCircle },
 ];
 
 export const TopBar = () => {

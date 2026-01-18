@@ -5,7 +5,8 @@ import {
     FolderKanban,
     CheckSquare,
     KanbanSquare,
-    User,
+    Users,
+    UserCircle,
     ChevronLeft,
     ChevronRight
 } from "lucide-react";
@@ -16,7 +17,8 @@ const navItems = [
     { title: "Projects", url: "/projects", icon: FolderKanban },
     { title: "Issues", url: "/issues", icon: CheckSquare },
     { title: "Board", url: "/board", icon: KanbanSquare },
-    { title: "Profile", url: "/profile", icon: User },
+    { title: "Teams", url: "/teams", icon: Users },
+    { title: "Users", url: "/users", icon: UserCircle },
 ];
 
 export const Sidebar = () => {
