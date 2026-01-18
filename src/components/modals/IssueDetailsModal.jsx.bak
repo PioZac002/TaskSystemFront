@@ -97,8 +97,8 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
                     assigneeId: Number(form.assigneeId),
                 });
             }
-            // Assign team
-            toast.success("Issue updated successfully");
+            // TODO: Jeśli masz endpoint do opisu – dodaj
+            toast({ title: "Success", description: "Issue updated" });
             setEdit(false);
             // Odśwież dane po update
             const refreshed = await apiClient.get(`/api/v1/issue/id/${issue.id}`);
@@ -110,25 +110,9 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
                 priority: refreshed.data.priority || "NORMAL",
                 dueDate: refreshed.data.dueDate ? refreshed.data.dueDate.slice(0, 10) : "",
                 assigneeId: refreshed.data.assigneeId ? String(refreshed.data.assigneeId) : "",
-                teamId: refreshed.data.teamId ? String(refreshed.data.teamId) : "",
             });
-        } catch {
-            toast.error("Failed to save changes");
-        }
-    };
-
-    const handleDeleteIssue = async () => {
-        if (!window.confirm('Are you sure you want to delete this issue? This action cannot be undone.')) return;
-        
-        try {
-            await apiClient.delete(`/api/v1/issue/${issue.id}`);
-            toast.success('Issue deleted successfully');
-            onOpenChange(false);
-            if (onIssueDeleted) {
-                onIssueDeleted(issue.id);
-            }
-        } catch {
-            toast.error('Failed to delete issue');
+        } catch (e) {
+            toast({ title: "Error", description: "Failed to save changes", variant: "destructive" });
         }
     };
 

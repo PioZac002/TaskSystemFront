@@ -288,7 +288,7 @@ export default function Dashboard() {
                     open={!!selectedIssueId} 
                     onOpenChange={() => setSelectedIssueId(null)}
                     issueId={selectedIssueId}
-                    onIssueDeleted={(id) => {
+                    onIssueDeleted={() => {
                         setSelectedIssueId(null);
                         fetchIssues(); // Refresh list
                     }}
