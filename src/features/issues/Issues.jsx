@@ -1,236 +1,225 @@
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import { Plus, Search, Filter, Clock, MessageSquare } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useIssueStore } from "@/store/issueStore";
-import { useProjectStore } from "@/store/projectStore";
-import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
+import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
+import { Plus, Search, X, ListTodo } from "lucide-react";
+import { toast } from "sonner";
+
+function formatDate(dateString) {
+    if (!dateString) return "No due date";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month:  "short",
+        day: "numeric"
+    });
+}
 
 export default function Issues() {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [filterStatus, setFilterStatus] = useState("all");
-    const [filterPriority, setFilterPriority] = useState("all");
-    const [filterProject, setFilterProject] = useState("all");
-    const [createModalOpen, setCreateModalOpen] = useState(false);
-    const [detailsOpen, setDetailsOpen] = useState(false);
+    const { issues, fetchIssues, loading } = useIssueStore();
     const [selectedIssueId, setSelectedIssueId] = useState(null);
+    const [createModalOpen, setCreateModalOpen] = useState(false);
 
-    const { issues, loading, error, fetchIssues } = useIssueStore();
-    const projects = useProjectStore((state) => state.projects);
+    // Filters
+    const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [priorityFilter, setPriorityFilter] = useState("all");
 
     useEffect(() => {
         fetchIssues();
-    }, [fetchIssues]);
+    }, []);
 
-    const filteredIssues = issues.filter((issue) => {
+    // Filtrowanie
+    const filteredIssues = issues.filter(issue => {
         const matchesSearch =
-            issue.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (issue.description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = filterStatus === "all" || issue.status?.toLowerCase() === filterStatus;
-        const matchesPriority = filterPriority === "all" || issue.priority?.toLowerCase() === filterPriority;
-        const matchesProject = filterProject === "all" || String(issue.projectId) === String(filterProject);
+            (issue.title?. toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+            (issue.key?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+            (issue.description?. toLowerCase() || "").includes(searchTerm.toLowerCase());
 
-        return matchesSearch && matchesStatus && matchesPriority && matchesProject;
+        const matchesStatus = statusFilter === "all" || issue.status === statusFilter;
+        const matchesPriority = priorityFilter === "all" || issue.priority === priorityFilter;
+
+        return matchesSearch && matchesStatus && matchesPriority;
     });
 
-    const handleOpenDetails = (id) => {
-        setSelectedIssueId(id);
-        setDetailsOpen(true);
+    const clearFilters = () => {
+        setSearchTerm("");
+        setStatusFilter("all");
+        setPriorityFilter("all");
+        toast.success("Filters cleared");
     };
+
+    const hasActiveFilters = searchTerm || statusFilter !== "all" || priorityFilter !== "all";
 
     return (
         <AppLayout>
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-4xl font-bold tracking-tight">Issues</h1>
-                        <p className="text-muted-foreground mt-2">Track and manage all your tasks</p>
+                        <h1 className="text-3xl font-bold">Issues</h1>
+                        <p className="text-muted-foreground">
+                            Manage and track all your tasks • {filteredIssues.length} of {issues.length} issues
+                        </p>
                     </div>
-                    <Button
-                        variant="gradient"
-                        onClick={() => setCreateModalOpen(true)}
-                        className="w-full md:w-auto"
-                    >
+                    <Button onClick={() => setCreateModalOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
-                        New Issue
+                        Create Issue
                     </Button>
                 </div>
 
                 {/* Filters */}
-                <Card className="border-border/50">
-                    <CardContent className="p-4">
-                        <div className="flex flex-col lg:flex-row gap-4">
-                            {/* Search */}
-                            <div className="flex-1 relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search issues..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 transition-all duration-200 focus:scale-[1.01]"
-                                />
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex-1">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search by title, key, or description..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="pl-10"
+                                    />
+                                </div>
                             </div>
 
-                            {/* Filters */}
-                            <div className="flex flex-col sm:flex-row gap-2 lg:gap-4">
-                                <Select value={filterProject} onValueChange={setFilterProject}>
-                                    <SelectTrigger className="w-full sm:w-[160px] transition-all duration-200">
-                                        <Filter className="h-4 w-4 mr-2" />
-                                        <SelectValue placeholder="Project" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Projects</SelectItem>
-                                        {projects.map((project) => (
-                                            <SelectItem key={project.id} value={String(project.id)}>
-                                                {project.shortName || project.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Statuses</SelectItem>
+                                    <SelectItem value="NEW">To Do</SelectItem>
+                                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                    <SelectItem value="REVIEW">Review</SelectItem>
+                                    <SelectItem value="DONE">Done</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                                    <SelectTrigger className="w-full sm:w-[140px] transition-all duration-200">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Status</SelectItem>
-                                        <SelectItem value="todo">To Do</SelectItem>
-                                        <SelectItem value="inprogress">In Progress</SelectItem>
-                                        <SelectItem value="review">Review</SelectItem>
-                                        <SelectItem value="done">Done</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                                <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectValue placeholder="Priority" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Priorities</SelectItem>
+                                    <SelectItem value="HIGH">High</SelectItem>
+                                    <SelectItem value="NORMAL">Normal</SelectItem>
+                                    <SelectItem value="LOW">Low</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                                <Select value={filterPriority} onValueChange={setFilterPriority}>
-                                    <SelectTrigger className="w-full sm:w-[140px] transition-all duration-200">
-                                        <SelectValue placeholder="Priority" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Priority</SelectItem>
-                                        <SelectItem value="high">High</SelectItem>
-                                        <SelectItem value="medium">Medium</SelectItem>
-                                        <SelectItem value="low">Low</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            {hasActiveFilters && (
+                                <Button variant="outline" onClick={clearFilters}>
+                                    <X className="mr-2 h-4 w-4" />
+                                    Clear
+                                </Button>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Issues List */}
-                <div className="space-y-3">
-                    {loading ? (
-                        <Card><CardContent className="p-8 text-center text-muted-foreground">Loading issues...</CardContent></Card>
-                    ) : error ? (
-                        <Card><CardContent className="p-8 text-center text-destructive">{error}</CardContent></Card>
-                    ) : filteredIssues.length === 0 ? (
-                        <Card className="border-border/50">
-                            <CardContent className="flex flex-col items-center justify-center py-12">
-                                <p className="text-muted-foreground text-lg">No issues found</p>
-                                <Button variant="outline" onClick={() => setCreateModalOpen(true)} className="mt-4">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Create your first issue
+                {loading ? (
+                    <div className="text-center py-12">
+                        <p className="text-muted-foreground">Loading issues...</p>
+                    </div>
+                ) : filteredIssues.length === 0 ? (
+                    <Card>
+                        <CardContent className="py-12 text-center">
+                            <ListTodo className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                            <p className="text-lg font-medium mb-2">
+                                {hasActiveFilters ? "No issues match your filters" : "No issues found"}
+                            </p>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                {hasActiveFilters
+                                    ? "Try adjusting your search criteria"
+                                    : "Create your first issue to get started"}
+                            </p>
+                            {hasActiveFilters && (
+                                <Button variant="outline" onClick={clearFilters}>
+                                    Clear Filters
                                 </Button>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        filteredIssues.map((issue) => (
+                            )}
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="space-y-3">
+                        {filteredIssues.map(issue => (
                             <Card
                                 key={issue.id}
-                                onClick={() => handleOpenDetails(issue.id)}
-                                className="group hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.01] border-border/50 bg-gradient-to-br from-card to-card/80"
+                                className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.01]"
+                                onClick={() => setSelectedIssueId(issue.id)}
                             >
-                                <CardContent className="p-4 md:p-6">
-                                    <div className="flex flex-col md:flex-row md:items-start gap-4">
-                                        {/* Status Badge */}
-                                        <Badge
-                                            variant={
-                                                issue.status?.toLowerCase() === "todo"
-                                                    ? "todo"
-                                                    : issue.status?.toLowerCase() === "inprogress"
-                                                        ? "inprogress"
-                                                        : issue.status?.toLowerCase() === "review"
-                                                            ? "warning"
-                                                            : "done"
-                                            }
-                                            className="rounded-full w-fit"
-                                        >
-                                            {issue.status === "todo"
-                                                ? "To Do"
-                                                : issue.status === "inprogress"
-                                                    ? "In Progress"
-                                                    : issue.status === "review"
-                                                        ? "Review"
-                                                        : "Done"}
-                                        </Badge>
-
-                                        {/* Content */}
-                                        <div className="flex-1 space-y-2 min-w-0">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <h3 className="font-semibold text-lg leading-tight group-hover:text-primary transition-colors">
-                                                    {issue.title}
-                                                </h3>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="font-mono text-sm text-muted-foreground font-semibold">
+                                                    {issue.key}
+                                                </span>
+                                                <h3 className="font-semibold truncate">{issue.title}</h3>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <Badge
+                                                    variant={issue.status === "DONE" ? "default" : "secondary"}
+                                                    className={
+                                                        issue.status === "DONE" ?  "bg-green-500" :
+                                                            issue.status === "IN_PROGRESS" ?  "bg-blue-500" :
+                                                                issue.status === "REVIEW" ?  "bg-purple-500" :
+                                                                    "bg-gray-500"
+                                                    }
+                                                >
+                                                    {issue.status === "NEW" ? "To Do" :
+                                                        issue.status === "IN_PROGRESS" ? "In Progress" :
+                                                            issue.status}
+                                                </Badge>
                                                 <Badge
                                                     variant={
-                                                        issue.priority?.toLowerCase() === "high"
-                                                            ? "destructive"
-                                                            : issue.priority?.toLowerCase() === "medium"
-                                                                ? "warning"
-                                                                : "secondary"
+                                                        issue.priority === "HIGH" ? "destructive" :
+                                                            issue.priority === "NORMAL" ? "secondary" :
+                                                                "outline"
                                                     }
-                                                    className="text-xs shrink-0"
                                                 >
-                                                    {issue.priority}
+                                                    {issue. priority}
                                                 </Badge>
+                                                <span className="text-sm text-muted-foreground">
+                                                    📅 {formatDate(issue. dueDate)}
+                                                </span>
+                                                {issue.assigneeId && (
+                                                    <span className="text-sm text-muted-foreground">
+                                                        👤 User #{issue.assigneeId}
+                                                    </span>
+                                                )}
                                             </div>
-                                            <p className="text-sm text-muted-foreground line-clamp-2">{issue.description}</p>
-                                            {/* Labels */}
-                                            {Array.isArray(issue.labels) && issue.labels.length > 0 && (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {issue.labels.map((label, idx) => (
-                                                        <Badge key={idx} variant="outline" className="text-xs px-2 py-0">
-                                                            {label}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                        {/* Meta */}
-                                        <div className="flex md:flex-col items-center md:items-end gap-3 md:gap-2 text-xs text-muted-foreground">
-                                            <div className="flex items-center gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                {issue.dueDate}
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <MessageSquare className="h-3 w-3" />
-                                                {issue.comments || 0}
-                                            </div>
-                                            <Avatar className="h-8 w-8">
-                                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                                    {issue.assignee}
-                                                </AvatarFallback>
-                                            </Avatar>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
-                        ))
-                    )}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
-            <CreateIssueModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
             <IssueDetailsModal
-                open={detailsOpen}
-                onOpenChange={setDetailsOpen}
+                open={!! selectedIssueId}
+                onOpenChange={() => setSelectedIssueId(null)}
                 issueId={selectedIssueId}
+                onIssueDeleted={() => {
+                    setSelectedIssueId(null);
+                    fetchIssues();
+                }}
+            />
+
+            <CreateIssueModal
+                open={createModalOpen}
+                onOpenChange={setCreateModalOpen}
             />
         </AppLayout>
     );

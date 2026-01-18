@@ -1,45 +1,48 @@
 import { create } from "zustand";
-import issueApi from "@/services/issueApi"; // ten plik tworzysz wg wcześniejszego wzoru
+import apiClient from "@/services/apiClient";
 
 export const useIssueStore = create((set, get) => ({
     issues: [],
     loading: false,
     error: null,
 
-    // Pobiera wszystkie issue z backendu
     fetchIssues: async () => {
         set({ loading: true, error: null });
         try {
-            const data = await issueApi.getAll();
-            set({ issues: data, loading: false });
+            const response = await apiClient.get('/api/v1/issue/all');
+            set({ issues: response.data, loading: false });
         } catch (e) {
+            console.error('Error fetching issues:', e);
             set({ error: "Failed to fetch issues", loading: false });
         }
     },
 
-    // Dodaje issue do backendu i lokalnie odświeża listę
-    addIssue: async (issue) => {
+    // ZMIANA: addIssue → createIssue
+    createIssue: async (issueData) => {
         set({ loading: true, error: null });
         try {
-            // Ustal priorytety i status zgodnie z backendem!
-            const backendIssue = {
-                ...issue,
-                priority: (issue.priority || "medium").toUpperCase(), // backend: "LOW", "MEDIUM", "HIGH"
-                status: issue.status ? issue.status.toUpperCase() : "NEW",
-                authorId: 0, // wstaw tak, by pobierać ID użytkownika zalogowanego!
-                assigneeId: issue.assigneeId || 0, // opcjonalnie
-            };
-            await issueApi.create(backendIssue);
-            await get().fetchIssues();
+            const response = await apiClient.post('/api/v1/issue/create', issueData);
+            set((state) => ({
+                issues: [...state.issues, response. data],
+                loading: false
+            }));
+            return response. data;
         } catch (e) {
+            console.error('Error creating issue:', e);
             set({ error: "Failed to add issue", loading: false });
-        } finally {
-            set({ loading: false });
+            throw e;
         }
     },
 
-    // Update, delete, move -- do uzupełnienia w przyszłości
-    updateIssue: async (id, data) => {},
-    deleteIssue: async (id) => {},
-    moveIssue: async (id, status) => {},
+    deleteIssue: async (id) => {
+        try {
+            await apiClient.delete(`/api/v1/issue/${id}`);
+            set((state) => ({
+                issues:  state.issues.filter(i => i.id !== id)
+            }));
+        } catch (e) {
+            console.error('Error deleting issue:', e);
+            throw e;
+        }
+    },
 }));

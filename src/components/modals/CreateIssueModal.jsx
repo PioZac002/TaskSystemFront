@@ -1,104 +1,151 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Label } from "@/components/ui/Label";
-import { Textarea } from "@/components/ui/Textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
+import { useUserStore } from "@/store/userStore";
+import { useTeamStore } from "@/store/teamStore";
 import { toast } from "sonner";
-import apiClient from "@/services/apiClient";
 
 export function CreateIssueModal({ open, onOpenChange }) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [priority, setPriority] = useState("normal");
-    const [status, setStatus] = useState("NEW");
     const [projectId, setProjectId] = useState("");
-    const [assigneeId, setAssigneeId] = useState("");
+    const [assigneeId, setAssigneeId] = useState("unassigned");
+    const [teamId, setTeamId] = useState("none");
+    const [priority, setPriority] = useState("NORMAL");
     const [dueDate, setDueDate] = useState("");
-    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    const addIssue = useIssueStore((state) => state.addIssue);
-    const projects = useProjectStore((state) => state.projects);
+    const createIssue = useIssueStore((state) => state.createIssue);
+    const { projects, fetchProjects } = useProjectStore();
+    const { users, fetchUsers } = useUserStore();
+    const { teams, fetchTeams } = useTeamStore();
 
     useEffect(() => {
         if (open) {
-            apiClient.get("/api/v1/user/all").then(res => setUsers(res.data)).catch(() => setUsers([]));
+            fetchProjects();
+            fetchUsers();
+            fetchTeams();
+
+            // Ustaw obecnego użytkownika jako domyślnego assignee
+            const currentUserId = localStorage.getItem('userId');
+            if (currentUserId) {
+                setAssigneeId(currentUserId);
+            }
         }
     }, [open]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!title.trim()) {
-            toast.error("Issue title is required");
-            return;
-        }
-        if (!projectId) {
-            toast.error("Please select a project");
-            return;
-        }
-        if (!assigneeId) {
-            toast.error("Please select an assignee");
+
+        if (!title.trim() || !projectId) {
+            toast.error("Title and Project are required");
             return;
         }
 
-        await addIssue({
-            title,
-            description,
-            status: status.toUpperCase(),
-            priority: priority.toUpperCase() === "MEDIUM" ? "NORMAL" : priority.toUpperCase(),
-            assigneeId: Number(assigneeId),
-            projectId: Number(projectId),
-            dueDate: dueDate || null,
-        });
+        // Sprawdź czy użytkownik jest zalogowany
+        const currentUserId = localStorage.getItem('userId');
+        if (!currentUserId) {
+            toast.error("You must be logged in to create an issue");
+            return;
+        }
 
-        toast.success("Issue created successfully");
-        setTitle("");
-        setDescription("");
-        setPriority("normal");
-        setStatus("NEW");
-        setProjectId("");
-        setAssigneeId("");
-        setDueDate("");
-        onOpenChange(false);
+        setLoading(true);
+
+        try {
+            const issueData = {
+                title:  title.trim(),
+                description: description.trim(),
+                projectId: Number(projectId),
+                assigneeId: assigneeId && assigneeId !== "unassigned" ? Number(assigneeId) : null,
+                teamId: teamId && teamId !== "none" ?  Number(teamId) : null,
+                priority: priority,
+                dueDate: dueDate || null,
+                authorId: Number(currentUserId)
+            };
+
+            console.log('Creating issue with data:', issueData);
+
+            await createIssue(issueData);
+            toast.success("Issue created successfully!");
+
+            // Reset form
+            setTitle("");
+            setDescription("");
+            setProjectId("");
+            setAssigneeId("unassigned");
+            setTeamId("none");
+            setPriority("NORMAL");
+            setDueDate("");
+
+            onOpenChange(false);
+        } catch (error) {
+            const errorMessage = error.response?.data?.Message || error.message || "Failed to create issue";
+            toast. error(errorMessage);
+            console.error('Create issue error:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[550px] animate-scale-in max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl">Create New Issue</DialogTitle>
-                    <DialogDescription>
-                        Add a new task or issue to track
-                    </DialogDescription>
+                    <DialogTitle>Create New Issue</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Title */}
                     <div className="space-y-2">
-                        <Label htmlFor="title">Title *</Label>
-                        <Input id="title" value={title} onChange={e => setTitle(e.target.value)} />
+                        <Label htmlFor="title">
+                            Title <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                            id="title"
+                            placeholder="Enter issue title..."
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            required
+                        />
                     </div>
+
+                    {/* Description */}
                     <div className="space-y-2">
                         <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} />
+                        <Textarea
+                            id="description"
+                            placeholder="Describe the issue..."
+                            value={description}
+                            onChange={(e) => setDescription(e. target.value)}
+                            rows={4}
+                        />
                     </div>
+
+                    {/* Project & Priority */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="project">Project *</Label>
-                            <Select value={projectId} onValueChange={setProjectId}>
+                            <Label htmlFor="project">
+                                Project <span className="text-destructive">*</span>
+                            </Label>
+                            <Select value={projectId} onValueChange={setProjectId} required>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select project" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {projects.map((project) => (
                                         <SelectItem key={project.id} value={String(project.id)}>
-                                            {project.shortName || project.name}
+                                            {project.shortName} - {project.description?. substring(0, 30) || 'No description'}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="priority">Priority</Label>
                             <Select value={priority} onValueChange={setPriority}>
@@ -106,54 +153,74 @@ export function CreateIssueModal({ open, onOpenChange }) {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="high">High</SelectItem>
-                                    <SelectItem value="normal">Normal</SelectItem>
-                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="HIGH">High</SelectItem>
+                                    <SelectItem value="NORMAL">Normal</SelectItem>
+                                    <SelectItem value="LOW">Low</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
+
+                    {/* Assignee & Team */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="status">Status</Label>
-                            <Select value={status} onValueChange={setStatus}>
+                            <Label htmlFor="assignee">Assignee</Label>
+                            <Select value={assigneeId} onValueChange={setAssigneeId}>
                                 <SelectTrigger>
-                                    <SelectValue />
+                                    <SelectValue placeholder="Unassigned" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="NEW">To Do</SelectItem>
-                                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                    <SelectItem value="REVIEW">Review</SelectItem>
-                                    <SelectItem value="DONE">Done</SelectItem>
+                                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                                    {users.map((user) => (
+                                        <SelectItem key={user. id} value={String(user. id)}>
+                                            {user.firstName} {user.lastName} ({user.email})
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
+
                         <div className="space-y-2">
-                            <Label htmlFor="assignee">Assignee *</Label>
-                            <Select value={assigneeId} onValueChange={setAssigneeId}>
+                            <Label htmlFor="team">Team (optional)</Label>
+                            <Select value={teamId} onValueChange={setTeamId}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select user" />
+                                    <SelectValue placeholder="No team" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {users.map((user) => (
-                                        <SelectItem key={user.id} value={String(user.id)}>
-                                            {user.firstName} {user.lastName}
+                                    <SelectItem value="none">No team</SelectItem>
+                                    {teams.map((team) => (
+                                        <SelectItem key={team.id} value={String(team.id)}>
+                                            {team. name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
+
+                    {/* Due Date */}
                     <div className="space-y-2">
-                        <Label htmlFor="dueDate">Due Date</Label>
-                        <Input id="dueDate" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                        <Label htmlFor="dueDate">Due Date (optional)</Label>
+                        <Input
+                            id="dueDate"
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                        />
                     </div>
-                    <div className="flex gap-3 pt-4">
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+
+                    {/* Actions */}
+                    <div className="flex justify-end gap-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                            disabled={loading}
+                        >
                             Cancel
                         </Button>
-                        <Button type="submit" variant="gradient" className="flex-1">
-                            Create Issue
+                        <Button type="submit" disabled={loading || !title.trim() || !projectId}>
+                            {loading ? "Creating..." : "Create Issue"}
                         </Button>
                     </div>
                 </form>

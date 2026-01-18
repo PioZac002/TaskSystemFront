@@ -1,88 +1,108 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Label } from "@/components/ui/Label";
-import { Textarea } from "@/components/ui/Textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
 
 export function CreateProjectModal({ open, onOpenChange }) {
     const [shortName, setShortName] = useState("");
     const [description, setDescription] = useState("");
-    const [dueDate, setDueDate] = useState("");
-    const addProject = useProjectStore((state) => state.addProject);
+    const [loading, setLoading] = useState(false);
+    const createProject = useProjectStore((state) => state.createProject);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!shortName.trim()) {
+
+        // Walidacja
+        if (!shortName. trim()) {
             toast.error("Project short name is required");
             return;
         }
-        addProject({
-            shortName,
-            description,
-            status: 'active',
-            progress: 0,
-            team: [],
-            dueDate,
-        });
-        toast.success("Project created successfully");
-        setShortName("");
-        setDescription("");
-        setDueDate("");
-        onOpenChange(false);
+
+        if (shortName.length > 6) {
+            toast.error("Short name must be max 6 characters");
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            await createProject({
+                shortName:  shortName.trim().toUpperCase(),
+                description:  description.trim() || null
+            });
+
+            toast. success("Project created successfully!");
+
+            // Reset form
+            setShortName("");
+            setDescription("");
+            onOpenChange(false);
+        } catch (error) {
+            const errorMessage = error.response?.data?.Message || error.message || "Failed to create project";
+            toast.error(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleShortNameChange = (e) => {
+        const value = e.target.value. toUpperCase();
+        if (value.length <= 6) {
+            setShortName(value);
+        }
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] animate-scale-in">
+            <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl">Create New Project</DialogTitle>
-                    <DialogDescription>
-                        Add a new project to your workspace
-                    </DialogDescription>
+                    <DialogTitle>Create New Project</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="shortName">Project Short Name *</Label>
+                        <Label htmlFor="shortName">
+                            Short Name <span className="text-destructive">*</span>
+                        </Label>
                         <Input
                             id="shortName"
-                            placeholder="Website Redesign"
+                            placeholder="e.g., PROJ, APP, WEB"
                             value={shortName}
-                            onChange={(e) => setShortName(e.target.value)}
+                            onChange={handleShortNameChange}
+                            maxLength={6}
+                            required
+                            className="font-mono uppercase"
                         />
+                        <p className="text-xs text-muted-foreground">
+                            {shortName.length}/6 characters • Used in issue keys (e.g., {shortName || 'PROJ'}-1, {shortName || 'PROJ'}-2)
+                        </p>
                     </div>
+
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description">Description (optional)</Label>
                         <Textarea
                             id="description"
                             placeholder="Describe your project..."
                             value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                            onChange={(e) => setDescription(e. target.value)}
                             rows={4}
                         />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="dueDate">Due Date</Label>
-                        <Input
-                            id="dueDate"
-                            type="date"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
-                        />
-                    </div>
-                    <div className="flex gap-3 pt-4">
+
+                    <div className="flex justify-end gap-3">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={() => onOpenChange(false)}
-                            className="flex-1"
+                            disabled={loading}
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" variant="gradient" className="flex-1">
-                            Create Project
+                        <Button type="submit" disabled={loading || !shortName.trim()}>
+                            {loading ? "Creating..." : "Create Project"}
                         </Button>
                     </div>
                 </form>

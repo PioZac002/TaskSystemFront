@@ -1,297 +1,348 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
-import { FolderKanban, CheckSquare, Users, TrendingUp, Plus, Clock } from "lucide-react";
-import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
-import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
-import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
-import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { useProjectStore } from "@/store/projectStore";
 import { useIssueStore } from "@/store/issueStore";
 import { useUserStore } from "@/store/userStore";
-import { calculateProgress, getInitials } from "@/utils/formatters";
+import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
+import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
+import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
+import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
+import {
+    FolderKanban,
+    CheckSquare,
+    Users,
+    TrendingUp,
+    Plus,
+    ArrowRight
+} from "lucide-react";
+
+function formatDate(dateString) {
+    if (!dateString) return "No due date";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day:  "numeric"
+    });
+}
 
 export default function Dashboard() {
     const navigate = useNavigate();
-    const [createProjectOpen, setCreateProjectOpen] = useState(false);
-    const [createIssueOpen, setCreateIssueOpen] = useState(false);
-    const [selectedProjectId, setSelectedProjectId] = useState(null);
-    const [selectedIssueId, setSelectedIssueId] = useState(null);
-    
-    const { projects, getProjects } = useProjectStore();
-    const { issues, fetchIssues } = useIssueStore();
+    const { projects, fetchProjects, loading:  projectsLoading } = useProjectStore();
+    const { issues, fetchIssues, loading: issuesLoading } = useIssueStore();
     const { users, fetchUsers } = useUserStore();
 
+    const [selectedProjectId, setSelectedProjectId] = useState(null);
+    const [selectedIssueId, setSelectedIssueId] = useState(null);
+    const [createProjectOpen, setCreateProjectOpen] = useState(false);
+    const [createIssueOpen, setCreateIssueOpen] = useState(false);
+
     useEffect(() => {
-        getProjects();
+        fetchProjects();
         fetchIssues();
         fetchUsers();
-    }, [getProjects, fetchIssues, fetchUsers]);
+    }, []);
 
-    // Calculate stats from real data
+    // Oblicz statystyki z real data
     const activeIssues = issues.filter(i => i.status !== 'DONE').length;
     const completedIssues = issues.filter(i => i.status === 'DONE').length;
-    const completionRate = issues.length > 0 
-        ? Math.round((completedIssues / issues.length) * 100) 
+    const completionRate = issues.length > 0
+        ? Math.round((completedIssues / issues.length) * 100)
         : 0;
-    
+
     const stats = [
-        { 
-            title: "Total Projects", 
-            value: projects.length.toString(), 
-            icon: FolderKanban, 
-            change: `${projects.length} active`, 
-            trend: "up" 
+        {
+            title: "Total Projects",
+            value: projects.length,
+            icon: FolderKanban,
+            change: `${projects.length} active`,
+            trend: "up",
+            color: "text-violet-600"
         },
-        { 
-            title: "Active Issues", 
-            value: activeIssues.toString(), 
-            icon: CheckSquare, 
-            change: `${completedIssues} completed`, 
-            trend: "up" 
+        {
+            title: "Active Issues",
+            value: activeIssues,
+            icon: CheckSquare,
+            change: `${completedIssues} completed`,
+            trend: "up",
+            color: "text-blue-600"
         },
-        { 
-            title: "Team Members", 
-            value: users.length.toString(), 
-            icon: Users, 
-            change: `${users.length} users`, 
-            trend: "up" 
+        {
+            title: "Team Members",
+            value: users.length,
+            icon: Users,
+            change: `${users.length} users`,
+            trend: "neutral",
+            color: "text-green-600"
         },
-        { 
-            title: "Completion Rate", 
-            value: `${completionRate}%`, 
-            icon: TrendingUp, 
-            change: "This month", 
-            trend: "up" 
+        {
+            title:  "Completion Rate",
+            value: `${completionRate}%`,
+            icon: TrendingUp,
+            change: "Overall progress",
+            trend: completionRate > 50 ? "up" : "down",
+            color: "text-orange-600"
         },
     ];
 
-    // Recent projects (last 3)
+    // Recent projects (ostatnie 3, posortowane po dacie utworzenia)
     const recentProjects = projects
-        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 3)
         .map(project => {
-            const projectIssues = issues.filter(i => i.projectId === project.id);
+            const projectIssues = issues.filter(i => i.projectId === project. id);
             const doneIssues = projectIssues.filter(i => i.status === 'DONE');
-            const progress = projectIssues.length > 0 
-                ? calculateProgress(projectIssues.length, doneIssues.length)
+            const progress = projectIssues.length > 0
+                ? Math.round((doneIssues.length / projectIssues.length) * 100)
                 : 0;
-            
+
             return {
                 id: project.id,
-                name: project.shortName || project.name || 'Unnamed Project',
-                description: project.description || 'No description',
+                name: project.shortName,
+                description: project.description || "No description",
                 progress,
                 issues: projectIssues.length,
-                status: progress === 100 ? 'done' : progress > 0 ? 'inprogress' : 'todo',
+                status: progress === 100 ? 'done' : 'inprogress',
             };
         });
 
-    // Recent issues (last 4)
+    // Recent issues (ostatnie 4, posortowane po dacie utworzenia)
     const recentIssues = issues
-        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        . sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 4)
-        .map(issue => {
-            const assignee = users.find(u => u.id === issue.assigneeId);
-            return {
-                id: issue.id,
-                key: issue.key || `#${issue.id}`,
-                title: issue.title || 'Untitled Issue',
-                priority: (issue.priority || 'NORMAL').toLowerCase(),
-                status: (issue.status || 'NEW').toLowerCase(),
-                assignee: assignee ? getInitials(assignee.firstName, assignee.lastName) : '??',
-                dueDate: issue.dueDate ? new Date(issue.dueDate).toLocaleDateString() : 'No due date',
-            };
-        });
+        .map(issue => ({
+            id: issue.id,
+            key: issue.key,
+            title: issue.title,
+            priority: issue.priority?. toLowerCase() || 'normal',
+            status: issue.status?. toLowerCase() || 'new',
+            assignee: issue. assigneeId || null,
+            dueDate: formatDate(issue. dueDate),
+        }));
+
+    const loading = projectsLoading || issuesLoading;
 
     return (
         <AppLayout>
-            <div className="space-y-8 animate-fade-in">
-                {/* Nagłówek */}
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-8">
+                {/* Header */}
+                <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
-                        <p className="text-muted-foreground mt-2">
-                            Welcome back! Here's what's happening today.
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+                            Dashboard
+                        </h1>
+                        <p className="text-muted-foreground mt-1">
+                            Welcome back! Here's what's happening with your projects.
                         </p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                         <Button variant="outline" onClick={() => setCreateProjectOpen(true)}>
-                            <FolderKanban className="mr-2 h-4 w-4" />
+                            <Plus className="mr-2 h-4 w-4" />
                             New Project
                         </Button>
-                        <Button variant="gradient" onClick={() => setCreateIssueOpen(true)}>
+                        <Button onClick={() => setCreateIssueOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
                             New Issue
                         </Button>
                     </div>
                 </div>
 
-                {/* Statystyki */}
-                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                    {stats.map((stat, index) => (
-                        <Card key={index} className="overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-card to-card/50">
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                                <stat.icon className="h-4 w-4 text-primary" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-3xl font-bold">{stat.value}</div>
-                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                    <TrendingUp className="h-3 w-3 text-success" />
-                                    {stat.change}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ))}
+                {/* Stats Grid */}
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    {stats.map((stat) => {
+                        const Icon = stat. icon;
+                        return (
+                            <Card key={stat. title} className="hover:shadow-lg transition-shadow">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">
+                                        {stat.title}
+                                    </CardTitle>
+                                    <Icon className={`h-5 w-5 ${stat. color}`} />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-3xl font-bold">{stat.value}</div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {stat.change}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                 </div>
 
                 {/* Recent Projects */}
                 <div>
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-bold">Recent Projects</h2>
+                        <h2 className="text-2xl font-semibold">Recent Projects</h2>
                         <Button variant="ghost" size="sm" onClick={() => navigate('/projects')}>
                             View all
+                            <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                     </div>
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {recentProjects.length === 0 ? (
-                            <Card className="col-span-full">
-                                <CardContent className="py-16 text-center">
-                                    <FolderKanban className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                    <p className="text-muted-foreground">No projects yet. Create one to get started!</p>
-                                </CardContent>
-                            </Card>
-                        ) : (
-                            recentProjects.map((project) => (
-                                <Card 
-                                    key={project.id} 
-                                    className="overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer"
+
+                    {loading ? (
+                        <p className="text-center text-muted-foreground py-8">Loading... </p>
+                    ) : recentProjects.length === 0 ? (
+                        <Card>
+                            <CardContent className="py-12 text-center">
+                                <FolderKanban className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+                                <p className="text-muted-foreground mb-4">No projects yet</p>
+                                <Button onClick={() => setCreateProjectOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create Your First Project
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid gap-6 md:grid-cols-3">
+                            {recentProjects.map((project) => (
+                                <Card
+                                    key={project. id}
+                                    className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
                                     onClick={() => setSelectedProjectId(project.id)}
                                 >
                                     <CardHeader>
                                         <div className="flex items-start justify-between">
-                                            <CardTitle className="text-lg">{project.name}</CardTitle>
-                                            <Badge variant={project.status}>{project.status}</Badge>
+                                            <div className="flex-1 min-w-0">
+                                                <CardTitle className="font-mono truncate">{project.name}</CardTitle>
+                                                <CardDescription className="line-clamp-2 mt-1">
+                                                    {project. description}
+                                                </CardDescription>
+                                            </div>
+                                            <Badge variant={project.status === 'done' ? 'default' : 'secondary'}
+                                                   className={project.status === 'done' ?  'bg-green-500' : ''}>
+                                                {project. issues} issues
+                                            </Badge>
                                         </div>
-                                        <CardDescription className="mt-2">{project.description}</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="space-y-4">
-                                            {/* Progress */}
-                                            <div>
-                                                <div className="flex items-center justify-between mb-2 text-sm">
-                                                    <span className="text-muted-foreground">Progress</span>
-                                                    <span className="font-medium">{project.progress}%</span>
-                                                </div>
-                                                <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-300"
-                                                        style={{ width: `${project.progress}%` }}
-                                                    />
-                                                </div>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-muted-foreground">Progress</span>
+                                                <span className="font-medium">{project.progress}%</span>
                                             </div>
-                                            {/* Issues count */}
-                                            <div className="flex items-center gap-2">
-                                                <CheckSquare className="h-4 w-4 text-muted-foreground" />
-                                                <span className="text-sm text-muted-foreground">{project.issues} issues</span>
-                                            </div>
+                                            <Progress value={project.progress} className="h-2" />
                                         </div>
                                     </CardContent>
                                 </Card>
-                            ))
-                        )}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Recent Issues */}
                 <div>
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-bold">Recent Issues</h2>
+                        <h2 className="text-2xl font-semibold">Recent Issues</h2>
                         <Button variant="ghost" size="sm" onClick={() => navigate('/issues')}>
                             View all
+                            <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                     </div>
-                    <Card>
-                        <CardContent className="p-0">
-                            {recentIssues.length === 0 ? (
-                                <div className="py-16 text-center">
-                                    <CheckSquare className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                    <p className="text-muted-foreground">No issues yet. Create one to get started!</p>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-border">
-                                    {recentIssues.map((issue) => (
-                                        <div
-                                            key={issue.id}
-                                            className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors cursor-pointer"
-                                            onClick={() => setSelectedIssueId(issue.id)}
-                                        >
-                                            <div className="flex items-center gap-4 flex-1">
-                                                <CheckSquare className="h-5 w-5 text-muted-foreground" />
-                                                <div className="flex-1">
-                                                    <p className="font-medium">{issue.title}</p>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <Badge variant={issue.status} className="text-xs">{issue.status}</Badge>
-                                                        <Badge
-                                                            variant={
-                                                                issue.priority === "high"
-                                                                    ? "destructive"
-                                                                    : "secondary"
-                                                            }
-                                                            className="text-xs"
-                                                        >
-                                                            {issue.priority}
-                                                        </Badge>
-                                                    </div>
+
+                    {loading ? (
+                        <p className="text-center text-muted-foreground py-8">Loading...</p>
+                    ) : recentIssues.length === 0 ? (
+                        <Card>
+                            <CardContent className="py-12 text-center">
+                                <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+                                <p className="text-muted-foreground mb-4">No issues yet</p>
+                                <Button onClick={() => setCreateIssueOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create Your First Issue
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid gap-3">
+                            {recentIssues.map((issue) => (
+                                <Card
+                                    key={issue.id}
+                                    className="cursor-pointer hover:shadow-md transition-shadow"
+                                    onClick={() => setSelectedIssueId(issue.id)}
+                                >
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className="font-mono text-sm text-muted-foreground font-semibold">
+                                                        {issue.key}
+                                                    </span>
+                                                    <span className="font-medium truncate">{issue.title}</span>
                                                 </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <Clock className="h-4 w-4" />
-                                                    {issue.dueDate}
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <Badge
+                                                        variant={issue.status === 'done' ? 'default' : 'secondary'}
+                                                        className={
+                                                            issue.status === 'done' ?  'bg-green-500' :
+                                                                issue.status === 'in_progress' ? 'bg-blue-500' :
+                                                                    issue.status === 'review' ? 'bg-purple-500' :
+                                                                        'bg-gray-500'
+                                                        }
+                                                    >
+                                                        {issue.status === 'new' ? 'To Do' :
+                                                            issue.status === 'in_progress' ? 'In Progress' :
+                                                                issue.status === 'review' ?  'Review' :
+                                                                    'Done'}
+                                                    </Badge>
+                                                    <Badge
+                                                        variant={
+                                                            issue.priority === 'high' ? 'destructive' :
+                                                                issue.priority === 'normal' ? 'secondary' :
+                                                                    'outline'
+                                                        }
+                                                    >
+                                                        {issue.priority}
+                                                    </Badge>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        📅 {issue.dueDate}
+                                                    </span>
+                                                    {issue.assignee && (
+                                                        <span className="text-sm text-muted-foreground">
+                                                            👤 User #{issue.assignee}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                                        {issue.assignee}
-                                                    </AvatarFallback>
-                                                </Avatar>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            <CreateProjectModal open={createProjectOpen} onOpenChange={setCreateProjectOpen} />
-            <CreateIssueModal open={createIssueOpen} onOpenChange={setCreateIssueOpen} />
-            
-            {selectedProjectId && (
-                <ProjectDetailsModal 
-                    open={!!selectedProjectId} 
-                    onOpenChange={() => setSelectedProjectId(null)}
-                    projectId={selectedProjectId}
-                />
-            )}
-            
-            {selectedIssueId && (
-                <IssueDetailsModal 
-                    open={!!selectedIssueId} 
-                    onOpenChange={() => setSelectedIssueId(null)}
-                    issueId={selectedIssueId}
-                    onIssueDeleted={() => {
-                        setSelectedIssueId(null);
-                        fetchIssues(); // Refresh list
-                    }}
-                />
-            )}
+            {/* Modals */}
+            <ProjectDetailsModal
+                open={!! selectedProjectId}
+                onOpenChange={() => setSelectedProjectId(null)}
+                projectId={selectedProjectId}
+            />
+
+            <IssueDetailsModal
+                open={!!selectedIssueId}
+                onOpenChange={() => setSelectedIssueId(null)}
+                issueId={selectedIssueId}
+                onIssueDeleted={() => {
+                    setSelectedIssueId(null);
+                    fetchIssues();
+                }}
+            />
+
+            <CreateProjectModal
+                open={createProjectOpen}
+                onOpenChange={setCreateProjectOpen}
+            />
+
+            <CreateIssueModal
+                open={createIssueOpen}
+                onOpenChange={setCreateIssueOpen}
+            />
         </AppLayout>
     );
 }

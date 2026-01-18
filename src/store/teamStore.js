@@ -1,61 +1,61 @@
 import { create } from "zustand";
-import teamApi from "@/services/teamApi";
+import apiClient from "@/services/apiClient";
 
 export const useTeamStore = create((set, get) => ({
     teams: [],
-    loading: false,
+    loading:  false,
     error: null,
-    
-    fetchTeams: async () => {
+
+    fetchTeams:  async () => {
         set({ loading: true, error: null });
         try {
-            const data = await teamApi.getAll();
-            set({ teams: data, loading: false });
+            const response = await apiClient.get('/api/v1/team/all');
+            set({ teams: response. data, loading: false });
         } catch (e) {
+            console.error('Error fetching teams:', e);
             set({ error: e.message || "Failed to fetch teams", loading: false });
         }
     },
-    
+
     createTeam: async (teamData) => {
         set({ loading: true, error: null });
         try {
-            const newTeam = await teamApi.create(teamData);
-            set({ 
-                teams: [...get().teams, newTeam],
-                loading: false 
+            const response = await apiClient.post('/api/v1/team/create', teamData);
+            set({
+                teams: [...get().teams, response.data],
+                loading: false
             });
-            return newTeam;
+            return response.data;
         } catch (e) {
-            set({ error: e.message || "Failed to create team", loading: false });
+            console.error('Error creating team:', e);
+            set({ error:  e.message || "Failed to create team", loading: false });
             throw e;
         }
     },
-    
+
     addUserToTeam: async (teamId, userId) => {
         set({ loading: true, error: null });
         try {
-            const updatedTeam = await teamApi.addUserToTeam(teamId, userId);
-            set({
-                teams: get().teams.map(t => t.id === teamId ? updatedTeam : t),
-                loading: false
-            });
-            return updatedTeam;
+            await apiClient.post('/api/v1/team/add-user', { teamId, userId });
+            // Odśwież wszystkie teamy
+            const response = await apiClient.get('/api/v1/team/all');
+            set({ teams: response. data, loading: false });
         } catch (e) {
-            set({ error: e.message || "Failed to add user to team", loading: false });
+            console. error('Error adding user to team:', e);
+            set({ error:  e.message || "Failed to add user to team", loading: false });
             throw e;
         }
     },
-    
+
     removeUserFromTeam: async (teamId, userId) => {
-        set({ loading: true, error: null });
+        set({ loading: true, error:  null });
         try {
-            const updatedTeam = await teamApi.removeUserFromTeam(teamId, userId);
-            set({
-                teams: get().teams.map(t => t.id === teamId ? updatedTeam : t),
-                loading: false
-            });
-            return updatedTeam;
+            await apiClient.post('/api/v1/team/remove-user', { teamId, userId });
+            // Odśwież wszystkie teamy
+            const response = await apiClient.get('/api/v1/team/all');
+            set({ teams: response.data, loading: false });
         } catch (e) {
+            console.error('Error removing user from team:', e);
             set({ error: e.message || "Failed to remove user from team", loading: false });
             throw e;
         }

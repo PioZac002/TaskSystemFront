@@ -1,147 +1,202 @@
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
-import { Input } from "@/components/ui/Input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import { Plus, Search } from "lucide-react";
-import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useProjectStore } from "@/store/projectStore";
+import { useIssueStore } from "@/store/issueStore";
 import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
-
+import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
+import { Plus, Search, X, FolderKanban, CheckCircle2, Clock } from "lucide-react";
 
 export default function Projects() {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [filterStatus, setFilterStatus] = useState("all");
-    const [createModalOpen, setCreateModalOpen] = useState(false);
-
-    const { projects, loading, error, getProjects } = useProjectStore();
-    const [detailsOpen, setDetailsOpen] = useState(false);
+    const { projects, fetchProjects, loading } = useProjectStore();
+    const { issues, fetchIssues } = useIssueStore();
     const [selectedProjectId, setSelectedProjectId] = useState(null);
-
-    const handleProjectClick = (id) => {
-        setSelectedProjectId(id);
-        setDetailsOpen(true);
-    };
+    const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
-        getProjects();
-    }, [getProjects]);
+        fetchProjects();
+        fetchIssues();
+    }, []);
 
-    const filteredProjects = projects.filter((project) => {
-        const matchesSearch = project.shortname
-            ? project.shortname.toLowerCase().includes(searchQuery.toLowerCase())
-            : "".includes(searchQuery.toLowerCase());
-        const matchesStatus = filterStatus === "all" || project.status === filterStatus;
-        return matchesSearch && matchesStatus;
+    // Oblicz progress dla każdego projektu
+    const projectsWithProgress = projects.map(project => {
+        const projectIssues = issues.filter(i => i.projectId === project. id);
+        const doneIssues = projectIssues. filter(i => i.status === 'DONE');
+        const inProgressIssues = projectIssues.filter(i => i. status === 'IN_PROGRESS');
+        const progress = projectIssues.length > 0
+            ? Math.round((doneIssues.length / projectIssues. length) * 100)
+            : 0;
+
+        return {
+            ... project,
+            totalIssues: projectIssues.length,
+            doneIssues: doneIssues.length,
+            inProgressIssues: inProgressIssues.length,
+            progress
+        };
     });
+
+    // Filtrowanie
+    const filteredProjects = projectsWithProgress.filter(project =>
+        (project.shortName?. toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+        (project.description?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+    );
+
+    const clearSearch = () => setSearchTerm("");
 
     return (
         <AppLayout>
-            <div className="space-y-6 animate-fade-in">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-4xl font-bold">Projects</h1>
-                        <p className="text-muted-foreground mt-2">Manage your projects</p>
+                        <h1 className="text-3xl font-bold">Projects</h1>
+                        <p className="text-muted-foreground">
+                            Manage your project portfolio • {filteredProjects.length} of {projects.length} projects
+                        </p>
                     </div>
-                    <Button variant="gradient" onClick={() => setCreateModalOpen(true)}>
+                    <Button onClick={() => setCreateModalOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
-                        New Project
+                        Create Project
                     </Button>
                 </div>
 
+                {/* Search */}
                 <Card>
-                    <CardContent className="p-4">
-                        <div className="flex gap-4">
-                            <div className="flex-1 relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <CardContent className="pt-6">
+                        <div className="flex gap-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search projects by name or description..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                     className="pl-10"
                                 />
                             </div>
-                            <Select value={filterStatus} onValueChange={setFilterStatus}>
-                                <SelectTrigger className="w-[180px]">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            {searchTerm && (
+                                <Button variant="outline" onClick={clearSearch}>
+                                    <X className="mr-2 h-4 w-4" />
+                                    Clear
+                                </Button>
+                            )}
                         </div>
-                        {loading && <div className="text-muted-foreground mt-2">Loading projects...</div>}
-                        {error && <div className="text-red-500 mt-2">{error}</div>}
                     </CardContent>
                 </Card>
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredProjects.map((project) => (
-                        <Card
-                            key={project.id}
-                            className="hover:shadow-lg transition-all cursor-pointer"
-                            onClick={() => handleProjectClick(project.id)}  // Dodaj obsługę kliknięcia!
-                        >
-                            <CardHeader>
-                                <div className="flex justify-between">
-                                    <div>
-                                        <CardTitle className="mb-1">{project.shortName}</CardTitle>
-                                        <p className="text-sm text-muted-foreground">{project.description}</p>
-                                    </div>
-                                    <Badge variant={project.status === "completed" ? "done" : "inprogress"}>
-                                        {project.status}
-                                    </Badge>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div>
-                                        {/* Jeśli backend nie zwraca progress - wyświetl placeholder */}
-                                        <div className="flex justify-between text-sm mb-2">
-                                            <span>Progress</span>
-                                            <span>
-                        {typeof project.progress !== "undefined"
-                            ? `${project.progress}%`
-                            : "N/A"}
-                      </span>
+                {/* Projects Grid */}
+                {loading ? (
+                    <div className="text-center py-12">
+                        <p className="text-muted-foreground">Loading projects... </p>
+                    </div>
+                ) : filteredProjects.length === 0 ? (
+                    <Card>
+                        <CardContent className="py-12 text-center">
+                            <FolderKanban className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                            <p className="text-lg font-medium mb-2">
+                                {searchTerm ? "No projects match your search" : "No projects yet"}
+                            </p>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                {searchTerm
+                                    ? "Try a different search term"
+                                    : "Create your first project to get started"}
+                            </p>
+                            {searchTerm ?  (
+                                <Button variant="outline" onClick={clearSearch}>
+                                    Clear Search
+                                </Button>
+                            ) : (
+                                <Button onClick={() => setCreateModalOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create Project
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {filteredProjects.map(project => (
+                            <Card
+                                key={project.id}
+                                className="cursor-pointer hover:shadow-xl transition-all hover:scale-105 hover:border-primary/50"
+                                onClick={() => setSelectedProjectId(project.id)}
+                            >
+                                <CardHeader>
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex-1 min-w-0">
+                                            <CardTitle className="text-xl font-mono truncate">
+                                                {project.shortName}
+                                            </CardTitle>
+                                            <CardDescription className="line-clamp-2 mt-1">
+                                                {project.description || "No description provided"}
+                                            </CardDescription>
                                         </div>
-                                        <div className="h-2 bg-muted rounded-full">
-                                            <div
-                                                className="h-2 bg-primary rounded-full"
-                                                style={{
-                                                    width:
-                                                        typeof project.progress !== "undefined"
-                                                            ? `${project.progress}%`
-                                                            : "0%",
-                                                }}
-                                            />
+                                        <Badge
+                                            variant={project. progress === 100 ? "default" : "secondary"}
+                                            className={project.progress === 100 ? "bg-green-500" : ""}
+                                        >
+                                            {project.totalIssues} {project.totalIssues === 1 ? "issue" : "issues"}
+                                        </Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {/* Progress Bar */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-medium text-muted-foreground">
+                                                Progress
+                                            </span>
+                                            <span className="text-sm font-bold">
+                                                {project.progress}%
+                                            </span>
+                                        </div>
+                                        <Progress
+                                            value={project. progress}
+                                            className="h-2"
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {project. doneIssues} of {project.totalIssues} issues completed
+                                        </p>
+                                    </div>
+
+                                    {/* Stats */}
+                                    <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">Done</p>
+                                                <p className="text-sm font-semibold">{project.doneIssues}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="h-4 w-4 text-blue-500" />
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">Active</p>
+                                                <p className="text-sm font-semibold">{project.inProgressIssues}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        {(project.team || [])
-                                            .slice(0, 3)
-                                            .map((member, i) => (
-                                                <Avatar key={i} className="h-6 w-6">
-                                                    <AvatarFallback className="text-xs">{member}</AvatarFallback>
-                                                </Avatar>
-                                            ))}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
             </div>
-            <CreateProjectModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
+
             <ProjectDetailsModal
-                open={detailsOpen}
-                onOpenChange={setDetailsOpen}
+                open={!! selectedProjectId}
+                onOpenChange={() => setSelectedProjectId(null)}
                 projectId={selectedProjectId}
+            />
+
+            <CreateProjectModal
+                open={createModalOpen}
+                onOpenChange={setCreateModalOpen}
             />
         </AppLayout>
     );

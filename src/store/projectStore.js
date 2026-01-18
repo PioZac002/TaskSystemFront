@@ -1,29 +1,37 @@
 import { create } from "zustand";
-import { fetchProjects, createProject } from "@/services/projectApi";
+import apiClient from "@/services/apiClient";
 
 export const useProjectStore = create((set) => ({
     projects: [],
     loading: false,
     error: null,
-    getProjects: async () => {
+
+    // ZMIANA: getProjects → fetchProjects
+    fetchProjects: async () => {
         set({ loading: true, error: null });
         try {
-            const data = await fetchProjects();
-            set({ projects: data, loading: false });
+            const response = await apiClient.get('/api/v1/project/all');
+            set({ projects: response.data, loading: false });
         } catch (e) {
+            console.error('Error fetching projects:', e);
             set({ error: e.message, loading: false });
         }
     },
-    addProject: async (project) => {
+
+    // ZMIANA: addProject → createProject
+    createProject: async (project) => {
         set({ loading: true, error: null });
         try {
-            const newProject = await createProject(project);
+            const response = await apiClient.post('/api/v1/project/create', project);
             set((state) => ({
-                projects: [...state.projects, newProject],
+                projects:  [...state.projects, response.data],
                 loading: false
             }));
+            return response.data;
         } catch (e) {
+            console.error('Error creating project:', e);
             set({ error: e.message, loading: false });
+            throw e;
         }
     }
 }));
