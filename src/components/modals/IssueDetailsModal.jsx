@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/Collapsible";
 import { CommentSection } from "@/components/comments/CommentSection";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
-import { Edit, Save, X, Trash2 } from "lucide-react";
+import { Edit, Save, X, Trash2, MessageSquare, ChevronDown } from "lucide-react";
 
 export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted }) {
     const [issue, setIssue] = useState(null);
@@ -18,6 +19,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
     const [teams, setTeams] = useState([]);
     const [edit, setEdit] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [commentsOpen, setCommentsOpen] = useState(true);
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -243,7 +245,6 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
                                         <SelectContent>
                                             <SelectItem value="NEW">To Do</SelectItem>
                                             <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                            <SelectItem value="REVIEW">Review</SelectItem>
                                             <SelectItem value="DONE">Done</SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -327,28 +328,23 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
 
                             <Separator />
 
-                            {/* Comments Section */}
-                            <div>
-                                <h3 className="font-semibold mb-3">Comments</h3>
-                                <CommentSection issueId={issue.id} />
-                            </div>
-
-                            <Separator />
-
-                            {/* Delete Button */}
-                            <div className="flex justify-between items-center">
-                                <p className="text-sm text-muted-foreground">
-                                    Created: {new Date(issue.createdAt).toLocaleString()}
-                                </p>
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={handleDeleteIssue}
-                                >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete Issue
-                                </Button>
-                            </div>
+                            {/* Comments Section - Collapsible */}
+                            <Collapsible open={commentsOpen} onOpenChange={setCommentsOpen}>
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className="w-full justify-between p-0 hover:bg-transparent">
+                                        <h3 className="font-semibold flex items-center gap-2">
+                                            <MessageSquare className="h-4 w-4" />
+                                            Comments
+                                        </h3>
+                                        <ChevronDown 
+                                            className={`h-4 w-4 transition-transform ${commentsOpen ? 'rotate-180' : ''}`} 
+                                        />
+                                    </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="mt-3">
+                                    <CommentSection issueId={issue.id} />
+                                </CollapsibleContent>
+                            </Collapsible>
                         </div>
                     </>
                 )}

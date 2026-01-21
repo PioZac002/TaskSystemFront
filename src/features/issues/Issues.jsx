@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useIssueStore } from "@/store/issueStore";
+import { useProjectStore } from "@/store/projectStore";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { Plus, Search, X, ListTodo } from "lucide-react";
@@ -23,6 +24,7 @@ function formatDate(dateString) {
 
 export default function Issues() {
     const { issues, fetchIssues, loading } = useIssueStore();
+    const { projects, fetchProjects } = useProjectStore();
     const [selectedIssueId, setSelectedIssueId] = useState(null);
     const [createModalOpen, setCreateModalOpen] = useState(false);
 
@@ -30,9 +32,11 @@ export default function Issues() {
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [priorityFilter, setPriorityFilter] = useState("all");
+    const [projectFilter, setProjectFilter] = useState("all");
 
     useEffect(() => {
         fetchIssues();
+        fetchProjects();
     }, []);
 
     // Filtrowanie
@@ -44,18 +48,20 @@ export default function Issues() {
 
         const matchesStatus = statusFilter === "all" || issue.status === statusFilter;
         const matchesPriority = priorityFilter === "all" || issue.priority === priorityFilter;
+        const matchesProject = projectFilter === "all" || String(issue.projectId) === projectFilter;
 
-        return matchesSearch && matchesStatus && matchesPriority;
+        return matchesSearch && matchesStatus && matchesPriority && matchesProject;
     });
 
     const clearFilters = () => {
         setSearchTerm("");
         setStatusFilter("all");
         setPriorityFilter("all");
+        setProjectFilter("all");
         toast.success("Filters cleared");
     };
 
-    const hasActiveFilters = searchTerm || statusFilter !== "all" || priorityFilter !== "all";
+    const hasActiveFilters = searchTerm || statusFilter !== "all" || priorityFilter !== "all" || projectFilter !== "all";
 
     return (
         <AppLayout>
@@ -77,7 +83,8 @@ export default function Issues() {
                 {/* Filters */}
                 <Card>
                     <CardContent className="pt-6">
-                        <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex flex-col gap-4">
+                            {/* Search Bar */}
                             <div className="flex-1">
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -90,37 +97,53 @@ export default function Issues() {
                                 </div>
                             </div>
 
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-full md:w-[180px]">
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Statuses</SelectItem>
-                                    <SelectItem value="NEW">To Do</SelectItem>
-                                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                    <SelectItem value="REVIEW">Review</SelectItem>
-                                    <SelectItem value="DONE">Done</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            {/* Filter Row */}
+                            <div className="flex flex-col md:flex-row gap-3">
+                                <Select value={projectFilter} onValueChange={setProjectFilter}>
+                                    <SelectTrigger className="w-full md:w-[200px]">
+                                        <SelectValue placeholder="All Projects" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Projects</SelectItem>
+                                        {projects.map((project) => (
+                                            <SelectItem key={project.id} value={String(project.id)}>
+                                                {project.shortName}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
 
-                            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                                <SelectTrigger className="w-full md:w-[180px]">
-                                    <SelectValue placeholder="Priority" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Priorities</SelectItem>
-                                    <SelectItem value="HIGH">High</SelectItem>
-                                    <SelectItem value="NORMAL">Normal</SelectItem>
-                                    <SelectItem value="LOW">Low</SelectItem>
-                                </SelectContent>
-                            </Select>
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="w-full md:w-[180px]">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        <SelectItem value="NEW">To Do</SelectItem>
+                                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                        <SelectItem value="DONE">Done</SelectItem>
+                                    </SelectContent>
+                                </Select>
 
-                            {hasActiveFilters && (
-                                <Button variant="outline" onClick={clearFilters}>
-                                    <X className="mr-2 h-4 w-4" />
-                                    Clear
-                                </Button>
-                            )}
+                                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                                    <SelectTrigger className="w-full md:w-[180px]">
+                                        <SelectValue placeholder="Priority" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Priorities</SelectItem>
+                                        <SelectItem value="HIGH">High</SelectItem>
+                                        <SelectItem value="NORMAL">Normal</SelectItem>
+                                        <SelectItem value="LOW">Low</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                {hasActiveFilters && (
+                                    <Button variant="outline" onClick={clearFilters}>
+                                        <X className="mr-2 h-4 w-4" />
+                                        Clear
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -172,8 +195,7 @@ export default function Issues() {
                                                     className={
                                                         issue.status === "DONE" ?  "bg-green-500" :
                                                             issue.status === "IN_PROGRESS" ?  "bg-blue-500" :
-                                                                issue.status === "REVIEW" ?  "bg-purple-500" :
-                                                                    "bg-gray-500"
+                                                                "bg-gray-500"
                                                     }
                                                 >
                                                     {issue.status === "NEW" ? "To Do" :
