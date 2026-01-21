@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/Dialog";
+import { Badge } from "@/components/ui/Badge";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Progress } from "@/components/ui/Progress";
+import { Separator } from "@/components/ui/Separator";
+import { Button } from "@/components/ui/Button";
 import { IssueDetailsModal } from "./IssueDetailsModal";
 import { CreateIssueModal } from "./CreateIssueModal";
 import apiClient from "@/services/apiClient";
