@@ -6,9 +6,10 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { IssueDetailsModal } from "./IssueDetailsModal";
+import { CreateIssueModal } from "./CreateIssueModal";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, AlertCircle, ListTodo, ExternalLink } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, ListTodo, ExternalLink, Plus } from "lucide-react";
 
 function formatDate(dateString) {
     if (!dateString) return "N/A";
@@ -22,10 +23,11 @@ function formatDate(dateString) {
     });
 }
 
-export function ProjectDetailsModal({ open, onOpenChange, projectId }) {
+export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUpdate }) {
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(false);
     const [selectedIssueId, setSelectedIssueId] = useState(null);
+    const [createIssueOpen, setCreateIssueOpen] = useState(false);
 
     useEffect(() => {
         if (open && projectId) {
@@ -171,9 +173,19 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId }) {
 
                                 {/* Issues List */}
                                 <div>
-                                    <h3 className="font-semibold mb-3 flex items-center justify-between">
-                                        <span>Issues ({totalIssues})</span>
-                                    </h3>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="font-semibold">
+                                            Issues ({totalIssues})
+                                        </h3>
+                                        <Button 
+                                            size="sm" 
+                                            onClick={() => setCreateIssueOpen(true)}
+                                            variant="outline"
+                                        >
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Add Issue
+                                        </Button>
+                                    </div>
                                     {issues.length === 0 ?  (
                                         <Card className="bg-muted/30">
                                             <CardContent className="py-12 text-center">
@@ -255,7 +267,23 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId }) {
                 issueId={selectedIssueId}
                 onIssueDeleted={() => {
                     setSelectedIssueId(null);
-                    loadProjectDetails(); // Refresh project data
+                    loadProjectDetails();
+                    if (onProjectUpdate) onProjectUpdate();
+                }}
+                onIssueUpdated={() => {
+                    loadProjectDetails();
+                    if (onProjectUpdate) onProjectUpdate();
+                }}
+            />
+
+            {/* Create Issue Modal */}
+            <CreateIssueModal
+                open={createIssueOpen}
+                onOpenChange={setCreateIssueOpen}
+                preSelectedProjectId={projectId}
+                onIssueCreated={() => {
+                    loadProjectDetails();
+                    if (onProjectUpdate) onProjectUpdate();
                 }}
             />
         </>

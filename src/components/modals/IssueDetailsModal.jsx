@@ -13,7 +13,7 @@ import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 import { Edit, Save, X, Trash2, MessageSquare, ChevronDown } from "lucide-react";
 
-export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted }) {
+export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted, onIssueUpdated }) {
     const [issue, setIssue] = useState(null);
     const [users, setUsers] = useState([]);
     const [teams, setTeams] = useState([]);
@@ -136,6 +136,11 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
 
             // Odśwież dane
             await loadData();
+            
+            // Notify parent component
+            if (onIssueUpdated) {
+                onIssueUpdated();
+            }
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to update issue";
             toast. error(errorMessage);

@@ -237,11 +237,17 @@ export default function Issues() {
                     setSelectedIssueId(null);
                     fetchIssues();
                 }}
+                onIssueUpdated={() => {
+                    fetchIssues();
+                }}
             />
 
             <CreateIssueModal
                 open={createModalOpen}
                 onOpenChange={setCreateModalOpen}
+                onIssueCreated={() => {
+                    fetchIssues();
+                }}
             />
         </AppLayout>
     );

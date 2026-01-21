@@ -45,4 +45,28 @@ export const useIssueStore = create((set, get) => ({
             throw e;
         }
     },
+
+    // Add updateIssueStatus function
+    updateIssueStatus: async (issueId, newStatus) => {
+        try {
+            await apiClient.put('/api/v1/issue/update-status', {
+                issueId: Number(issueId),
+                newStatus: newStatus
+            });
+            
+            // Update local state
+            set((state) => ({
+                issues: state.issues.map(issue =>
+                    issue.id === issueId
+                        ? { ...issue, status: newStatus }
+                        : issue
+                )
+            }));
+            
+            return true;
+        } catch (e) {
+            console.error('Error updating issue status:', e);
+            throw e;
+        }
+    },
 }));
