@@ -180,8 +180,8 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                 ) : (
                     <>
                         <DialogHeader>
-                            <div className="flex items-center justify-between">
-                                <div>
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1 min-w-0">
                                     <DialogTitle className="text-2xl">
                                         {edit ? (
                                             <Input
@@ -193,16 +193,34 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                             issue.title
                                         )}
                                     </DialogTitle>
-                                    <p className="text-sm text-muted-foreground font-mono mt-1">
-                                        {issue.key}
-                                    </p>
+                                    <div className="flex items-center gap-3 mt-2">
+                                        <p className="text-sm text-muted-foreground font-mono">
+                                            {issue.key}
+                                        </p>
+                                        <span className="text-muted-foreground">•</span>
+                                        <p className="text-sm text-muted-foreground">
+                                            Created {new Date(issue.createdAt).toLocaleDateString('en-US', { 
+                                                month: 'short', 
+                                                day: 'numeric', 
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </p>
+                                    </div>
                                 </div>
                                 <div className="flex gap-2">
                                     {! edit ?  (
-                                        <Button size="sm" onClick={() => setEdit(true)}>
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            Edit
-                                        </Button>
+                                        <>
+                                            <Button size="sm" onClick={() => setEdit(true)}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </Button>
+                                            <Button size="sm" variant="destructive" onClick={handleDeleteIssue}>
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </Button>
+                                        </>
                                     ) : (
                                         <>
                                             <Button size="sm" onClick={handleSave} disabled={loading}>

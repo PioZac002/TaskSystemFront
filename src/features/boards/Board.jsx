@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Plus, MoreHorizontal, Clock, MessageSquare } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
     DndContext,
     DragOverlay,
