@@ -156,7 +156,7 @@ export const TopBar = () => {
             {/* Mobile Navigation Menu - Dropdown from top */}
             <nav
                 className={cn(
-                    "md: hidden fixed top-16 left-0 right-0 z-40 bg-card border-b border-border shadow-lg transition-all duration-300 ease-in-out",
+                    "md:hidden fixed top-16 left-0 right-0 z-40 bg-card border-b border-border shadow-lg transition-all duration-300 ease-in-out",
                     mobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full pointer-events-none"
                 )}
                 aria-hidden={!mobileMenuOpen}
@@ -170,7 +170,7 @@ export const TopBar = () => {
                             className={({ isActive }) =>
                                 cn(
                                     "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-                                    "hover: bg-accent focus:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                                    "hover:bg-accent focus:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                                     isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground"
                                 )
                             }

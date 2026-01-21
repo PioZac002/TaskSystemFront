@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Badge } from "@/components/ui/Badge";
+import { Progress } from "@/components/ui/Progress";
 import { useProjectStore } from "@/store/projectStore";
 import { useIssueStore } from "@/store/issueStore";
 import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
-import { Plus, Search, X, FolderKanban, CheckCircle2, Clock } from "lucide-react";
+import { Plus, Search, X, FolderKanban, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 
 export default function Projects() {
     const { projects, fetchProjects, loading } = useProjectStore();
@@ -28,6 +28,13 @@ export default function Projects() {
         const projectIssues = issues.filter(i => i.projectId === project. id);
         const doneIssues = projectIssues. filter(i => i.status === 'DONE');
         const inProgressIssues = projectIssues.filter(i => i. status === 'IN_PROGRESS');
+        const todoIssues = projectIssues.filter(i => i.status === 'NEW');
+        
+        // Priority breakdown
+        const highPriority = projectIssues.filter(i => i.priority === 'HIGH').length;
+        const normalPriority = projectIssues.filter(i => i.priority === 'NORMAL').length;
+        const lowPriority = projectIssues.filter(i => i.priority === 'LOW').length;
+        
         const progress = projectIssues.length > 0
             ? Math.round((doneIssues.length / projectIssues. length) * 100)
             : 0;
@@ -37,6 +44,10 @@ export default function Projects() {
             totalIssues: projectIssues.length,
             doneIssues: doneIssues.length,
             inProgressIssues: inProgressIssues.length,
+            todoIssues: todoIssues.length,
+            highPriority,
+            normalPriority,
+            lowPriority,
             progress
         };
     });
@@ -165,7 +176,7 @@ export default function Projects() {
                                     </div>
 
                                     {/* Stats */}
-                                    <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                                    <div className="grid grid-cols-3 gap-2 pt-2 border-t">
                                         <div className="flex items-center gap-2">
                                             <CheckCircle2 className="h-4 w-4 text-green-500" />
                                             <div>
@@ -180,7 +191,38 @@ export default function Projects() {
                                                 <p className="text-sm font-semibold">{project.inProgressIssues}</p>
                                             </div>
                                         </div>
+                                        <div className="flex items-center gap-2">
+                                            <AlertTriangle className="h-4 w-4 text-gray-500" />
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">To Do</p>
+                                                <p className="text-sm font-semibold">{project.todoIssues}</p>
+                                            </div>
+                                        </div>
                                     </div>
+
+                                    {/* Priority Breakdown */}
+                                    {project.totalIssues > 0 && (
+                                        <div className="pt-2 border-t">
+                                            <p className="text-xs text-muted-foreground mb-2">Priority</p>
+                                            <div className="flex gap-2 flex-wrap">
+                                                {project.highPriority > 0 && (
+                                                    <Badge variant="destructive" className="text-xs">
+                                                        {project.highPriority} HIGH
+                                                    </Badge>
+                                                )}
+                                                {project.normalPriority > 0 && (
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {project.normalPriority} NORMAL
+                                                    </Badge>
+                                                )}
+                                                {project.lowPriority > 0 && (
+                                                    <Badge variant="outline" className="text-xs">
+                                                        {project.lowPriority} LOW
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         ))}
@@ -192,6 +234,10 @@ export default function Projects() {
                 open={!! selectedProjectId}
                 onOpenChange={() => setSelectedProjectId(null)}
                 projectId={selectedProjectId}
+                onProjectUpdate={() => {
+                    fetchIssues();
+                    fetchProjects();
+                }}
             />
 
             <CreateProjectModal

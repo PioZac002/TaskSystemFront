@@ -10,28 +10,27 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['vite.svg', 'icon-192x192.png', 'icon-512x512.png'],
+      manifest: false, // Use standalone manifest.webmanifest
       devOptions: {
         enabled: true
       },
-      manifest: {
-        name: 'TaskSystem - Project Management',
-        short_name: 'TaskSystem',
-        description: 'Professional Task Management System - Jira Clone',
-        theme_color: '#1f2937',
-        background_color: '#ffffff',
-        display: 'standalone',
-        scope: '/',
-        start_url: '/',
-        icons: [
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        runtimeCaching: [
           {
-            src: '/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: '/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
+            urlPattern: /^https:\/\/api\..*\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
           }
         ]
       }

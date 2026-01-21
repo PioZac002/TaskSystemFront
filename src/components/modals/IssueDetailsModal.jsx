@@ -1,23 +1,25 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Dialog";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/Textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Badge } from "@/components/ui/Badge";
+import { Separator } from "@/components/ui/Separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/Collapsible";
 import { CommentSection } from "@/components/comments/CommentSection";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
-import { Edit, Save, X, Trash2 } from "lucide-react";
+import { Edit, Save, X, Trash2, MessageSquare, ChevronDown } from "lucide-react";
 
-export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted }) {
+export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted, onIssueUpdated }) {
     const [issue, setIssue] = useState(null);
     const [users, setUsers] = useState([]);
     const [teams, setTeams] = useState([]);
     const [edit, setEdit] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [commentsOpen, setCommentsOpen] = useState(true);
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -134,6 +136,11 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
 
             // Odśwież dane
             await loadData();
+            
+            // Notify parent component
+            if (onIssueUpdated) {
+                onIssueUpdated();
+            }
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to update issue";
             toast. error(errorMessage);
@@ -173,8 +180,8 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
                 ) : (
                     <>
                         <DialogHeader>
-                            <div className="flex items-center justify-between">
-                                <div>
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1 min-w-0">
                                     <DialogTitle className="text-2xl">
                                         {edit ? (
                                             <Input
@@ -186,16 +193,34 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
                                             issue.title
                                         )}
                                     </DialogTitle>
-                                    <p className="text-sm text-muted-foreground font-mono mt-1">
-                                        {issue.key}
-                                    </p>
+                                    <div className="flex items-center gap-3 mt-2">
+                                        <p className="text-sm text-muted-foreground font-mono">
+                                            {issue.key}
+                                        </p>
+                                        <span className="text-muted-foreground">•</span>
+                                        <p className="text-sm text-muted-foreground">
+                                            Created {new Date(issue.createdAt).toLocaleDateString('en-US', { 
+                                                month: 'short', 
+                                                day: 'numeric', 
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </p>
+                                    </div>
                                 </div>
                                 <div className="flex gap-2">
                                     {! edit ?  (
-                                        <Button size="sm" onClick={() => setEdit(true)}>
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            Edit
-                                        </Button>
+                                        <>
+                                            <Button size="sm" onClick={() => setEdit(true)}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </Button>
+                                            <Button size="sm" variant="destructive" onClick={handleDeleteIssue}>
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </Button>
+                                        </>
                                     ) : (
                                         <>
                                             <Button size="sm" onClick={handleSave} disabled={loading}>
@@ -243,7 +268,6 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
                                         <SelectContent>
                                             <SelectItem value="NEW">To Do</SelectItem>
                                             <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                            <SelectItem value="REVIEW">Review</SelectItem>
                                             <SelectItem value="DONE">Done</SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -327,28 +351,23 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted 
 
                             <Separator />
 
-                            {/* Comments Section */}
-                            <div>
-                                <h3 className="font-semibold mb-3">Comments</h3>
-                                <CommentSection issueId={issue.id} />
-                            </div>
-
-                            <Separator />
-
-                            {/* Delete Button */}
-                            <div className="flex justify-between items-center">
-                                <p className="text-sm text-muted-foreground">
-                                    Created: {new Date(issue.createdAt).toLocaleString()}
-                                </p>
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={handleDeleteIssue}
-                                >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete Issue
-                                </Button>
-                            </div>
+                            {/* Comments Section - Collapsible */}
+                            <Collapsible open={commentsOpen} onOpenChange={setCommentsOpen}>
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className="w-full justify-between p-0 hover:bg-transparent">
+                                        <h3 className="font-semibold flex items-center gap-2">
+                                            <MessageSquare className="h-4 w-4" />
+                                            Comments
+                                        </h3>
+                                        <ChevronDown 
+                                            className={`h-4 w-4 transition-transform ${commentsOpen ? 'rotate-180' : ''}`} 
+                                        />
+                                    </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="mt-3">
+                                    <CommentSection issueId={issue.id} />
+                                </CollapsibleContent>
+                            </Collapsible>
                         </div>
                     </>
                 )}

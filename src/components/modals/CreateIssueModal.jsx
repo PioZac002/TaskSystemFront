@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Dialog";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/Textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUserStore } from "@/store/userStore";
 import { useTeamStore } from "@/store/teamStore";
 import { toast } from "sonner";
 
-export function CreateIssueModal({ open, onOpenChange }) {
+export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId, onIssueCreated }) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [projectId, setProjectId] = useState("");
@@ -32,13 +32,18 @@ export function CreateIssueModal({ open, onOpenChange }) {
             fetchUsers();
             fetchTeams();
 
+            // Set pre-selected project if provided
+            if (preSelectedProjectId) {
+                setProjectId(String(preSelectedProjectId));
+            }
+
             // Ustaw obecnego użytkownika jako domyślnego assignee
             const currentUserId = localStorage.getItem('userId');
             if (currentUserId) {
                 setAssigneeId(currentUserId);
             }
         }
-    }, [open]);
+    }, [open, preSelectedProjectId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -86,6 +91,11 @@ export function CreateIssueModal({ open, onOpenChange }) {
             setDueDate("");
 
             onOpenChange(false);
+            
+            // Callback for parent to refresh
+            if (onIssueCreated) {
+                onIssueCreated();
+            }
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to create issue";
             toast. error(errorMessage);
@@ -134,7 +144,12 @@ export function CreateIssueModal({ open, onOpenChange }) {
                             <Label htmlFor="project">
                                 Project <span className="text-destructive">*</span>
                             </Label>
-                            <Select value={projectId} onValueChange={setProjectId} required>
+                            <Select 
+                                value={projectId} 
+                                onValueChange={setProjectId} 
+                                required
+                                disabled={!!preSelectedProjectId}
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select project" />
                                 </SelectTrigger>
@@ -146,6 +161,11 @@ export function CreateIssueModal({ open, onOpenChange }) {
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {preSelectedProjectId && (
+                                <p className="text-xs text-muted-foreground">
+                                    Project is pre-selected for this modal
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-2">

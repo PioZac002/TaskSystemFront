@@ -1,24 +1,55 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/Textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
+import { Separator } from "@/components/ui/Separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useCommentStore } from "@/store/commentStore";
 import { toast } from "sonner";
 import { Trash2, User, ArrowUpDown } from "lucide-react";
 
 function formatDate(dateString) {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleString("en-US", {
-        year: "numeric",
-        month:  "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-    });
+    if (!dateString) return "Just now";
+    
+    try {
+        const date = new Date(dateString);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            return "Invalid date";
+        }
+        
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        // Just now (< 1 min)
+        if (diffMins < 1) return "Just now";
+        
+        // Minutes ago (< 60 mins)
+        if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+        
+        // Hours ago (< 24 hours)
+        if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+        
+        // Days ago (< 7 days)
+        if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+        
+        // Otherwise show full date
+        return date.toLocaleString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return "Invalid date";
+    }
 }
 
 export function CommentSection({ issueId }) {

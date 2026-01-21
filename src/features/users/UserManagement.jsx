@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Badge } from "@/components/ui/Badge";
+import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { useUserStore } from "@/store/userStore";
-import { Search, Trash2, User, Mail, UserCircle } from "lucide-react";
+import { Search, Trash2, Mail, ArrowUpDown, UserCircle } from "lucide-react";
 import { toast } from "sonner";
 import { getInitials } from "@/utils/formatters";
 
 export default function UserManagement() {
     const { users, fetchUsers, deleteUser, loading } = useUserStore();
     const [searchTerm, setSearchTerm] = useState("");
+    const [sortField, setSortField] = useState("id");
+    const [sortOrder, setSortOrder] = useState("asc");
 
     useEffect(() => {
         fetchUsers();
@@ -33,19 +36,55 @@ export default function UserManagement() {
         }
     };
 
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+        } else {
+            setSortField(field);
+            setSortOrder("asc");
+        }
+    };
+
     // Filtrowanie z null safety
-    const filteredUsers = users. filter(user => {
+    const filteredUsers = users.filter(user => {
         if (!searchTerm) return true;
 
         const search = searchTerm.toLowerCase();
 
         // Bezpieczne sprawdzanie z optional chaining
-        const matchesEmail = (user.email?. toLowerCase() || "").includes(search);
+        const matchesEmail = (user.email?.toLowerCase() || "").includes(search);
         const matchesFirstName = (user.firstName?.toLowerCase() || "").includes(search);
         const matchesLastName = (user.lastName?.toLowerCase() || "").includes(search);
         const matchesId = String(user.id || "").includes(search);
 
         return matchesEmail || matchesFirstName || matchesLastName || matchesId;
+    });
+
+    // Sortowanie
+    const sortedUsers = [...filteredUsers].sort((a, b) => {
+        let aVal, bVal;
+        
+        switch (sortField) {
+            case "name":
+                aVal = `${a.firstName || ""} ${a.lastName || ""}`.toLowerCase();
+                bVal = `${b.firstName || ""} ${b.lastName || ""}`.toLowerCase();
+                break;
+            case "email":
+                aVal = (a.email || "").toLowerCase();
+                bVal = (b.email || "").toLowerCase();
+                break;
+            case "role":
+                aVal = (a.role || "").toLowerCase();
+                bVal = (b.role || "").toLowerCase();
+                break;
+            default:
+                aVal = a.id || 0;
+                bVal = b.id || 0;
+        }
+
+        if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+        return 0;
     });
 
     return (
@@ -56,7 +95,7 @@ export default function UserManagement() {
                     <div>
                         <h1 className="text-3xl font-bold">User Management</h1>
                         <p className="text-muted-foreground">
-                            Manage system users • {filteredUsers.length} of {users.length} users
+                            Manage system users • {sortedUsers.length} of {users.length} users
                         </p>
                     </div>
                 </div>
@@ -76,12 +115,12 @@ export default function UserManagement() {
                     </CardContent>
                 </Card>
 
-                {/* Users List */}
+                {/* Users Table */}
                 {loading ? (
                     <div className="text-center py-12">
                         <p className="text-muted-foreground">Loading users...</p>
                     </div>
-                ) : filteredUsers.length === 0 ? (
+                ) : sortedUsers.length === 0 ? (
                     <Card>
                         <CardContent className="py-12 text-center">
                             <UserCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -94,62 +133,105 @@ export default function UserManagement() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredUsers. map((user) => (
-                            <Card key={user.id} className="hover:shadow-lg transition-shadow">
-                                <CardHeader>
-                                    <div className="flex items-start gap-4">
-                                        <Avatar className="h-12 w-12 bg-primary/10">
-                                            <AvatarFallback className="bg-primary/20 text-primary font-semibold">
-                                                {getInitials(user.firstName, user.lastName)}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 min-w-0">
-                                            <CardTitle className="text-lg truncate">
-                                                {user.firstName || "N/A"} {user.lastName || ""}
-                                            </CardTitle>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <Mail className="h-3 w-3 text-muted-foreground" />
-                                                <p className="text-sm text-muted-foreground truncate">
-                                                    {user.email || "No email"}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">User ID</span>
-                                            <Badge variant="outline">{user.id}</Badge>
-                                        </div>
-
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">Role</span>
-                                            <Badge variant="secondary">
-                                                {user.role || "User"}
-                                            </Badge>
-                                        </div>
-
-                                        <div className="pt-3 border-t">
+                    <Card>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[80px]">Avatar</TableHead>
+                                        <TableHead>
                                             <Button
-                                                variant="destructive"
+                                                variant="ghost"
                                                 size="sm"
-                                                className="w-full"
-                                                onClick={() => handleDeleteUser(
-                                                    user.id,
-                                                    `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || `User #${user.id}`
-                                                )}
+                                                className="-ml-3 h-8"
+                                                onClick={() => handleSort("name")}
                                             >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete User
+                                                Name
+                                                <ArrowUpDown className="ml-2 h-4 w-4" />
                                             </Button>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                                        </TableHead>
+                                        <TableHead>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="-ml-3 h-8"
+                                                onClick={() => handleSort("email")}
+                                            >
+                                                Email
+                                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                                            </Button>
+                                        </TableHead>
+                                        <TableHead>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="-ml-3 h-8"
+                                                onClick={() => handleSort("role")}
+                                            >
+                                                Role
+                                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                                            </Button>
+                                        </TableHead>
+                                        <TableHead>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="-ml-3 h-8"
+                                                onClick={() => handleSort("id")}
+                                            >
+                                                ID
+                                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                                            </Button>
+                                        </TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {sortedUsers.map((user) => (
+                                        <TableRow key={user.id}>
+                                            <TableCell>
+                                                <Avatar className="h-10 w-10 bg-primary/10">
+                                                    <AvatarFallback className="bg-primary/20 text-primary font-semibold">
+                                                        {getInitials(user.firstName, user.lastName)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                            </TableCell>
+                                            <TableCell className="font-medium">
+                                                {user.firstName || "N/A"} {user.lastName || ""}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Mail className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="text-sm">{user.email || "No email"}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary">
+                                                    {user.role || "User"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{user.id}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDeleteUser(
+                                                        user.id,
+                                                        `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || `User #${user.id}`
+                                                    )}
+                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                 )}
             </div>
         </AppLayout>
