@@ -58,16 +58,18 @@ export function CreateIssueModal({ open, onOpenChange }) {
         setLoading(true);
 
         try {
+
             const issueData = {
                 title:  title.trim(),
-                description: description.trim(),
-                projectId: Number(projectId),
+                description: description.trim() || null,  // ← null jeśli pusty
+                projectId: projectId ? Number(projectId) : null,  // ← nullable
                 assigneeId: assigneeId && assigneeId !== "unassigned" ? Number(assigneeId) : null,
-                teamId: teamId && teamId !== "none" ?  Number(teamId) : null,
-                priority: priority,
+                teamId: teamId && teamId !== "none" ? Number(teamId) : null,
+                priority: priority || "NORMAL",  // ← default NORMAL
                 dueDate: dueDate || null,
                 authorId: Number(currentUserId)
             };
+
 
             console.log('Creating issue with data:', issueData);
 

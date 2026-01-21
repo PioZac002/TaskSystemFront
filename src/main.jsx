@@ -3,8 +3,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
+import { useAuthStore } from "@/store/authStore";
 
-// Importy podstron (dopasuj ścieżki do siebie)
+// Importy podstron
 import LandingPage from "@/features/landing/LandingPage";
 import NotFound from "@/features/NotFound";
 import Dashboard from "@/features/dashboard/Dashboard";
@@ -18,14 +19,31 @@ import UserManagement from "@/features/users/UserManagement";
 import TeamManagement from "@/features/teams/TeamManagement";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 
-// (opcjonalnie) import dark mode/theme-provider jeśli korzystasz np. z "next-themes"
-// Możesz dodać własny ThemeProvider jeśli jest potrzebny.
+// Komponent App z inicjalizacją auth
+function App() {
+    const { initialize, loading, initialized } = useAuthStore();
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
+    React.useEffect(() => {
+        if (!initialized) {
+            console.log('🚀 [App] Initializing authentication...');
+            initialize();
+        }
+    }, [initialized, initialize]);
 
-root.render(
-    <React.StrictMode>
-        <BrowserRouter>
+    // Pokaż loader podczas inicjalizacji
+    if (! initialized || loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-4 text-muted-foreground">Initializing...</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <>
             <Toaster position="top-right" richColors />
             <Routes>
                 <Route path="/" element={<LandingPage />} />
@@ -38,9 +56,18 @@ root.render(
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
                 <Route path="/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
-                {/* Fallback - 404 */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
+        </>
+    );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+
+root.render(
+    <React.StrictMode>
+        <BrowserRouter>
+            <App />
         </BrowserRouter>
     </React.StrictMode>
 );

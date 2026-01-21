@@ -1,147 +1,143 @@
-import apiClient from './apiClient';
+import apiClient from "./apiClient";
 
-const authService = {
-    // Login user
+class AuthService {
+    constructor() {
+        console.log('🔧 [AuthService] Initializing.. .');
+    }
+
     async login(email, password) {
+        console.log('🔐 [AuthService] Attempting login:', { email });
+
         try {
             const response = await apiClient.post('/api/v1/login', {
                 email,
                 password
             });
 
-            // Backend zwraca accessToken i refreshToken jako obiekty z polami { token, expires }
-            const { accessToken, refreshToken } = response.data;
+            console.log('✅ [AuthService] Login successful');
 
-            if (accessToken?. token) {
-                localStorage.setItem('accessToken', accessToken.token);
+            const accessToken = response.data.accessToken?. token || response.data.accessToken;
+            const refreshToken = response.data.refreshToken?.token || response. data.refreshToken;
 
-                if (accessToken.expires) {
-                    localStorage.setItem('accessTokenExpiresAt', accessToken.expires);
-                }
+            this.setTokens(accessToken, refreshToken);
+
+            // Pobierz userId z tokena
+            const userId = this.extractUserIdFromToken(accessToken);
+
+            if (userId) {
+                localStorage.setItem('userId', userId);
+
+                // Pobierz pełne dane użytkownika
+                const userResponse = await apiClient.get(`/api/v1/user/id/${userId}`);
+                localStorage.setItem('user', JSON. stringify(userResponse.data));
+
+                return { accessToken, refreshToken, userId, user: userResponse.data };
             }
 
-            if (refreshToken?. token) {
-                localStorage.setItem('refreshToken', refreshToken. token);
-
-                if (refreshToken.expires) {
-                    localStorage.setItem('refreshTokenExpiresAt', refreshToken. expires);
-                }
-            }
-
-            // Pobierz userId z JWT tokenu (dekoduj payload)
-            if (accessToken?.token) {
-                try {
-                    const payload = JSON.parse(atob(accessToken.token.split('.')[1]));
-                    if (payload.nameid) {
-                        localStorage.setItem('userId', payload.nameid);
-                    }
-                } catch (e) {
-                    console.warn('Failed to decode JWT token:', e);
-                }
-            }
-
-            return response.data;
+            return { accessToken, refreshToken, userId: null, user: null };
         } catch (error) {
-            throw this.handleError(error);
+            console.error('❌ [AuthService] Login failed:', {
+                status: error.response?.status,
+                message: error.response?.data?.Message || error.message
+            });
+            throw error;
         }
-    },
+    }
 
-    // Register user
     async register(userData) {
+        console.log('📝 [AuthService] Attempting registration');
+
         try {
             const response = await apiClient.post('/api/v1/register', userData);
-            return response.data;
+            console.log('✅ [AuthService] Registration successful');
+            return response. data;
         } catch (error) {
-            throw this.handleError(error);
+            console.error('❌ [AuthService] Registration failed');
+            throw error;
         }
-    },
+    }
 
-    // Refresh tokens using refresh token
     async refreshTokens() {
+        console.log('🔄 [AuthService] Refreshing tokens...');
+
+        const refreshToken = this.getRefreshToken();
+
+        if (!refreshToken) {
+            throw new Error('No refresh token available');
+        }
+
         try {
-            const refreshToken = localStorage.getItem('refreshToken');
-
-            if (!refreshToken) {
-                throw new Error('No refresh token available');
-            }
-
-            const response = await apiClient.post('/api/v1/auth/regenerate-tokens', {
+            const response = await apiClient. post('/api/v1/auth/regenerate-tokens', {
                 refreshToken
             });
 
-            // Backend zwraca nowy accessToken i refreshToken jako obiekty
-            const { accessToken:  newAccessToken, refreshToken: newRefreshToken } = response.data;
+            const newAccessToken = response.data.accessToken?.token || response.data.accessToken;
+            const newRefreshToken = response.data.refreshToken?.token || response.data.refreshToken;
 
-            if (newAccessToken?.token) {
-                localStorage.setItem('accessToken', newAccessToken.token);
+            this.setTokens(newAccessToken, newRefreshToken);
 
-                if (newAccessToken.expires) {
-                    localStorage.setItem('accessTokenExpiresAt', newAccessToken. expires);
-                }
-            }
+            console.log('✅ [AuthService] Tokens refreshed');
 
-            if (newRefreshToken?.token) {
-                localStorage.setItem('refreshToken', newRefreshToken.token);
-
-                if (newRefreshToken.expires) {
-                    localStorage.setItem('refreshTokenExpiresAt', newRefreshToken.expires);
-                }
-            }
-
-            return response.data;
+            return { accessToken: newAccessToken, refreshToken: newRefreshToken };
         } catch (error) {
-            throw this.handleError(error);
-        }
-    },
-
-    // Logout user
-    logout() {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('accessTokenExpiresAt');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('refreshTokenExpiresAt');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('currentUser');
-    },
-
-    // Get current user from localStorage
-    getCurrentUser() {
-        const user = localStorage.getItem('currentUser');
-        return user ? JSON. parse(user) : null;
-    },
-
-    // Save current user to localStorage
-    saveCurrentUser(user) {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-    },
-
-    // Check if user is authenticated
-    isAuthenticated() {
-        const token = localStorage.getItem('accessToken');
-        return !!token;
-    },
-
-    // Check if refresh token is still valid
-    isRefreshTokenValid() {
-        const expiresAt = localStorage.getItem('refreshTokenExpiresAt');
-        if (!expiresAt) return false;
-
-        const expirationDate = new Date(expiresAt);
-        return expirationDate > new Date();
-    },
-
-    // Handle API errors
-    handleError(error) {
-        if (error.response) {
-            const message = error.response.data?. message || error.response.data?.Message || 'An error occurred';
-            return new Error(message);
-        } else if (error.request) {
-            return new Error('Network error - please check your connection');
-        } else {
-            return new Error(error.message || 'An unexpected error occurred');
+            console.error('❌ [AuthService] Token refresh failed');
+            throw error;
         }
     }
-};
 
-export { authService };
-export default authService;
+    extractUserIdFromToken(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.sub || payload.userId || payload.nameid || payload.id;
+        } catch (error) {
+            console.error('❌ [AuthService] Failed to extract userId from token');
+            return null;
+        }
+    }
+
+    setTokens(accessToken, refreshToken) {
+        console.log('💾 [AuthService] Saving tokens');
+
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    getAccessToken() {
+        return localStorage.getItem('accessToken');
+    }
+
+    getRefreshToken() {
+        return localStorage. getItem('refreshToken');
+    }
+
+    getCurrentUser() {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                return JSON.parse(userStr);
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    isAuthenticated() {
+        return !!this.getAccessToken() && !!this.getRefreshToken();
+    }
+
+    logout() {
+        console.log('👋 [AuthService] Logging out.. .');
+
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('user');
+
+        delete apiClient.defaults.headers.common['Authorization'];
+    }
+}
+
+export const authService = new AuthService();

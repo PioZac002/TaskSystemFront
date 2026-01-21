@@ -19,22 +19,54 @@ import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Projects", url: "/projects", icon: FolderKanban },
-    { title: "Issues", url: "/issues", icon: ListTodo },
-    { title: "Board", url: "/board", icon: Trello },
-    { title: "Teams", url: "/teams", icon: Users },
-    { title: "Users", url: "/users", icon: UserCircle },
+    { title: "Projects", url: "/projects", icon:  FolderKanban },
+    { title: "Issues", url: "/issues", icon:  ListTodo },
+    { title: "Board", url: "/board", icon:  Trello },
+    { title: "Teams", url: "/teams", icon:  Users },
+    { title: "Users", url: "/users", icon:  UserCircle },
 ];
 
 export const TopBar = () => {
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // ✅ Pobierz user i loading z authStore
     const user = useAuthStore((state) => state.user);
+    const loading = useAuthStore((state) => state.loading);
     const logout = useAuthStore((state) => state.logout);
 
     const handleLogout = () => {
         logout();
         navigate("/login");
+    };
+
+    // ✅ Oblicz display name i inicjały z firstName/lastName
+    const getDisplayName = () => {
+        if (loading) return "Loading...";
+        if (!user) return "Guest";
+
+        // Backend zwraca: { firstName, lastName, email }
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+        return fullName || user.email || "User";
+    };
+
+    const getInitials = () => {
+        if (loading || !user) return "?";
+
+        const firstInitial = user.firstName?.[0] || '';
+        const lastInitial = user.lastName?.[0] || '';
+
+        if (firstInitial && lastInitial) {
+            return `${firstInitial}${lastInitial}`.toUpperCase();
+        }
+
+        // Fallback: pierwsze 2 litery email
+        return user.email?.substring(0, 2).toUpperCase() || "??";
+    };
+
+    const getEmail = () => {
+        if (loading) return "Loading...";
+        return user?.email || "No email";
     };
 
     return (
@@ -77,11 +109,15 @@ export const TopBar = () => {
                     {/* User Menu */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                            <Button
+                                variant="ghost"
+                                className="relative h-10 w-10 rounded-full"
+                                disabled={loading}
+                            >
                                 <Avatar className="h-10 w-10">
-                                    <AvatarImage src="" alt="User" />
+                                    <AvatarImage src={user?.avatarUrl || ""} alt={getDisplayName()} />
                                     <AvatarFallback className="bg-primary text-primary-foreground">
-                                        {user?.name?.substring(0, 2).toUpperCase() || "JD"}
+                                        {getInitials()}
                                     </AvatarFallback>
                                 </Avatar>
                             </Button>
@@ -89,16 +125,26 @@ export const TopBar = () => {
                         <DropdownMenuContent className="w-56 bg-popover" align="end">
                             <DropdownMenuLabel className="font-normal">
                                 <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none">{user?.name || "John Doe"}</p>
-                                    <p className="text-xs leading-none text-muted-foreground">{user?.email || "john@example.com"}</p>
+                                    <p className="text-sm font-medium leading-none">
+                                        {getDisplayName()}
+                                    </p>
+                                    <p className="text-xs leading-none text-muted-foreground">
+                                        {getEmail()}
+                                    </p>
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => navigate("/profile")}>
+                            <DropdownMenuItem
+                                onClick={() => navigate("/profile")}
+                                disabled={loading}
+                            >
                                 <Settings className="mr-2 h-4 w-4" />
                                 <span>Settings</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleLogout}>
+                            <DropdownMenuItem
+                                onClick={handleLogout}
+                                disabled={loading}
+                            >
                                 <LogOut className="mr-2 h-4 w-4" />
                                 <span>Log out</span>
                             </DropdownMenuItem>
@@ -110,7 +156,7 @@ export const TopBar = () => {
             {/* Mobile Navigation Menu - Dropdown from top */}
             <nav
                 className={cn(
-                    "md:hidden fixed top-16 left-0 right-0 z-40 bg-card border-b border-border shadow-lg transition-all duration-300 ease-in-out",
+                    "md: hidden fixed top-16 left-0 right-0 z-40 bg-card border-b border-border shadow-lg transition-all duration-300 ease-in-out",
                     mobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full pointer-events-none"
                 )}
                 aria-hidden={!mobileMenuOpen}
@@ -124,7 +170,7 @@ export const TopBar = () => {
                             className={({ isActive }) =>
                                 cn(
                                     "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-                                    "hover:bg-accent focus:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                                    "hover: bg-accent focus:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                                     isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground"
                                 )
                             }
