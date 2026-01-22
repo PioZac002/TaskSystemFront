@@ -142,18 +142,17 @@ export default function Dashboard() {
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={() => setCreateProjectOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
-                            New Project
+                            <span className="hidden sm:inline">New </span>Project
                         </Button>
                         <Button onClick={() => setCreateIssueOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
-                            New Issue
+                            <span className="hidden sm:inline">New </span>Issue
                         </Button>
                     </div>
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                    {stats.map((stat) => {
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{stats.map((stat) => {
                         const Icon = stat. icon;
                         return (
                             <Card key={stat. title} className="hover:shadow-lg transition-shadow">
@@ -198,7 +197,7 @@ export default function Dashboard() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="grid gap-6 md:grid-cols-3">
+                        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {recentProjects.map((project) => (
                                 <Card
                                     key={project. id}

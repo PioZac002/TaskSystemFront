@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import { Plus, MoreHorizontal, Clock, MessageSquare } from "lucide-react";
+import { Plus, MoreHorizontal } from "lucide-react";
 import {
     DndContext,
     DragOverlay,
@@ -13,7 +12,6 @@ import {
     useSensor,
     useSensors,
     closestCorners,
-    DragEndEvent,
 } from "@dnd-kit/core";
 
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -59,7 +57,7 @@ function TaskCard({ task, onClick }) {
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <Card 
                 className="group hover:shadow-lg transition-all duration-200 cursor-grab active:cursor-grabbing hover:scale-105 bg-gradient-to-br from-card to-card/80"
-                onClick={(e) => {
+                onClick={() => {
                     // Only trigger onClick if not dragging
                     if (!isDragging && onClick) {
                         onClick();
@@ -102,6 +100,7 @@ export default function Board() {
     const [activeTask, setActiveTask] = useState(null);
     const [selectedProjectId, setSelectedProjectId] = useState("");
     const [selectedIssueId, setSelectedIssueId] = useState(null);
+    const [activeColumnIndex, setActiveColumnIndex] = useState(0);
     
     const { issues, fetchIssues, updateIssueStatus } = useIssueStore();
     const { projects, fetchProjects } = useProjectStore();
@@ -211,7 +210,95 @@ export default function Board() {
                         onDragEnd={handleDragEnd}
                         collisionDetection={closestCorners}
                     >
-                        <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 h-full">
+                        {/* Mobile - Carousel */}
+                        <div className="md:hidden space-y-4">
+                            <div className="flex items-center justify-between">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setActiveColumnIndex(prev => Math.max(0, prev - 1))}
+                                    disabled={activeColumnIndex === 0}
+                                >
+                                    ← Prev
+                                </Button>
+                                <h2 className="text-lg font-semibold">{columns[activeColumnIndex].title}</h2>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setActiveColumnIndex(prev => Math.min(columns.length - 1, prev + 1))}
+                                    disabled={activeColumnIndex === columns.length - 1}
+                                >
+                                    Next →
+                                </Button>
+                            </div>
+                            {(() => {
+                                const column = columns[activeColumnIndex];
+                                const columnIssues = projectIssues.filter((issue) => issue.status === column.id);
+                                
+                                return (
+                                    <Card className="h-full flex flex-col border-border/50">
+                                        <CardHeader className="border-b border-border">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant={column.variant} className="rounded-full">
+                                                        {columnIssues.length}
+                                                    </Badge>
+                                                    <CardTitle className="text-base font-semibold">{column.title}</CardTitle>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="flex-1 overflow-y-auto p-3 space-y-3 max-h-[calc(100vh-20rem)]">
+                                            {columnIssues.map((task) => (
+                                                <Card 
+                                                    key={task.id}
+                                                    className="group hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 bg-gradient-to-br from-card to-card/80"
+                                                    onClick={() => setSelectedIssueId(task.id)}
+                                                >
+                                                    <CardContent className="p-4 space-y-3">
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <h3 className="font-semibold text-sm leading-tight group-hover:text-primary transition-colors">
+                                                                {task.title}
+                                                            </h3>
+                                                            <Badge
+                                                                variant={
+                                                                    task.priority === 'HIGH' ? 'destructive' :
+                                                                    task.priority === 'NORMAL' ? 'secondary' :
+                                                                    'outline'
+                                                                }
+                                                                className="text-xs shrink-0"
+                                                            >
+                                                                {task.priority}
+                                                            </Badge>
+                                                        </div>
+                                                        {task.description && (
+                                                            <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
+                                                        )}
+                                                        <div className="flex items-center justify-between pt-2 border-t border-border">
+                                                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                                <span className="font-mono">{task.key}</span>
+                                                                {task.assigneeId && (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <span>User #{task.assigneeId}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                            {columnIssues.length === 0 && (
+                                                <div className="text-center py-8 text-muted-foreground text-sm">
+                                                    No issues
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })()}
+                        </div>
+
+                        {/* Desktop - Grid with Drag & Drop */}
+                        <div className="hidden md:flex gap-4 md:gap-6 overflow-x-auto pb-4 h-full">
                             {columns.map((column) => {
                                 const columnIssues = projectIssues.filter((issue) => issue.status === column.id);
 

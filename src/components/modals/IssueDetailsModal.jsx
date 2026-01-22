@@ -172,7 +172,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[95vw] md:max-w-[650px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
                 {loading && ! issue ? (
                     <div className="py-12 text-center text-muted-foreground">
                         Loading...
@@ -254,7 +254,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                             <Separator />
 
                             {/* Status & Priority */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <Label>Status</Label>
                                     <Select
@@ -293,7 +293,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                             </div>
 
                             {/* Assignee & Team */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <Label>Assignee</Label>
                                     <Select
