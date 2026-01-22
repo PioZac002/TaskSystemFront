@@ -1,61 +1,30 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Textarea } from "@/components/ui/Textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
-import { Separator } from "@/components/ui/Separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCommentStore } from "@/store/commentStore";
 import { toast } from "sonner";
-import { Trash2, User, ArrowUpDown } from "lucide-react";
+import { Trash2, User } from "lucide-react";
 
 function formatDate(dateString) {
-    if (!dateString) return "Just now";
-    
-    try {
-        const date = new Date(dateString);
-        
-        // Check if date is valid
-        if (isNaN(date.getTime())) {
-            return "Invalid date";
-        }
-        
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-        
-        // Just now (< 1 min)
-        if (diffMins < 1) return "Just now";
-        
-        // Minutes ago (< 60 mins)
-        if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
-        
-        // Hours ago (< 24 hours)
-        if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
-        
-        // Days ago (< 7 days)
-        if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
-        
-        // Otherwise show full date
-        return date.toLocaleString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-    } catch (error) {
-        console.error('Error formatting date:', error);
-        return "Invalid date";
-    }
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleString("en-US", {
+        year:  "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
 }
 
 export function CommentSection({ issueId }) {
     const [newComment, setNewComment] = useState("");
     const [currentUserId, setCurrentUserId] = useState(null);
-    const [sortOrder, setSortOrder] = useState("newest"); // newest, oldest
+    const [sortOrder, setSortOrder] = useState("newest");
     const [filterUserId, setFilterUserId] = useState("all");
 
     const { comments, fetchCommentsByIssueId, createComment, deleteComment, loading } = useCommentStore();
@@ -65,39 +34,43 @@ export function CommentSection({ issueId }) {
             fetchCommentsByIssueId(issueId);
         }
 
-        // Pobierz userId z localStorage
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-            setCurrentUserId(Number(userId));
+        // ✅ Pobierz userId z localStorage
+        const storedUserId = localStorage.getItem('userId');
+        console.log('📌 Stored userId from localStorage:', storedUserId);
+
+        if (storedUserId) {
+            setCurrentUserId(Number(storedUserId));
+        } else {
+            console.warn('⚠️ No userId found in localStorage! ');
         }
     }, [issueId]);
 
     const handleAddComment = async () => {
         if (!newComment.trim()) {
-            toast.error("Comment cannot be empty");
+            toast. error("Comment cannot be empty");
             return;
         }
 
-        if (! currentUserId) {
+        if (!currentUserId) {
             toast.error("You must be logged in to comment");
+            console.error('❌ currentUserId is null!  localStorage userId:', localStorage.getItem('userId'));
             return;
         }
 
         try {
             await createComment({
-                issueId: Number(issueId),
+                issueId:  Number(issueId),
                 content: newComment. trim(),
-                authorId: currentUserId  // ← Z localStorage!
+                authorId: currentUserId
             });
 
             toast.success("Comment added successfully!");
             setNewComment("");
-
-            // Odśwież komentarze
             await fetchCommentsByIssueId(issueId);
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to add comment";
             toast.error(errorMessage);
+            console. error('Comment error:', error);
         }
     };
 
@@ -106,7 +79,7 @@ export function CommentSection({ issueId }) {
 
         try {
             await deleteComment(commentId);
-            toast. success("Comment deleted successfully!");
+            toast.success("Comment deleted successfully!");
             await fetchCommentsByIssueId(issueId);
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to delete comment";
@@ -117,28 +90,25 @@ export function CommentSection({ issueId }) {
     // Filtrowanie i sortowanie
     let filteredComments = [... comments];
 
-    // Filtruj po użytkowniku
     if (filterUserId !== "all") {
         filteredComments = filteredComments.filter(c => String(c.authorId) === filterUserId);
     }
 
-    // Sortuj
     filteredComments.sort((a, b) => {
         const dateA = new Date(a. createdAt);
         const dateB = new Date(b.createdAt);
         return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
     });
 
-    // Unikalni autorzy dla filtra
     const uniqueAuthors = [... new Set(comments.map(c => c.authorId))];
 
     return (
         <div className="space-y-4">
             {/* Filtry */}
             {comments.length > 0 && (
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                     <Select value={sortOrder} onValueChange={setSortOrder}>
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -148,7 +118,7 @@ export function CommentSection({ issueId }) {
                     </Select>
 
                     <Select value={filterUserId} onValueChange={setFilterUserId}>
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -163,14 +133,14 @@ export function CommentSection({ issueId }) {
                 </div>
             )}
 
-            {/* Formularz dodawania komentarza */}
+            {/* Formularz dodawania */}
             <Card className="bg-accent/50">
                 <CardContent className="pt-6">
                     <div className="space-y-3">
                         <Textarea
                             placeholder="Write a comment..."
                             value={newComment}
-                            onChange={(e) => setNewComment(e. target.value)}
+                            onChange={(e) => setNewComment(e.target.value)}
                             rows={3}
                             className="resize-none"
                         />
@@ -211,9 +181,7 @@ export function CommentSection({ issueId }) {
                 {!loading && filteredComments.length === 0 && comments.length > 0 && (
                     <Card className="bg-muted/30">
                         <CardContent className="py-8 text-center">
-                            <p className="text-muted-foreground">
-                                No comments match your filters
-                            </p>
+                            <p className="text-muted-foreground">No comments match your filters</p>
                         </CardContent>
                     </Card>
                 )}
