@@ -2,7 +2,7 @@ import apiClient from "./apiClient";
 
 class AuthService {
     constructor() {
-        console.log('🔧 [AuthService] Initializing.. .');
+        console.log('🔧 [AuthService] Initializing...');
     }
 
     async login(email, password) {
@@ -34,7 +34,7 @@ class AuthService {
                 return { accessToken, refreshToken, userId, user: userResponse.data };
             }
 
-            return { accessToken, refreshToken, userId: null, user: null };
+            return { accessToken, refreshToken, userId:  null, user: null };
         } catch (error) {
             console.error('❌ [AuthService] Login failed:', {
                 status: error.response?.status,
@@ -45,14 +45,31 @@ class AuthService {
     }
 
     async register(userData) {
-        console.log('📝 [AuthService] Attempting registration');
+        console.log('📝 [AuthService] Attempting registration with data:', {
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            email: userData.email,
+            slackUserId: userData.slackUserId
+        });
 
         try {
-            const response = await apiClient.post('/api/v1/register', userData);
+            const response = await apiClient.post('/api/v1/register', {
+                firstName:  userData.firstName,
+                lastName: userData.lastName,
+                email: userData.email,
+                password: userData.password,
+                slackUserId: userData.slackUserId
+            });
+
             console.log('✅ [AuthService] Registration successful');
-            return response. data;
+
+            // Po udanej rejestracji, automatycznie zaloguj użytkownika
+            return await this.login(userData.email, userData.password);
         } catch (error) {
-            console.error('❌ [AuthService] Registration failed');
+            console. error('❌ [AuthService] Registration failed:', {
+                status: error.response?.status,
+                message: error.response?.data?.Message || error.message
+            });
             throw error;
         }
     }
@@ -99,7 +116,7 @@ class AuthService {
         console.log('💾 [AuthService] Saving tokens');
 
         localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
+        localStorage. setItem('refreshToken', refreshToken);
 
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
     }
@@ -117,25 +134,19 @@ class AuthService {
         if (userStr) {
             try {
                 return JSON.parse(userStr);
-            } catch (e) {
+            } catch {
                 return null;
             }
         }
         return null;
     }
 
-    isAuthenticated() {
-        return !!this.getAccessToken() && !!this.getRefreshToken();
-    }
-
     logout() {
-        console.log('👋 [AuthService] Logging out.. .');
-
-        localStorage.removeItem('accessToken');
+        console.log('🚪 [AuthService] Logging out');
+        localStorage. removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        localStorage.removeItem('userId');
         localStorage.removeItem('user');
-
+        localStorage.removeItem('userId');
         delete apiClient.defaults.headers.common['Authorization'];
     }
 }

@@ -1,31 +1,46 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/Textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
+import { Separator } from "@/components/ui/Separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useCommentStore } from "@/store/commentStore";
+import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import { Trash2, User } from "lucide-react";
 
 function formatDate(dateString) {
     if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleString("en-US", {
-        year:  "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-    });
+
+    try {
+        const date = new Date(dateString);
+
+        if (isNaN(date.getTime())) {
+            return "Invalid date";
+        }
+
+        return date.toLocaleString("en-US", {
+            year:  "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return "Invalid date";
+    }
 }
 
 export function CommentSection({ issueId }) {
     const [newComment, setNewComment] = useState("");
-    const [currentUserId, setCurrentUserId] = useState(null);
     const [sortOrder, setSortOrder] = useState("newest");
     const [filterUserId, setFilterUserId] = useState("all");
+
+    // Pobierz userId z authStore zamiast localStorage
+    const user = useAuthStore((state) => state.user);
+    const currentUserId = user?.id || null;
 
     const { comments, fetchCommentsByIssueId, createComment, deleteComment, loading } = useCommentStore();
 
@@ -34,34 +49,61 @@ export function CommentSection({ issueId }) {
             fetchCommentsByIssueId(issueId);
         }
 
-        // ✅ Pobierz userId z localStorage
-        const storedUserId = localStorage.getItem('userId');
-        console.log('📌 Stored userId from localStorage:', storedUserId);
-
-        if (storedUserId) {
-            setCurrentUserId(Number(storedUserId));
-        } else {
-            console.warn('⚠️ No userId found in localStorage! ');
-        }
-    }, [issueId]);
+        // Debug log
+        console.log('🔍 [CommentSection] Current user:', {
+            user,
+            currentUserId,
+            issueId
+        });
+    }, [issueId, fetchCommentsByIssueId, user, currentUserId]);
 
     const handleAddComment = async () => {
         if (!newComment.trim()) {
-            toast. error("Comment cannot be empty");
+            toast.error("Comment cannot be empty");
             return;
         }
 
-        if (!currentUserId) {
-            toast.error("You must be logged in to comment");
-            console.error('❌ currentUserId is null!  localStorage userId:', localStorage.getItem('userId'));
+        // Spróbuj pobrać userId z różnych źródeł
+        let authorId = currentUserId;
+
+        if (!authorId) {
+            // Fallback 1: localStorage userId
+            const storedUserId = localStorage.getItem('userId');
+            if (storedUserId) {
+                authorId = Number(storedUserId);
+            }
+        }
+
+        if (! authorId) {
+            // Fallback 2: user object z localStorage
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                try {
+                    const userObj = JSON.parse(userStr);
+                    authorId = userObj.id;
+                } catch (e) {
+                    console.error('Error parsing user:', e);
+                }
+            }
+        }
+
+        if (!authorId) {
+            toast.error("Unable to identify user.  Please try logging in again.");
+            console.error('❌ Cannot add comment - no valid authorId found');
             return;
         }
+
+        console.log('📤 [CommentSection] Sending comment:', {
+            issueId:  Number(issueId),
+            content: newComment. trim(),
+            authorId
+        });
 
         try {
             await createComment({
-                issueId:  Number(issueId),
-                content: newComment. trim(),
-                authorId: currentUserId
+                issueId: Number(issueId),
+                content: newComment.trim(),
+                authorId:  Number(authorId)
             });
 
             toast.success("Comment added successfully!");
@@ -69,8 +111,12 @@ export function CommentSection({ issueId }) {
             await fetchCommentsByIssueId(issueId);
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to add comment";
+            console.error('❌ [CommentSection] Failed to add comment:', {
+                error,
+                response: error.response?. data,
+                status: error.response?.status
+            });
             toast.error(errorMessage);
-            console. error('Comment error:', error);
         }
     };
 
@@ -94,7 +140,7 @@ export function CommentSection({ issueId }) {
         filteredComments = filteredComments.filter(c => String(c.authorId) === filterUserId);
     }
 
-    filteredComments.sort((a, b) => {
+    filteredComments. sort((a, b) => {
         const dateA = new Date(a. createdAt);
         const dateB = new Date(b.createdAt);
         return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
@@ -143,16 +189,14 @@ export function CommentSection({ issueId }) {
                             onChange={(e) => setNewComment(e.target.value)}
                             rows={3}
                             className="resize-none"
+                            disabled={loading}
                         />
-                        <div className="flex justify-between items-center">
-                            <p className="text-xs text-muted-foreground">
-                                {currentUserId ? `Posting as User #${currentUserId}` : 'Not logged in'}
-                            </p>
+                        <div className="flex justify-end items-center">
                             <Button
                                 onClick={handleAddComment}
-                                disabled={loading || !newComment.trim() || !currentUserId}
+                                disabled={loading || !newComment.trim()}
                             >
-                                Add Comment
+                                {loading ? "Adding..." : "Add Comment"}
                             </Button>
                         </div>
                     </div>
@@ -163,7 +207,7 @@ export function CommentSection({ issueId }) {
             <div className="space-y-3">
                 {loading && comments.length === 0 && (
                     <div className="text-center py-8">
-                        <p className="text-muted-foreground">Loading comments...</p>
+                        <p className="text-muted-foreground">Loading comments... </p>
                     </div>
                 )}
 
