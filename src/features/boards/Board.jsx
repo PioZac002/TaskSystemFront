@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import { Plus, MoreHorizontal, Clock, MessageSquare } from "lucide-react";
+import { Plus, MoreHorizontal } from "lucide-react";
 import {
     DndContext,
     DragOverlay,
@@ -13,7 +12,6 @@ import {
     useSensor,
     useSensors,
     closestCorners,
-    DragEndEvent,
 } from "@dnd-kit/core";
 
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -59,7 +57,7 @@ function TaskCard({ task, onClick }) {
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <Card 
                 className="group hover:shadow-lg transition-all duration-200 cursor-grab active:cursor-grabbing hover:scale-105 bg-gradient-to-br from-card to-card/80"
-                onClick={(e) => {
+                onClick={() => {
                     // Only trigger onClick if not dragging
                     if (!isDragging && onClick) {
                         onClick();
