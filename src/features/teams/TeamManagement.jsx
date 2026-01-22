@@ -116,13 +116,13 @@ export default function TeamManagement() {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button onClick={() => setCreateTeamModalOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Create </span>Team
+                        <Button onClick={() => setCreateTeamModalOpen(true)} className="md:px-4 px-2">
+                            <Plus className="h-5 w-5 md:mr-2" />
+                            <span className="hidden md:inline">Create Team</span>
                         </Button>
-                        <Button variant="outline" onClick={() => setAddUserModalOpen(true)}>
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Add </span>User
+                        <Button variant="outline" onClick={() => setAddUserModalOpen(true)} className="md:px-4 px-2">
+                            <UserPlus className="h-5 w-5 md:mr-2" />
+                            <span className="hidden md:inline">Add User</span>
                         </Button>
                     </div>
                 </div>
@@ -191,14 +191,14 @@ export default function TeamManagement() {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="flex-1"
+                                                className="flex-1 md:px-4 px-2"
                                                 onClick={() => {
                                                     setManagingTeamId(team.id);
                                                     setManageTeamModalOpen(true);
                                                 }}
                                             >
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Manage
+                                                <Edit className="h-5 w-5 md:mr-2" />
+                                                <span className="hidden md:inline">Manage</span>
                                             </Button>
                                         </div>
                                     </CardContent>
@@ -211,7 +211,7 @@ export default function TeamManagement() {
 
             {/* Create Team Modal */}
             <Dialog open={createTeamModalOpen} onOpenChange={setCreateTeamModalOpen}>
-                <DialogContent>
+                <DialogContent className="w-[95vw] max-w-md sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Create New Team</DialogTitle>
                         <DialogDescription>
@@ -249,7 +249,7 @@ export default function TeamManagement() {
 
             {/* Add User to Team Modal */}
             <Dialog open={addUserModalOpen} onOpenChange={setAddUserModalOpen}>
-                <DialogContent>
+                <DialogContent className="w-[95vw] max-w-md sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Add User to Team</DialogTitle>
                         <DialogDescription>
@@ -318,7 +318,7 @@ export default function TeamManagement() {
 
             {/* Manage Team Modal */}
             <Dialog open={manageTeamModalOpen} onOpenChange={setManageTeamModalOpen}>
-                <DialogContent className="sm:max-w-[95vw] md:max-w-[600px]">
+                <DialogContent className="w-[95vw] max-w-md sm:max-w-[500px] md:max-w-[550px]">
                     <DialogHeader>
                         <DialogTitle>Manage Team: {managingTeam?.name}</DialogTitle>
                         <DialogDescription>
