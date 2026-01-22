@@ -133,9 +133,52 @@ export default function UserManagement() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <Card>
-                        <CardContent className="p-0">
-                            <Table>
+                    <>
+                        {/* Mobile - Cards */}
+                        <div className="md:hidden space-y-3">
+                            {sortedUsers.map(user => (
+                                <Card key={user.id}>
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-10 w-10 bg-primary/10">
+                                                <AvatarFallback className="bg-primary/20 text-primary font-semibold">
+                                                    {getInitials(user.firstName, user.lastName)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-semibold truncate">
+                                                    {user.firstName || "N/A"} {user.lastName || ""}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground truncate">
+                                                    {user.email || "No email"}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="secondary">
+                                                    {user.role || "User"}
+                                                </Badge>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDeleteUser(
+                                                        user.id,
+                                                        `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || `User #${user.id}`
+                                                    )}
+                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {/* Desktop - Table */}
+                        <Card className="hidden md:block">
+                            <CardContent className="p-0">
+                                <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="w-[80px]">Avatar</TableHead>
@@ -232,6 +275,7 @@ export default function UserManagement() {
                             </Table>
                         </CardContent>
                     </Card>
+                    </>
                 )}
             </div>
         </AppLayout>

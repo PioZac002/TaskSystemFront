@@ -118,11 +118,11 @@ export default function TeamManagement() {
                     <div className="flex gap-2">
                         <Button onClick={() => setCreateTeamModalOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
-                            New Team
+                            <span className="hidden sm:inline">Create </span>Team
                         </Button>
                         <Button variant="outline" onClick={() => setAddUserModalOpen(true)}>
                             <UserPlus className="mr-2 h-4 w-4" />
-                            Add User to Team
+                            <span className="hidden sm:inline">Add </span>User
                         </Button>
                     </div>
                 </div>
@@ -145,7 +145,7 @@ export default function TeamManagement() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {teams.map((team) => (
                                 <Card key={team.id} className="hover:shadow-lg transition-shadow">
                                     <CardHeader>
@@ -318,7 +318,7 @@ export default function TeamManagement() {
 
             {/* Manage Team Modal */}
             <Dialog open={manageTeamModalOpen} onOpenChange={setManageTeamModalOpen}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="sm:max-w-[95vw] md:max-w-[600px]">
                     <DialogHeader>
                         <DialogTitle>Manage Team: {managingTeam?.name}</DialogTitle>
                         <DialogDescription>

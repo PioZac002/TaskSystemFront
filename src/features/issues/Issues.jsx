@@ -76,7 +76,7 @@ export default function Issues() {
                     </div>
                     <Button onClick={() => setCreateModalOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Create Issue
+                        <span className="hidden sm:inline">Create </span>Issue
                     </Button>
                 </div>
 
@@ -98,9 +98,9 @@ export default function Issues() {
                             </div>
 
                             {/* Filter Row */}
-                            <div className="flex flex-col md:flex-row gap-3">
+                            <div className="flex flex-col sm:flex-row gap-3">
                                 <Select value={projectFilter} onValueChange={setProjectFilter}>
-                                    <SelectTrigger className="w-full md:w-[200px]">
+                                    <SelectTrigger className="w-full sm:w-[200px]">
                                         <SelectValue placeholder="All Projects" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -114,7 +114,7 @@ export default function Issues() {
                                 </Select>
 
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectTrigger className="w-full sm:w-[180px]">
                                         <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -126,7 +126,7 @@ export default function Issues() {
                                 </Select>
 
                                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                                    <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectTrigger className="w-full sm:w-[180px]">
                                         <SelectValue placeholder="Priority" />
                                     </SelectTrigger>
                                     <SelectContent>

@@ -68,7 +68,7 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-[95vw] md:max-w-[700px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
                     {loading ?  (
                         <div className="py-12 text-center text-muted-foreground">
                             Loading project details...
@@ -78,7 +78,7 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
                             <DialogHeader>
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
-                                        <DialogTitle className="text-3xl font-mono">
+                                        <DialogTitle className="text-2xl md:text-3xl font-mono break-words">
                                             {project.shortName}
                                         </DialogTitle>
                                         <DialogDescription className="mt-2 text-base">
@@ -210,7 +210,7 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
                                                                     <span className="font-mono text-xs text-muted-foreground font-semibold">
                                                                         {issue.key}
                                                                     </span>
-                                                                    <span className="font-medium truncate">{issue.title}</span>
+                                                                    <span className="font-medium truncate line-clamp-1">{issue.title}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2 flex-wrap">
                                                                     <Badge

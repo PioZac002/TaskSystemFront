@@ -73,7 +73,7 @@ export default function Projects() {
                     </div>
                     <Button onClick={() => setCreateModalOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Create Project
+                        <span className="hidden sm:inline">Create </span>Project
                     </Button>
                 </div>
 
@@ -130,7 +130,7 @@ export default function Projects() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {filteredProjects.map(project => (
                             <Card
                                 key={project.id}
