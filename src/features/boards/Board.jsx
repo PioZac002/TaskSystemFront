@@ -9,7 +9,7 @@ import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 
