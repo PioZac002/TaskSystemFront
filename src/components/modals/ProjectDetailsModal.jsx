@@ -1,25 +1,23 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/Dialog";
-import { Badge } from "@/components/ui/Badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Dialog";
 import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { Separator } from "@/components/ui/Separator";
-import { Button } from "@/components/ui/Button";
-import { IssueDetailsModal } from "./IssueDetailsModal";
-import { CreateIssueModal } from "./CreateIssueModal";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, AlertCircle, ListTodo, ExternalLink, Plus } from "lucide-react";
+import { Plus, ExternalLink, ListTodo, CheckCircle2, Clock, AlertCircle, Calendar, FolderKanban } from "lucide-react";
+import { IssueDetailsModal } from "./IssueDetailsModal";
+import { CreateIssueModal } from "./CreateIssueModal";
 
 function formatDate(dateString) {
-    if (!dateString) return "N/A";
+    if (!dateString) return "No date";
     const date = new Date(dateString);
-    return date.toLocaleString("en-US", {
-        year: "numeric",
-        month:  "short",
+    return date.toLocaleDateString("en-US", {
+        month: "short",
         day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
+        year: "numeric"
     });
 }
 
@@ -51,208 +49,315 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
 
     if (!project && !loading) return null;
 
-    // Oblicz statystyki
     const issues = project?.issues || [];
-    const totalIssues = issues.length;
-    const doneIssues = issues. filter(i => i.status === 'DONE').length;
-    const inProgressIssues = issues.filter(i => i.status === 'IN_PROGRESS').length;
-    const reviewIssues = issues.filter(i => i.status === 'REVIEW').length;
-    const todoIssues = issues.filter(i => i.status === 'NEW').length;
-    const progress = totalIssues > 0 ?  Math.round((doneIssues / totalIssues) * 100) : 0;
+    const todoIssues = issues.filter(i => i.status === 'NEW');
+    const inProgressIssues = issues.filter(i => i.status === 'IN_PROGRESS');
+    const doneIssues = issues.filter(i => i.status === 'DONE');
 
-    // Grupuj po priorytecie
-    const highPriorityIssues = issues.filter(i => i.priority === 'HIGH').length;
-    const normalPriorityIssues = issues.filter(i => i. priority === 'NORMAL').length;
-    const lowPriorityIssues = issues.filter(i => i. priority === 'LOW').length;
+    const highPriorityIssues = issues.filter(i => i.priority === 'HIGH');
+    const normalPriorityIssues = issues.filter(i => i.priority === 'NORMAL');
+    const lowPriorityIssues = issues.filter(i => i.priority === 'LOW');
+
+    const completionRate = issues.length > 0
+        ? Math.round((doneIssues.length / issues.length) * 100)
+        : 0;
 
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[95vw] md:max-w-[700px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-                    {loading ?  (
+                <DialogContent className="max-w-[95vw] w-full md:max-w-[1400px] h-[95vh] overflow-hidden p-0 flex flex-col">
+                    {loading && !project ? (
                         <div className="py-12 text-center text-muted-foreground">
-                            Loading project details...
+                            Loading...
                         </div>
                     ) : (
                         <>
-                            <DialogHeader>
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <DialogTitle className="text-2xl md:text-3xl font-mono break-words">
+                            {/* Header - Sticky */}
+                            <div className="shrink-0 bg-background border-b px-4 md:px-6 py-3 md:py-4">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 md:gap-3 mb-2">
+                                            <FolderKanban className="h-4 md:h-5 w-4 md:w-5 text-primary" />
+                                            <span className="text-xs md:text-sm font-mono text-muted-foreground">
+                                                {project.shortName}
+                                            </span>
+                                        </div>
+                                        <DialogTitle className="text-lg md:text-2xl font-bold">
                                             {project.shortName}
                                         </DialogTitle>
-                                        <DialogDescription className="mt-2 text-base">
-                                            {project.description || "No description provided"}
-                                        </DialogDescription>
+                                        {project.description && (
+                                            <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
+                                                {project.description}
+                                            </p>
+                                        )}
                                     </div>
-                                    <Badge
-                                        variant={progress === 100 ? "default" : "secondary"}
-                                        className={`${progress === 100 ? "bg-green-500" : ""} text-lg px-3 py-1`}
-                                    >
-                                        {progress}%
-                                    </Badge>
+                                    <Button onClick={() => setCreateIssueOpen(true)} size="sm" className="shrink-0">
+                                        <Plus className="h-4 w-4 md:mr-2" />
+                                        <span className="hidden md:inline">Add Issue</span>
+                                    </Button>
                                 </div>
-                            </DialogHeader>
+                            </div>
 
-                            <div className="space-y-6">
-                                {/* Progress Bar */}
-                                <div className="bg-accent/30 p-4 rounded-lg">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm font-semibold">Overall Progress</span>
-                                        <span className="text-sm font-bold text-primary">{progress}%</span>
-                                    </div>
-                                    <Progress value={progress} className="h-3" />
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                        {doneIssues} of {totalIssues} issues completed
-                                    </p>
-                                </div>
-
-                                {/* Stats Grid */}
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <Card className="bg-green-50 dark:bg-green-950 border-green-200 dark: border-green-800">
-                                        <CardContent className="p-4">
-                                            <div className="flex flex-col items-center text-center">
-                                                <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400 mb-2" />
-                                                <p className="text-2xl font-bold text-green-700 dark:text-green-300">{doneIssues}</p>
-                                                <p className="text-xs text-green-600 dark:text-green-400">Done</p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-
-                                    <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                                        <CardContent className="p-4">
-                                            <div className="flex flex-col items-center text-center">
-                                                <Clock className="h-8 w-8 text-blue-600 dark:text-blue-400 mb-2" />
-                                                <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{inProgressIssues}</p>
-                                                <p className="text-xs text-blue-600 dark:text-blue-400">In Progress</p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-
-                                    <Card className="bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800">
-                                        <CardContent className="p-4">
-                                            <div className="flex flex-col items-center text-center">
-                                                <ListTodo className="h-8 w-8 text-purple-600 dark:text-purple-400 mb-2" />
-                                                <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{reviewIssues}</p>
-                                                <p className="text-xs text-purple-600 dark:text-purple-400">Review</p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-
-                                    <Card className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                                        <CardContent className="p-4">
-                                            <div className="flex flex-col items-center text-center">
-                                                <AlertCircle className="h-8 w-8 text-gray-600 dark:text-gray-400 mb-2" />
-                                                <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">{todoIssues}</p>
-                                                <p className="text-xs text-gray-600 dark:text-gray-400">To Do</p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-
-                                {/* Priority Breakdown */}
-                                <div className="bg-muted/50 p-4 rounded-lg">
-                                    <h3 className="font-semibold mb-3">Priority Breakdown</h3>
-                                    <div className="flex gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="destructive">{highPriorityIssues}</Badge>
-                                            <span className="text-sm text-muted-foreground">High</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="secondary">{normalPriorityIssues}</Badge>
-                                            <span className="text-sm text-muted-foreground">Normal</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="outline">{lowPriorityIssues}</Badge>
-                                            <span className="text-sm text-muted-foreground">Low</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Issues List */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-3">
-                                        <h3 className="font-semibold">
-                                            Issues ({totalIssues})
-                                        </h3>
-                                        <Button 
-                                            size="sm" 
-                                            onClick={() => setCreateIssueOpen(true)}
-                                            variant="outline"
-                                        >
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Add Issue
-                                        </Button>
-                                    </div>
-                                    {issues.length === 0 ?  (
-                                        <Card className="bg-muted/30">
-                                            <CardContent className="py-12 text-center">
-                                                <ListTodo className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-                                                <p className="text-muted-foreground">
-                                                    No issues in this project yet
-                                                </p>
+                            {/* Content - Scrollable */}
+                            <div className="flex-1 overflow-y-auto">
+                                {/* Mobile: Single Column, Desktop: Two Columns */}
+                                <div className="md:flex md:min-h-full">
+                                    {/* Main Content */}
+                                    <div className="flex-1 px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
+                                        {/* Progress Overview */}
+                                        <Card>
+                                            <CardContent className="p-4 md:pt-6">
+                                                <div className="space-y-3 md:space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <h3 className="text-base md:text-lg font-semibold">Project Progress</h3>
+                                                        <span className="text-xl md:text-2xl font-bold text-primary">
+                                                            {completionRate}%
+                                                        </span>
+                                                    </div>
+                                                    <Progress value={completionRate} className="h-2 md:h-3" />
+                                                    <div className="grid grid-cols-3 gap-2 md:gap-4 pt-2">
+                                                        <div className="text-center">
+                                                            <div className="text-lg md:text-2xl font-bold text-muted-foreground">
+                                                                {todoIssues.length}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">To Do</div>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <div className="text-lg md:text-2xl font-bold text-blue-600">
+                                                                {inProgressIssues.length}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">In Progress</div>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <div className="text-lg md:text-2xl font-bold text-green-600">
+                                                                {doneIssues.length}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">Done</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </CardContent>
                                         </Card>
-                                    ) : (
-                                        <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                                            {issues.map(issue => (
-                                                <Card
-                                                    key={issue.id}
-                                                    className="hover:bg-accent cursor-pointer transition-colors"
-                                                    onClick={() => setSelectedIssueId(issue.id)}
-                                                >
-                                                    <CardContent className="p-3">
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <span className="font-mono text-xs text-muted-foreground font-semibold">
-                                                                        {issue.key}
-                                                                    </span>
-                                                                    <span className="font-medium truncate line-clamp-1">{issue.title}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-2 flex-wrap">
-                                                                    <Badge
-                                                                        variant={issue.status === 'DONE' ? 'default' : 'secondary'}
-                                                                        className={`text-xs ${
-                                                                            issue.status === 'DONE' ?  'bg-green-500' :
-                                                                                issue. status === 'IN_PROGRESS' ? 'bg-blue-500' :
-                                                                                    issue.status === 'REVIEW' ? 'bg-purple-500' :
-                                                                                        'bg-gray-500'
-                                                                        }`}
-                                                                    >
-                                                                        {issue. status === 'NEW' ? 'To Do' :
-                                                                            issue.status === 'IN_PROGRESS' ? 'In Progress' :
-                                                                                issue.status}
-                                                                    </Badge>
-                                                                    <Badge
-                                                                        variant={
-                                                                            issue.priority === 'HIGH' ? 'destructive' :
-                                                                                issue.priority === 'NORMAL' ? 'secondary' :
-                                                                                    'outline'
-                                                                        }
-                                                                        className="text-xs"
-                                                                    >
-                                                                        {issue.priority}
-                                                                    </Badge>
-                                                                </div>
-                                                            </div>
-                                                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+
+                                        {/* Mobile: Stats Cards */}
+                                        <div className="grid grid-cols-2 gap-3 md:hidden">
+                                            <Card>
+                                                <CardContent className="p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <AlertCircle className="h-4 w-4 text-red-500" />
+                                                        <div className="flex-1">
+                                                            <p className="text-xs text-muted-foreground">High</p>
+                                                            <p className="text-lg font-bold">{highPriorityIssues.length}</p>
                                                         </div>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                            <Card>
+                                                <CardContent className="p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <AlertCircle className="h-4 w-4 text-yellow-500" />
+                                                        <div className="flex-1">
+                                                            <p className="text-xs text-muted-foreground">Normal</p>
+                                                            <p className="text-lg font-bold">{normalPriorityIssues.length}</p>
+                                                        </div>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+
+                                        <Separator className="md:my-6" />
+
+                                        {/* Issues List */}
+                                        <div>
+                                            <div className="flex items-center justify-between mb-3 md:mb-4">
+                                                <h3 className="text-base md:text-lg font-semibold">
+                                                    Issues ({issues.length})
+                                                </h3>
+                                            </div>
+
+                                            {issues.length === 0 ? (
+                                                <Card className="bg-muted/30">
+                                                    <CardContent className="py-8 md:py-12 text-center">
+                                                        <ListTodo className="mx-auto h-10 md:h-12 w-10 md:w-12 text-muted-foreground mb-3" />
+                                                        <p className="text-sm text-muted-foreground mb-3">
+                                                            No issues in this project yet
+                                                        </p>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => setCreateIssueOpen(true)}
+                                                        >
+                                                            <Plus className="mr-2 h-4 w-4" />
+                                                            Create First Issue
+                                                        </Button>
                                                     </CardContent>
                                                 </Card>
-                                            ))}
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {issues.map(issue => (
+                                                        <Card
+                                                            key={issue.id}
+                                                            className="hover:bg-accent cursor-pointer transition-all hover:shadow-md"
+                                                            onClick={() => setSelectedIssueId(issue.id)}
+                                                        >
+                                                            <CardContent className="p-3 md:p-4">
+                                                                <div className="flex items-start justify-between gap-3 md:gap-4">
+                                                                    <div className="flex-1 min-w-0 space-y-1 md:space-y-2">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="font-mono text-xs text-muted-foreground font-semibold">
+                                                                                {issue.key}
+                                                                            </span>
+                                                                            <h4 className="font-medium truncate text-sm md:text-base">
+                                                                                {issue.title}
+                                                                            </h4>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                                            <Badge
+                                                                                variant={
+                                                                                    issue.status === 'DONE' ? 'default' :
+                                                                                        issue.status === 'IN_PROGRESS' ? 'secondary' :
+                                                                                            'outline'
+                                                                                }
+                                                                                className="text-xs"
+                                                                            >
+                                                                                {issue.status === 'NEW' ? 'To Do' :
+                                                                                    issue.status === 'IN_PROGRESS' ? 'In Progress' :
+                                                                                        'Done'}
+                                                                            </Badge>
+                                                                            <Badge
+                                                                                variant={
+                                                                                    issue.priority === 'HIGH' ? 'destructive' :
+                                                                                        issue.priority === 'NORMAL' ? 'secondary' :
+                                                                                            'outline'
+                                                                                }
+                                                                                className="text-xs"
+                                                                            >
+                                                                                {issue.priority}
+                                                                            </Badge>
+                                                                        </div>
+                                                                    </div>
+                                                                    <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
 
-                                <Separator />
+                                    {/* Desktop Sidebar - Hidden on Mobile */}
+                                    <div className="hidden md:block w-[380px] border-l bg-muted/20 px-6 py-6">
+                                        <div className="space-y-6">
+                                            {/* Statistics Cards */}
+                                            <div>
+                                                <h3 className="text-sm font-semibold mb-3 text-muted-foreground">
+                                                    Statistics
+                                                </h3>
+                                                <div className="space-y-3">
+                                                    <Card>
+                                                        <CardContent className="p-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="p-2 rounded-lg bg-primary/10">
+                                                                    <ListTodo className="h-4 w-4 text-primary" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-xs text-muted-foreground">Total Issues</p>
+                                                                    <p className="text-lg font-bold">{issues.length}</p>
+                                                                </div>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
 
-                                {/* Metadata */}
-                                <div className="text-sm text-muted-foreground space-y-1">
-                                    <p><strong>Project ID:</strong> {project.id}</p>
-                                    <p><strong>Created:</strong> {formatDate(project.createdAt)}</p>
+                                                    <Card>
+                                                        <CardContent className="p-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="p-2 rounded-lg bg-green-500/10">
+                                                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-xs text-muted-foreground">Completed</p>
+                                                                    <p className="text-lg font-bold">{doneIssues.length}</p>
+                                                                </div>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+
+                                                    <Card>
+                                                        <CardContent className="p-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="p-2 rounded-lg bg-blue-500/10">
+                                                                    <Clock className="h-4 w-4 text-blue-600" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-xs text-muted-foreground">In Progress</p>
+                                                                    <p className="text-lg font-bold">{inProgressIssues.length}</p>
+                                                                </div>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                </div>
+                                            </div>
+
+                                            <Separator />
+
+                                            {/* Priority Breakdown */}
+                                            <div>
+                                                <h3 className="text-sm font-semibold mb-3 text-muted-foreground">
+                                                    Priority Breakdown
+                                                </h3>
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <AlertCircle className="h-4 w-4 text-red-500" />
+                                                            <span>High</span>
+                                                        </div>
+                                                        <span className="font-semibold">{highPriorityIssues.length}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <AlertCircle className="h-4 w-4 text-yellow-500" />
+                                                            <span>Normal</span>
+                                                        </div>
+                                                        <span className="font-semibold">{normalPriorityIssues.length}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <AlertCircle className="h-4 w-4 text-gray-500" />
+                                                            <span>Low</span>
+                                                        </div>
+                                                        <span className="font-semibold">{lowPriorityIssues.length}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <Separator />
+
+                                            {/* Project Details */}
+                                            <div>
+                                                <h3 className="text-sm font-semibold mb-3 text-muted-foreground">
+                                                    Project Details
+                                                </h3>
+                                                <div className="space-y-3 text-sm">
+                                                    <div>
+                                                        <p className="text-muted-foreground mb-1">Project Key</p>
+                                                        <p className="font-mono font-semibold">{project.shortName}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-muted-foreground mb-1 flex items-center gap-2">
+                                                            <Calendar className="h-4 w-4" />
+                                                            Created
+                                                        </p>
+                                                        <p>{formatDate(project.createdAt)}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-muted-foreground mb-1">Project ID</p>
+                                                        <p className="font-mono text-xs">{project.id}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </>
@@ -260,9 +365,9 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
                 </DialogContent>
             </Dialog>
 
-            {/* Nested Issue Details Modal */}
+            {/* Nested Modals */}
             <IssueDetailsModal
-                open={!! selectedIssueId}
+                open={!!selectedIssueId}
                 onOpenChange={() => setSelectedIssueId(null)}
                 issueId={selectedIssueId}
                 onIssueDeleted={() => {
@@ -276,7 +381,6 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
                 }}
             />
 
-            {/* Create Issue Modal */}
             <CreateIssueModal
                 open={createIssueOpen}
                 onOpenChange={setCreateIssueOpen}
