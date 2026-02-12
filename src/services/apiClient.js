@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { storageService } from './storageService';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://vfedora1.tail7fa028.ts. net: 6901';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'komuna.site:6901';
 
 const apiClient = axios. create({
     baseURL: API_BASE_URL,
