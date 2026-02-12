@@ -14,7 +14,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/Dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 const navItems = [
