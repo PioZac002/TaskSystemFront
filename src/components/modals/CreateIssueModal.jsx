@@ -13,6 +13,15 @@ import { useAuthStore } from "@/store/authStore";  // ✅ Import authStore
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 
+/**
+ * CreateIssueModal component for creating new issues
+ * 
+ * @param {Object} props
+ * @param {boolean} props.open - Whether the modal is open
+ * @param {Function} props.onOpenChange - Callback when modal open state changes
+ * @param {number|null} props.preSelectedProjectId - Optional project ID to pre-select
+ * @param {Function} props.onIssueCreated - Optional callback called after issue is successfully created
+ */
 export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = null, onIssueCreated }) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");

@@ -133,7 +133,7 @@ export function CommentSection({ issueId }) {
 
             toast.success("Comment added successfully!");
             setNewComment("");
-            // Don't refetch - the store already updates with the response
+            // Don't refetch - the commentStore.createComment already appends the response to comments array (see commentStore.js line 25)
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to add comment";
             console.error('❌ [CommentSection] Failed to add comment:', {
@@ -153,7 +153,7 @@ export function CommentSection({ issueId }) {
         try {
             await deleteComment(commentId);
             toast.success("Comment deleted successfully!");
-            // Don't refetch - the store already updates
+            // Don't refetch - the commentStore.deleteComment already filters out the deleted comment (see commentStore.js line 41)
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to delete comment";
             toast.error(errorMessage);
