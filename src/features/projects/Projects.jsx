@@ -25,9 +25,9 @@ export default function Projects() {
 
     // Oblicz progress dla każdego projektu
     const projectsWithProgress = projects.map(project => {
-        const projectIssues = issues.filter(i => i.projectId === project. id);
-        const doneIssues = projectIssues. filter(i => i.status === 'DONE');
-        const inProgressIssues = projectIssues.filter(i => i. status === 'IN_PROGRESS');
+        const projectIssues = issues.filter(i => i.projectId === project.id);
+        const doneIssues = projectIssues.filter(i => i.status === 'DONE');
+        const inProgressIssues = projectIssues.filter(i => i.status === 'IN_PROGRESS');
         const todoIssues = projectIssues.filter(i => i.status === 'NEW');
         
         // Priority breakdown
@@ -36,11 +36,11 @@ export default function Projects() {
         const lowPriority = projectIssues.filter(i => i.priority === 'LOW').length;
         
         const progress = projectIssues.length > 0
-            ? Math.round((doneIssues.length / projectIssues. length) * 100)
+            ? Math.round((doneIssues.length / projectIssues.length) * 100)
             : 0;
 
         return {
-            ... project,
+            ...project,
             totalIssues: projectIssues.length,
             doneIssues: doneIssues.length,
             inProgressIssues: inProgressIssues.length,
@@ -54,7 +54,7 @@ export default function Projects() {
 
     // Filtrowanie
     const filteredProjects = projectsWithProgress.filter(project =>
-        (project.shortName?. toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+        (project.shortName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
         (project.description?.toLowerCase() || "").includes(searchTerm.toLowerCase())
     );
 
@@ -71,9 +71,10 @@ export default function Projects() {
                             Manage your project portfolio • {filteredProjects.length} of {projects.length} projects
                         </p>
                     </div>
-                    <Button onClick={() => setCreateModalOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">Create </span>Project
+                    <Button onClick={() => setCreateModalOpen(true)} className="shrink-0">
+                        <Plus className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Create Project</span>
+                        <span className="sm:hidden">P</span>
                     </Button>
                 </div>
 

@@ -74,16 +74,17 @@ export default function Issues() {
                             Manage and track all your tasks • {filteredIssues.length} of {issues.length} issues
                         </p>
                     </div>
-                    <Button onClick={() => setCreateModalOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">Create </span>Issue
+                    <Button onClick={() => setCreateModalOpen(true)} className="shrink-0">
+                        <Plus className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Create Issue</span>
+                        <span className="sm:hidden">I</span>
                     </Button>
                 </div>
 
                 {/* Filters */}
                 <Card>
                     <CardContent className="pt-6">
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-4 max-w-full overflow-hidden">
                             {/* Search Bar */}
                             <div className="flex-1">
                                 <div className="relative">
@@ -100,7 +101,7 @@ export default function Issues() {
                             {/* Filter Row */}
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <Select value={projectFilter} onValueChange={setProjectFilter}>
-                                    <SelectTrigger className="w-full sm:w-[200px]">
+                                    <SelectTrigger className="w-full sm:w-[200px] max-w-full">
                                         <SelectValue placeholder="All Projects" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -114,7 +115,7 @@ export default function Issues() {
                                 </Select>
 
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-full sm:w-[180px]">
+                                    <SelectTrigger className="w-full sm:w-[180px] max-w-full">
                                         <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -126,7 +127,7 @@ export default function Issues() {
                                 </Select>
 
                                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                                    <SelectTrigger className="w-full sm:w-[180px]">
+                                    <SelectTrigger className="w-full sm:w-[180px] max-w-full">
                                         <SelectValue placeholder="Priority" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -173,7 +174,7 @@ export default function Issues() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-w-full">
                         {filteredIssues.map(issue => (
                             <Card
                                 key={issue.id}

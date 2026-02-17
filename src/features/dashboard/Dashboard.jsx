@@ -152,15 +152,15 @@ export default function Dashboard() {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{stats.map((stat) => {
-                        const Icon = stat. icon;
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">{stats.map((stat) => {
+                        const Icon = stat.icon;
                         return (
-                            <Card key={stat. title} className="hover:shadow-lg transition-shadow">
+                            <Card key={stat.title} className="hover:shadow-lg transition-shadow">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">
                                         {stat.title}
                                     </CardTitle>
-                                    <Icon className={`h-5 w-5 ${stat. color}`} />
+                                    <Icon className={`h-5 w-5 ${stat.color}`} />
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-3xl font-bold">{stat.value}</div>
@@ -197,10 +197,10 @@ export default function Dashboard() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-full">
                             {recentProjects.map((project) => (
                                 <Card
-                                    key={project. id}
+                                    key={project.id}
                                     className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
                                     onClick={() => setSelectedProjectId(project.id)}
                                 >
@@ -257,7 +257,7 @@ export default function Dashboard() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="grid gap-3">
+                        <div className="grid gap-3 max-w-full">
                             {recentIssues.map((issue) => (
                                 <Card
                                     key={issue.id}
