@@ -9,14 +9,14 @@ import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 
 const columns = [
     { id: "NEW", title: "To Do", color: "border-l-4 border-l-slate-400" },
     { id: "IN_PROGRESS", title: "In Progress", color: "border-l-4 border-l-blue-500" },
-    { id: "DONE", title:  "Done", color: "border-l-4 border-l-green-500" },
+    { id: "DONE", title: "Done", color: "border-l-4 border-l-green-500" },
 ];
 
 export default function Board() {
