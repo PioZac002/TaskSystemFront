@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/Separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useCommentStore } from "@/store/commentStore";
 import { useAuthStore } from "@/store/authStore";
+import { useUserStore } from "@/store/userStore";
 import { toast } from "sonner";
 import { Trash2, User } from "lucide-react";
 
@@ -19,9 +20,14 @@ function formatDate(dateString) {
         if (isNaN(date.getTime())) {
             return "Invalid date";
         }
+        
+        // Handle default/unset dates (0001-01-01T00:00:00)
+        if (dateString.startsWith("0001-01-01")) {
+            return "Just now";
+        }
 
         return date.toLocaleString("en-US", {
-            year:  "numeric",
+            year: "numeric",
             month: "short",
             day: "numeric",
             hour: "2-digit",
@@ -37,16 +43,19 @@ export function CommentSection({ issueId }) {
     const [newComment, setNewComment] = useState("");
     const [sortOrder, setSortOrder] = useState("newest");
     const [filterUserId, setFilterUserId] = useState("all");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Pobierz userId z authStore zamiast localStorage
     const user = useAuthStore((state) => state.user);
     const currentUserId = user?.id || null;
 
     const { comments, fetchCommentsByIssueId, createComment, deleteComment, loading } = useCommentStore();
+    const { users, fetchUsers } = useUserStore();
 
     useEffect(() => {
         if (issueId) {
             fetchCommentsByIssueId(issueId);
+            fetchUsers();
         }
 
         // Debug log
@@ -55,11 +64,26 @@ export function CommentSection({ issueId }) {
             currentUserId,
             issueId
         });
-    }, [issueId, fetchCommentsByIssueId, user, currentUserId]);
+    }, [issueId, fetchCommentsByIssueId, fetchUsers, user, currentUserId]);
+    
+    // Helper function to get user name by ID
+    const getUserName = (userId) => {
+        if (!userId) return "Unknown User";
+        const foundUser = users.find(u => u.id === userId);
+        if (foundUser) {
+            return `${foundUser.firstName || ''} ${foundUser.lastName || ''}`.trim() || `User #${userId}`;
+        }
+        return `User #${userId}`;
+    };
 
     const handleAddComment = async () => {
         if (!newComment.trim()) {
             toast.error("Comment cannot be empty");
+            return;
+        }
+        
+        // Prevent double submission
+        if (isSubmitting) {
             return;
         }
 
@@ -74,7 +98,7 @@ export function CommentSection({ issueId }) {
             }
         }
 
-        if (! authorId) {
+        if (!authorId) {
             // Fallback 2: user object z localStorage
             const userStr = localStorage.getItem('user');
             if (userStr) {
@@ -88,45 +112,48 @@ export function CommentSection({ issueId }) {
         }
 
         if (!authorId) {
-            toast.error("Unable to identify user.  Please try logging in again.");
+            toast.error("Unable to identify user. Please try logging in again.");
             console.error('❌ Cannot add comment - no valid authorId found');
             return;
         }
 
         console.log('📤 [CommentSection] Sending comment:', {
-            issueId:  Number(issueId),
-            content: newComment. trim(),
+            issueId: Number(issueId),
+            content: newComment.trim(),
             authorId
         });
 
+        setIsSubmitting(true);
         try {
             await createComment({
                 issueId: Number(issueId),
                 content: newComment.trim(),
-                authorId:  Number(authorId)
+                authorId: Number(authorId)
             });
 
             toast.success("Comment added successfully!");
             setNewComment("");
-            await fetchCommentsByIssueId(issueId);
+            // Don't refetch - the commentStore.createComment already appends the response to comments array (see commentStore.js line 25)
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to add comment";
             console.error('❌ [CommentSection] Failed to add comment:', {
                 error,
-                response: error.response?. data,
+                response: error.response?.data,
                 status: error.response?.status
             });
             toast.error(errorMessage);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleDeleteComment = async (commentId) => {
-        if (! window.confirm("Are you sure you want to delete this comment?")) return;
+        if (!window.confirm("Are you sure you want to delete this comment?")) return;
 
         try {
             await deleteComment(commentId);
             toast.success("Comment deleted successfully!");
-            await fetchCommentsByIssueId(issueId);
+            // Don't refetch - the commentStore.deleteComment already filters out the deleted comment (see commentStore.js line 41)
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to delete comment";
             toast.error(errorMessage);
@@ -171,7 +198,7 @@ export function CommentSection({ issueId }) {
                             <SelectItem value="all">All Users</SelectItem>
                             {uniqueAuthors.map(authorId => (
                                 <SelectItem key={authorId} value={String(authorId)}>
-                                    User #{authorId}
+                                    {getUserName(authorId)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -189,7 +216,7 @@ export function CommentSection({ issueId }) {
                             onChange={(e) => setNewComment(e.target.value)}
                             rows={3}
                             className="resize-none"
-                            disabled={loading}
+                            disabled={loading || isSubmitting}
                         />
                         <div className="flex justify-end items-center">
                             <Button
@@ -207,11 +234,11 @@ export function CommentSection({ issueId }) {
             <div className="space-y-3">
                 {loading && comments.length === 0 && (
                     <div className="text-center py-8">
-                        <p className="text-muted-foreground">Loading comments... </p>
+                        <p className="text-muted-foreground">Loading comments...</p>
                     </div>
                 )}
 
-                {! loading && comments.length === 0 && (
+                {!loading && comments.length === 0 && (
                     <Card className="bg-muted/30">
                         <CardContent className="py-12 text-center">
                             <User className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
@@ -242,7 +269,7 @@ export function CommentSection({ issueId }) {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1">
-                                            <p className="font-medium">User #{comment.authorId}</p>
+                                            <p className="font-medium">{getUserName(comment.authorId)}</p>
                                             <p className="text-xs text-muted-foreground">
                                                 {formatDate(comment.createdAt)}
                                             </p>

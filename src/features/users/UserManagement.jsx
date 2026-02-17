@@ -176,8 +176,8 @@ export default function UserManagement() {
                         </div>
 
                         {/* Desktop - Table */}
-                        <Card className="hidden md:block">
-                            <CardContent className="p-0">
+                        <Card className="hidden md:block max-w-full overflow-hidden">
+                            <CardContent className="p-0 overflow-x-auto">\
                                 <Table>
                                 <TableHeader>
                                     <TableRow>

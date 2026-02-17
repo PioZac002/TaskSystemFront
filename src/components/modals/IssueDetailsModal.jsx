@@ -118,15 +118,20 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
             if (form.teamId &&
                 form.teamId !== "none" &&
                 form.teamId !== currentTeamId) {
-                await apiClient.put("/api/v1/issue/assign-team", {
+                const teamResponse = await apiClient.put("/api/v1/issue/assign-team", {
                     issueId: Number(issue.id),
                     teamId: Number(form.teamId),
                 });
+                // Update issue with the team data from response
+                if (teamResponse.data && teamResponse.data.team) {
+                    setIssue(prev => ({ ...prev, team: teamResponse.data.team }));
+                }
             }
 
             toast.success("Issue updated successfully!");
             setEdit(false);
 
+            // Reload data to ensure everything is in sync
             await loadData();
 
             if (onIssueUpdated) {

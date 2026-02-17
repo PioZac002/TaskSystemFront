@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/Dialog";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/Textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUserStore } from "@/store/userStore";
@@ -13,7 +13,16 @@ import { useAuthStore } from "@/store/authStore";  // ✅ Import authStore
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 
-export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = null }) {
+/**
+ * CreateIssueModal component for creating new issues
+ * 
+ * @param {Object} props
+ * @param {boolean} props.open - Whether the modal is open
+ * @param {Function} props.onOpenChange - Callback when modal open state changes
+ * @param {number|null} props.preSelectedProjectId - Optional project ID to pre-select
+ * @param {Function} props.onIssueCreated - Optional callback called after issue is successfully created
+ */
+export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = null, onIssueCreated }) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [priority, setPriority] = useState("NORMAL");
@@ -54,8 +63,8 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
         }
 
         // ✅ DEBUG - sprawdź wszystkie możliwe źródła userId
-        console.log("🔍 Checking for userId.. .");
-        console.log("1️⃣ localStorage. userId:", localStorage.getItem('userId'));
+        console.log("🔍 Checking for userId...");
+        console.log("1️⃣ localStorage.userId:", localStorage.getItem('userId'));
         console.log("2️⃣ localStorage.user:", localStorage.getItem('user'));
         console.log("3️⃣ authStore.user:", user);
         console.log("4️⃣ All localStorage keys:", Object.keys(localStorage));
@@ -64,21 +73,21 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
         let authorId = null;
 
         // Opcja 1: z authStore
-        if (user?. id) {
+        if (user?.id) {
             authorId = user.id;
             console.log("✅ Got userId from authStore:", authorId);
         }
         // Opcja 2: z localStorage 'userId'
-        else if (localStorage. getItem('userId')) {
+        else if (localStorage.getItem('userId')) {
             authorId = Number(localStorage.getItem('userId'));
-            console.log("✅ Got userId from localStorage. userId:", authorId);
+            console.log("✅ Got userId from localStorage.userId:", authorId);
         }
         // Opcja 3: z localStorage 'user' (sparsowany JSON)
-        else if (localStorage. getItem('user')) {
+        else if (localStorage.getItem('user')) {
             try {
                 const userObj = JSON.parse(localStorage.getItem('user'));
-                authorId = userObj?. id;
-                console.log("✅ Got userId from localStorage. user:", authorId);
+                authorId = userObj?.id;
+                console.log("✅ Got userId from localStorage.user:", authorId);
             } catch (e) {
                 console.error("❌ Failed to parse localStorage.user:", e);
             }
@@ -86,7 +95,7 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
 
         if (!authorId) {
             toast.error("You must be logged in to create an issue");
-            console.error('❌ No userId found anywhere!  Check localStorage and authStore');
+            console.error('❌ No userId found anywhere! Check localStorage and authStore');
             return;
         }
 
@@ -95,7 +104,7 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
         try {
             // ✅ KROK 1: Utwórz issue
             const payload = {
-                title:  title.trim(),
+                title: title.trim(),
                 description: description.trim() || null,
                 priority: priority || null,
                 authorId: authorId,
@@ -137,7 +146,7 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
 
                         console.log("✅ Team assigned successfully");
                     } catch (teamError) {
-                        console. error("⚠️ Failed to assign team:", teamError);
+                        console.error("⚠️ Failed to assign team:", teamError);
                         toast.warning("Issue created, but failed to assign team");
                     }
                 }
@@ -149,12 +158,18 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
             setTitle("");
             setDescription("");
             setPriority("NORMAL");
-            setProjectId(preSelectedProjectId ?  String(preSelectedProjectId) : "");
+            setProjectId(preSelectedProjectId ? String(preSelectedProjectId) : "");
             setAssigneeId("unassigned");
             setTeamId("none");
             setDueDate("");
 
             await fetchIssues();
+            
+            // Call the callback to refresh parent component
+            if (onIssueCreated) {
+                onIssueCreated();
+            }
+            
             onOpenChange(false);
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to create issue";

@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bell, Search, LogOut, Settings, Menu, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LayoutDashboard, FolderKanban, ListTodo, Trello, UserCircle, Users } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useSearchStore } from "@/store/searchStore";
+import { useProjectStore } from "@/store/projectStore";
+import { useIssueStore } from "@/store/issueStore";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -16,20 +19,31 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { SearchResults } from "./SearchResults";
 
 const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Projects", url: "/projects", icon:  FolderKanban },
-    { title: "Issues", url: "/issues", icon:  ListTodo },
-    { title: "Board", url: "/board", icon:  Trello },
-    { title: "Teams", url: "/teams", icon:  Users },
-    { title: "Users", url: "/users", icon:  UserCircle },
+    { title: "Projects", url: "/projects", icon: FolderKanban },
+    { title: "Issues", url: "/issues", icon: ListTodo },
+    { title: "Board", url: "/board", icon: Trello },
+    { title: "Teams", url: "/teams", icon: Users },
+    { title: "Users", url: "/users", icon: UserCircle },
 ];
 
 export const TopBar = () => {
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [searchOpen, setSearchOpen] = useState(false);
+    
+    // Search state
+    const { searchTerm, isSearchOpen, setSearchTerm, setSearchOpen, clearSearch } = useSearchStore();
+    const { fetchProjects } = useProjectStore();
+    const { fetchIssues } = useIssueStore();
+
+    // Fetch data for search on mount
+    useEffect(() => {
+        fetchProjects();
+        fetchIssues();
+    }, [fetchProjects, fetchIssues]);
 
     // ✅ Pobierz user i loading z authStore
     const user = useAuthStore((state) => state.user);
@@ -85,30 +99,17 @@ export const TopBar = () => {
                 </Button>
 
                 {/* Search */}
-                <div className="flex flex-1 items-center gap-4 max-w-md">
-                    {/* Mobile - Icon only */}
+                <div className="flex flex-1 items-center gap-4 max-w-md relative">
+                    {/* Mobile - Icon that opens overlay */}
                     <div className="md:hidden">
-                        {searchOpen ? (
-                            <div className="relative w-full">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    placeholder="Search..."
-                                    className="pl-10 bg-background w-[200px]"
-                                    onBlur={() => setSearchOpen(false)}
-                                    autoFocus
-                                />
-                            </div>
-                        ) : (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setSearchOpen(true)}
-                                aria-label="Search"
-                            >
-                                <Search className="h-5 w-5" />
-                            </Button>
-                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSearchOpen(!isSearchOpen)}
+                            aria-label="Search"
+                        >
+                            <Search className="h-5 w-5" />
+                        </Button>
                     </div>
 
                     {/* Desktop - Full search */}
@@ -118,7 +119,14 @@ export const TopBar = () => {
                             type="search"
                             placeholder="Search projects, issues..."
                             className="pl-10 bg-background"
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setSearchOpen(true);
+                            }}
+                            onFocus={() => setSearchOpen(true)}
                         />
+                        <SearchResults />
                     </div>
                 </div>
 
@@ -208,6 +216,40 @@ export const TopBar = () => {
                     ))}
                 </div>
             </nav>
+
+            {/* Mobile Search Overlay */}
+            {isSearchOpen && (
+                <div className="md:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+                    <div className="fixed top-16 left-0 right-0 p-4 bg-background border-b shadow-lg">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                type="search"
+                                placeholder="Search projects, issues..."
+                                className="pl-10 bg-background"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                autoFocus
+                            />
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-2 top-1/2 -translate-y-1/2"
+                                onClick={clearSearch}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="mt-2">
+                            <SearchResults />
+                        </div>
+                    </div>
+                    <div 
+                        className="absolute inset-0 -z-10" 
+                        onClick={clearSearch}
+                    />
+                </div>
+            )}
         </>
     );
 };

@@ -17,7 +17,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
         e.preventDefault();
 
         // Walidacja
-        if (!shortName. trim()) {
+        if (!shortName.trim()) {
             toast.error("Project short name is required");
             return;
         }
@@ -35,7 +35,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
                 description:  description.trim() || null
             });
 
-            toast. success("Project created successfully!");
+            toast.success("Project created successfully!");
 
             // Reset form
             setShortName("");
@@ -50,7 +50,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
     };
 
     const handleShortNameChange = (e) => {
-        const value = e.target.value. toUpperCase();
+        const value = e.target.value.toUpperCase();
         if (value.length <= 6) {
             setShortName(value);
         }
@@ -69,7 +69,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
                         </Label>
                         <Input
                             id="shortName"
-                            placeholder="e.g., PROJ, APP, WEB"
+                            placeholder="e.g., TS, DEV, FRONT"
                             value={shortName}
                             onChange={handleShortNameChange}
                             maxLength={6}
@@ -77,7 +77,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
                             className="font-mono uppercase"
                         />
                         <p className="text-xs text-muted-foreground">
-                            {shortName.length}/6 characters • Used in issue keys (e.g., {shortName || 'PROJ'}-1, {shortName || 'PROJ'}-2)
+                            {shortName.length}/6 characters • Max 6 uppercase letters • Used in issue keys (e.g., {shortName || 'TS'}-1, {shortName || 'TS'}-2)
                         </p>
                     </div>
 
@@ -87,7 +87,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
                             id="description"
                             placeholder="Describe your project..."
                             value={description}
-                            onChange={(e) => setDescription(e. target.value)}
+                            onChange={(e) => setDescription(e.target.value)}
                             rows={4}
                         />
                     </div>
