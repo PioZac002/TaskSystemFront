@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import { storageService } from "./storageService";
 
 class AuthService {
     constructor() {
@@ -25,16 +26,16 @@ class AuthService {
             const userId = this.extractUserIdFromToken(accessToken);
 
             if (userId) {
-                localStorage.setItem('userId', userId);
+                storageService.setItem('userId', String(userId));
 
                 // Pobierz pełne dane użytkownika
                 const userResponse = await apiClient.get(`/api/v1/user/id/${userId}`);
-                localStorage.setItem('user', JSON. stringify(userResponse.data));
+                storageService.setItem('user', JSON.stringify(userResponse.data));
 
                 return { accessToken, refreshToken, userId, user: userResponse.data };
             }
 
-            return { accessToken, refreshToken, userId:  null, user: null };
+            return { accessToken, refreshToken, userId: null, user: null };
         } catch (error) {
             console.error('❌ [AuthService] Login failed:', {
                 status: error.response?.status,
@@ -115,22 +116,22 @@ class AuthService {
     setTokens(accessToken, refreshToken) {
         console.log('💾 [AuthService] Saving tokens');
 
-        localStorage.setItem('accessToken', accessToken);
-        localStorage. setItem('refreshToken', refreshToken);
+        storageService.setItem('accessToken', accessToken);
+        storageService.setItem('refreshToken', refreshToken);
 
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
     }
 
     getAccessToken() {
-        return localStorage.getItem('accessToken');
+        return storageService.getItem('accessToken');
     }
 
     getRefreshToken() {
-        return localStorage. getItem('refreshToken');
+        return storageService.getItem('refreshToken');
     }
 
     getCurrentUser() {
-        const userStr = localStorage.getItem('user');
+        const userStr = storageService.getItem('user');
         if (userStr) {
             try {
                 return JSON.parse(userStr);
@@ -143,10 +144,10 @@ class AuthService {
 
     logout() {
         console.log('🚪 [AuthService] Logging out');
-        localStorage. removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('userId');
+        storageService.removeItem('accessToken');
+        storageService.removeItem('refreshToken');
+        storageService.removeItem('user');
+        storageService.removeItem('userId');
         delete apiClient.defaults.headers.common['Authorization'];
     }
 }

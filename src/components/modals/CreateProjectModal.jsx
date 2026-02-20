@@ -22,8 +22,8 @@ export function CreateProjectModal({ open, onOpenChange }) {
             return;
         }
 
-        if (shortName.length > 6) {
-            toast.error("Short name must be max 6 characters");
+        if (!/^[A-Z]{6}$/.test(shortName)) {
+            toast.error("Short name must be exactly 6 uppercase letters (A-Z only)");
             return;
         }
 
@@ -50,7 +50,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
     };
 
     const handleShortNameChange = (e) => {
-        const value = e.target.value.toUpperCase();
+        const value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
         if (value.length <= 6) {
             setShortName(value);
         }
@@ -69,7 +69,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
                         </Label>
                         <Input
                             id="shortName"
-                            placeholder="e.g., TS, DEV, FRONT"
+                            placeholder="PROJAB"
                             value={shortName}
                             onChange={handleShortNameChange}
                             maxLength={6}
@@ -77,7 +77,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
                             className="font-mono uppercase"
                         />
                         <p className="text-xs text-muted-foreground">
-                            {shortName.length}/6 characters • Max 6 uppercase letters • Used in issue keys (e.g., {shortName || 'TS'}-1, {shortName || 'TS'}-2)
+                            {shortName.length}/6 characters • Exactly 6 uppercase letters A-Z • Used in issue keys (e.g., {shortName || 'PROJAB'}-1, {shortName || 'PROJAB'}-2)
                         </p>
                     </div>
 
@@ -92,7 +92,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
                         />
                     </div>
 
-                    <div className="flex justify-end gap-3">
+                    <div className="flex justify-end gap-3 mt-4">
                         <Button
                             type="button"
                             variant="outline"
@@ -101,7 +101,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={loading || !shortName.trim()}>
+                        <Button type="submit" disabled={loading || !/^[A-Z]{6}$/.test(shortName)}>
                             {loading ? "Creating..." : "Create Project"}
                         </Button>
                     </div>

@@ -17,6 +17,8 @@ import LoginForm from "@/features/auth/LoginForm";
 import RegisterForm from "@/features/auth/RegisterForm";
 import UserManagement from "@/features/users/UserManagement";
 import TeamManagement from "@/features/teams/TeamManagement";
+import ProjectDetailPage from "@/features/projects/ProjectDetailPage";
+import IssueDetailPage from "@/features/issues/IssueDetailPage";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 
 // Komponent App z inicjalizacją auth
@@ -52,7 +54,9 @@ function App() {
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/board" element={<ProtectedRoute><Board /></ProtectedRoute>} />
                 <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+                <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetailPage /></ProtectedRoute>} />
                 <Route path="/issues" element={<ProtectedRoute><Issues /></ProtectedRoute>} />
+                <Route path="/issues/:id" element={<ProtectedRoute><IssueDetailPage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
                 <Route path="/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
