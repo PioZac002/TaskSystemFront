@@ -10,6 +10,7 @@ import { useProjectStore } from "@/store/projectStore";
 import { useUserStore } from "@/store/userStore";
 import { useTeamStore } from "@/store/teamStore";
 import { useAuthStore } from "@/store/authStore";  // ✅ Import authStore
+import { storageService } from "@/services/storageService";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 
@@ -64,10 +65,9 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
 
         // ✅ DEBUG - sprawdź wszystkie możliwe źródła userId
         console.log("🔍 Checking for userId...");
-        console.log("1️⃣ localStorage.userId:", localStorage.getItem('userId'));
-        console.log("2️⃣ localStorage.user:", localStorage.getItem('user'));
+        console.log("1️⃣ storageService.userId:", storageService.getItem('userId'));
+        console.log("2️⃣ storageService.user:", storageService.getItem('user'));
         console.log("3️⃣ authStore.user:", user);
-        console.log("4️⃣ All localStorage keys:", Object.keys(localStorage));
 
         // ✅ Spróbuj pobrać userId z wielu źródeł
         let authorId = null;
@@ -77,19 +77,19 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
             authorId = user.id;
             console.log("✅ Got userId from authStore:", authorId);
         }
-        // Opcja 2: z localStorage 'userId'
-        else if (localStorage.getItem('userId')) {
-            authorId = Number(localStorage.getItem('userId'));
-            console.log("✅ Got userId from localStorage.userId:", authorId);
+        // Opcja 2: ze storageService 'userId'
+        else if (storageService.getItem('userId')) {
+            authorId = Number(storageService.getItem('userId'));
+            console.log("✅ Got userId from storageService.userId:", authorId);
         }
-        // Opcja 3: z localStorage 'user' (sparsowany JSON)
-        else if (localStorage.getItem('user')) {
+        // Opcja 3: ze storageService 'user' (sparsowany JSON)
+        else if (storageService.getItem('user')) {
             try {
-                const userObj = JSON.parse(localStorage.getItem('user'));
+                const userObj = JSON.parse(storageService.getItem('user'));
                 authorId = userObj?.id;
-                console.log("✅ Got userId from localStorage.user:", authorId);
+                console.log("✅ Got userId from storageService.user:", authorId);
             } catch (e) {
-                console.error("❌ Failed to parse localStorage.user:", e);
+                console.error("❌ Failed to parse storageService.user:", e);
             }
         }
 

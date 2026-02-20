@@ -207,7 +207,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                         </DialogTitle>
                                     )}
                                 </div>
-                                <div className="flex gap-1 md:gap-2 shrink-0">
+                                <div className="flex gap-1 md:gap-2 shrink-0 mr-8">
                                     {!edit ? (
                                         <>
                                             <Button size="sm" variant="outline" onClick={() => setEdit(true)} className="hidden md:flex">

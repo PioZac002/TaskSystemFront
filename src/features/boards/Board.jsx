@@ -126,9 +126,10 @@ export default function Board() {
                                 </Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-3 space-y-2 min-h-[400px]">
+                        <CardContent className="p-3 space-y-2 min-h-[400px] max-h-[600px] overflow-y-auto">
                             {filteredIssues
                                 .filter(issue => issue.status === columns[activeColumnIndex].id)
+                                .slice(0, 10)
                                 .map((issue) => (
                                     <Card
                                         key={issue.id}
@@ -177,11 +178,11 @@ export default function Board() {
                                             <CardContent
                                                 ref={provided.innerRef}
                                                 {... provided.droppableProps}
-                                                className={`p-3 space-y-2 min-h-[500px] transition-colors ${
+                                                className={`p-3 space-y-2 min-h-[500px] max-h-[600px] overflow-y-auto transition-colors ${
                                                     snapshot. isDraggingOver ? "bg-accent/30" : ""
                                                 }`}
                                             >
-                                                {columnIssues.map((issue, index) => (
+                                                {columnIssues.slice(0, 10).map((issue, index) => (
                                                     <Draggable
                                                         key={issue.id}
                                                         draggableId={String(issue.id)}

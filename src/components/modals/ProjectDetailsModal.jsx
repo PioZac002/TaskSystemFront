@@ -91,7 +91,7 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
                                             </p>
                                         )}
                                     </div>
-                                    <Button onClick={() => setCreateIssueOpen(true)} size="sm" className="shrink-0">
+                                    <Button onClick={() => setCreateIssueOpen(true)} size="sm" className="shrink-0 mr-8">
                                         <Plus className="h-4 w-4 md:mr-2" />
                                         <span className="hidden md:inline">Add Issue</span>
                                     </Button>
