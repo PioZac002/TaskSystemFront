@@ -1,7 +1,7 @@
 {
   "name": "TaskSystem - Project Management",
   "short_name": "TaskSystem",
-  "description": "Professional Task Management System - Jira Clone for managing projects, issues, and teams",
+  "description": "Professional Task Management System - for managing projects, issues, and teams",
   "theme_color": "#1f2937",
   "background_color": "#ffffff",
   "display": "standalone",
