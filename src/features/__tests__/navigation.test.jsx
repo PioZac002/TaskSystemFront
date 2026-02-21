@@ -86,12 +86,14 @@ describe('Navigation UX - Dashboard', () => {
     let Dashboard;
 
     beforeEach(async () => {
+        // Simulate desktop screen so responsive navigation uses Link/navigate instead of modal
+        Object.defineProperty(window, 'innerWidth', { value: 1024, configurable: true, writable: true });
         vi.resetModules();
         const mod = await import('@/features/dashboard/Dashboard');
         Dashboard = mod.default;
     });
 
-    it('project card title has cursor-pointer and hover:underline styling', async () => {
+    it('project card title has hover:underline styling and links to project page', async () => {
         const { container } = render(
             <MemoryRouter>
                 <Dashboard />
@@ -101,7 +103,6 @@ describe('Navigation UX - Dashboard', () => {
         expect(projectTitles.length).toBeGreaterThan(0);
         const projectTitle = Array.from(projectTitles).find(el => el.textContent === 'TESTPR');
         expect(projectTitle).not.toBeNull();
-        expect(projectTitle.className).toMatch(/cursor-pointer/);
         expect(projectTitle.className).toMatch(/hover:underline/);
     });
 
@@ -138,6 +139,8 @@ describe('Navigation UX - Issues page', () => {
     let Issues;
 
     beforeEach(async () => {
+        // Simulate desktop screen so responsive navigation uses Link/navigate instead of modal
+        Object.defineProperty(window, 'innerWidth', { value: 1024, configurable: true, writable: true });
         vi.resetModules();
         const mod = await import('@/features/issues/Issues');
         Issues = mod.default;

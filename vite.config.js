@@ -66,6 +66,12 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_BASE_URL || 'http://vfedora1.tail7fa028.ts.net:6901',
+        changeOrigin: true,
+      }
+    }
   }
 })

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +10,7 @@ import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
+import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import { Plus, Search, X, ListTodo, Eye } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,7 +25,7 @@ function formatDate(dateString) {
 }
 
 export default function Issues() {
-    const navigate = useNavigate();
+    const { isMobile } = useResponsiveNavigation();
     const { issues, fetchIssues, loading } = useIssueStore();
     const { projects, fetchProjects } = useProjectStore();
     const [selectedIssueId, setSelectedIssueId] = useState(null);
@@ -189,11 +190,19 @@ export default function Issues() {
                                                 <span className="font-mono text-sm text-muted-foreground font-semibold">
                                                     {issue.key}
                                                 </span>
-                                                <h3
-                                                    className="font-semibold truncate hover:underline cursor-pointer text-primary"
-                                                    title="Open full page"
-                                                    onClick={() => navigate(`/issues/${issue.id}`)}
-                                                >{issue.title}</h3>
+                                                {isMobile ? (
+                                                    <h3
+                                                        className="font-semibold truncate hover:underline cursor-pointer text-primary"
+                                                        title="Open full page"
+                                                        onClick={() => setSelectedIssueId(issue.id)}
+                                                    >{issue.title}</h3>
+                                                ) : (
+                                                    <Link
+                                                        to={`/issues/${issue.id}`}
+                                                        className="font-semibold truncate hover:underline text-primary"
+                                                        title="Open full page"
+                                                    >{issue.title}</Link>
+                                                )}
                                                 <button
                                                     title="Quick preview"
                                                     className="text-muted-foreground hover:text-primary transition-colors shrink-0"

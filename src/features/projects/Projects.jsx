@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -10,10 +10,11 @@ import { useProjectStore } from "@/store/projectStore";
 import { useIssueStore } from "@/store/issueStore";
 import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
+import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import { Plus, Search, X, FolderKanban, CheckCircle2, Clock, AlertTriangle, Eye } from "lucide-react";
 
 export default function Projects() {
-    const navigate = useNavigate();
+    const { isMobile } = useResponsiveNavigation();
     const { projects, fetchProjects, loading } = useProjectStore();
     const { issues, fetchIssues } = useIssueStore();
     const [selectedProjectId, setSelectedProjectId] = useState(null);
@@ -143,12 +144,24 @@ export default function Projects() {
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <CardTitle
-                                                    className="text-xl font-mono truncate hover:underline cursor-pointer text-primary"
-                                                    title="Open full page"
-                                                    onClick={() => navigate(`/projects/${project.id}`)}
-                                                >
-                                                    {project.shortName}
+                                                <CardTitle className="text-xl font-mono truncate text-primary">
+                                                    {isMobile ? (
+                                                        <span
+                                                            className="hover:underline cursor-pointer"
+                                                            title="Open full page"
+                                                            onClick={() => setSelectedProjectId(project.id)}
+                                                        >
+                                                            {project.shortName}
+                                                        </span>
+                                                    ) : (
+                                                        <Link
+                                                            to={`/projects/${project.id}`}
+                                                            className="hover:underline"
+                                                            title="Open full page"
+                                                        >
+                                                            {project.shortName}
+                                                        </Link>
+                                                    )}
                                                 </CardTitle>
                                                 <button
                                                     title="Quick preview"

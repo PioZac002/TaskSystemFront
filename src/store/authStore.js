@@ -10,7 +10,6 @@ export const useAuthStore = create((set, get) => ({
     isAuthenticated: false,
     loading: true,
     initialized: false,
-    _refreshTimer: null,
 
     initialize:  async () => {
         console.log('🔐 [AuthStore] Initializing auth state...');
@@ -168,94 +167,11 @@ export const useAuthStore = create((set, get) => ({
             isAuthenticated: Boolean(accessToken && user),
         });
 
-        // Schedule proactive token refresh
-        get().scheduleTokenRefresh(accessToken);
-
         console.log('✅ [AuthStore] Auth set successfully');
-    },
-
-    scheduleTokenRefresh: (accessToken) => {
-        // Clear any existing timer
-        const existing = get()._refreshTimer;
-        if (existing) {
-            clearTimeout(existing);
-        }
-
-        if (!accessToken) return;
-
-        try {
-            const payload = JSON.parse(atob(accessToken.split('.')[1]));
-            const expMs = payload.exp * 1000;
-            const nowMs = Date.now();
-            // Fire 60 seconds before expiry
-            const delayMs = expMs - nowMs - 60000;
-
-            if (delayMs <= 0) {
-                console.log('⚠️ [AuthStore] Token already near expiry, skipping proactive refresh timer');
-                return;
-            }
-
-            console.log(`⏰ [AuthStore] Proactive refresh scheduled in ${Math.round(delayMs / 1000)}s`);
-            tokenDebugger.log(`Proactive refresh scheduled in ${Math.round(delayMs / 1000)}s`);
-
-            const timer = setTimeout(async () => {
-                console.log('🔄 [AuthStore] Proactive token refresh firing...');
-                tokenDebugger.log('Proactive refresh timer fired');
-                const currentRefreshToken = storageService.getItem('refreshToken');
-                tokenDebugger.logRefreshTokenState(currentRefreshToken);
-
-                if (!currentRefreshToken) {
-                    console.warn('⚠️ [AuthStore] No refresh token for proactive refresh');
-                    return;
-                }
-
-                try {
-                    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://vfedora1.tail7fa028.ts.net:6901';
-                    const response = await fetch(`${API_BASE_URL}/api/v1/auth/regenerate-tokens`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ refreshToken: currentRefreshToken }),
-                    });
-
-                    if (!response.ok) {
-                        console.error('❌ [AuthStore] Proactive refresh failed:', response.status);
-                        return;
-                    }
-
-                    const data = await response.json();
-                    tokenDebugger.logRefreshCycle('proactive-response', data);
-
-                    const newAccessToken = data.accessToken?.token || data.accessToken;
-                    const newRefreshToken = data.refreshToken?.token || data.refreshToken;
-
-                    if (newAccessToken) {
-                        storageService.setItem('accessToken', newAccessToken);
-                        if (newRefreshToken) storageService.setItem('refreshToken', newRefreshToken);
-                        set({ accessToken: newAccessToken, refreshToken: newRefreshToken || currentRefreshToken });
-                        // Schedule next refresh
-                        get().scheduleTokenRefresh(newAccessToken);
-                        console.log('✅ [AuthStore] Proactive refresh successful');
-                        tokenDebugger.inspectToken(newAccessToken, 'new-accessToken');
-                    }
-                } catch (err) {
-                    console.error('❌ [AuthStore] Proactive refresh error:', err);
-                }
-            }, delayMs);
-
-            set({ _refreshTimer: timer });
-        } catch (e) {
-            console.error('❌ [AuthStore] Failed to schedule token refresh:', e);
-        }
     },
 
     logout: () => {
         console. log('👋 [AuthStore] Logging out...');
-
-        // Clear proactive refresh timer
-        const timer = get()._refreshTimer;
-        if (timer) {
-            clearTimeout(timer);
-        }
 
         storageService.clear();
 
@@ -264,7 +180,6 @@ export const useAuthStore = create((set, get) => ({
             accessToken: null,
             refreshToken: null,
             isAuthenticated: false,
-            _refreshTimer: null,
         });
 
         console.log('✅ [AuthStore] Logout complete');
