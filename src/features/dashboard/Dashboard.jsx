@@ -174,19 +174,19 @@ export default function Dashboard() {
                             Dashboard
                         </h1>
                         <p className="text-muted-foreground mt-1">
-                            Welcome back! Here's what's happening with your projects.
+                            Welcome back!
                         </p>
                     </div>
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={() => setCreateProjectOpen(true)}>
                             <Plus className="mr-2 h-4 w-4 hidden md:inline-flex" />
                             <span className="md:hidden">+P</span>
-                            <span className="hidden md:inline">+ Project</span>
+                            <span className="hidden md:inline">Project</span>
                         </Button>
                         <Button onClick={() => setCreateIssueOpen(true)}>
                             <Plus className="mr-2 h-4 w-4 hidden md:inline-flex" />
                             <span className="md:hidden">+I</span>
-                            <span className="hidden md:inline">+ Issue</span>
+                            <span className="hidden md:inline">Issue</span>
                         </Button>
                     </div>
                 </div>
