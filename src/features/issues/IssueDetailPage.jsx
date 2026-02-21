@@ -14,7 +14,7 @@ import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 import {
     Edit, Save, X, Trash2, Calendar, User as UserIcon,
-    Users, Tag, ArrowLeft
+    Users, Tag
 } from "lucide-react";
 
 export default function IssueDetailPage() {
@@ -173,10 +173,6 @@ export default function IssueDetailPage() {
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <Button variant="ghost" size="sm" onClick={() => navigate('/issues')} className="shrink-0">
-                            <ArrowLeft className="h-4 w-4 mr-1" />
-                            Back
-                        </Button>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <span className="text-sm font-mono text-muted-foreground">{issue.key}</span>
