@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +10,7 @@ import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 import {
     Plus, ExternalLink, ListTodo, CheckCircle2, Clock,
-    AlertCircle, Calendar, FolderKanban, ArrowLeft
+    AlertCircle, Calendar, FolderKanban
 } from "lucide-react";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
@@ -27,7 +27,6 @@ function formatDate(dateString) {
 
 export default function ProjectDetailPage() {
     const { id } = useParams();
-    const navigate = useNavigate();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(false);
     const [selectedIssueId, setSelectedIssueId] = useState(null);
@@ -76,23 +75,17 @@ export default function ProjectDetailPage() {
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <Button variant="ghost" size="sm" onClick={() => navigate('/projects')}>
-                            <ArrowLeft className="h-4 w-4 mr-1" />
-                            Back
-                        </Button>
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <FolderKanban className="h-5 w-5 text-primary" />
-                                <span className="text-sm font-mono text-muted-foreground">
-                                    {project.shortName}
-                                </span>
-                            </div>
-                            <h1 className="text-2xl md:text-3xl font-bold">{project.shortName}</h1>
-                            {project.description && (
-                                <p className="text-muted-foreground mt-1">{project.description}</p>
-                            )}
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <FolderKanban className="h-5 w-5 text-primary" />
+                            <span className="text-sm font-mono text-muted-foreground">
+                                {project.shortName}
+                            </span>
                         </div>
+                        <h1 className="text-2xl md:text-3xl font-bold">{project.shortName}</h1>
+                        {project.description && (
+                            <p className="text-muted-foreground mt-1">{project.description}</p>
+                        )}
                     </div>
                     <Button onClick={() => setCreateIssueOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />

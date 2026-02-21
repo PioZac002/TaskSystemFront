@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -11,6 +11,7 @@ import { useProjectStore } from "@/store/projectStore";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 
@@ -21,7 +22,7 @@ const columns = [
 ];
 
 export default function Board() {
-    const navigate = useNavigate();
+    const { isMobile } = useResponsiveNavigation();
     const { issues, fetchIssues } = useIssueStore();
     const { projects, fetchProjects } = useProjectStore();
     const [selectedProjectId, setSelectedProjectId] = useState("all");
@@ -142,13 +143,23 @@ export default function Board() {
                                                 {issue.key}
                                             </p>
                                             <div className="flex items-start gap-2 mb-2">
-                                                <h3
-                                                    className="font-semibold text-sm line-clamp-2 flex-1 hover:underline cursor-pointer text-primary"
-                                                    title="Open full page"
-                                                    onClick={() => navigate(`/issues/${issue.id}`)}
-                                                >
-                                                    {issue.title}
-                                                </h3>
+                                                {isMobile ? (
+                                                    <h3
+                                                        className="font-semibold text-sm line-clamp-2 flex-1 hover:underline cursor-pointer text-primary"
+                                                        title="Open full page"
+                                                        onClick={() => setSelectedIssueId(issue.id)}
+                                                    >
+                                                        {issue.title}
+                                                    </h3>
+                                                ) : (
+                                                    <Link
+                                                        to={`/issues/${issue.id}`}
+                                                        className="font-semibold text-sm line-clamp-2 flex-1 hover:underline text-primary"
+                                                        title="Open full page"
+                                                    >
+                                                        {issue.title}
+                                                    </Link>
+                                                )}
                                                 <button
                                                     title="Quick preview"
                                                     className="text-muted-foreground hover:text-primary transition-colors shrink-0 mt-0.5"
@@ -216,13 +227,23 @@ export default function Board() {
                                                                         {issue.key}
                                                                     </p>
                                                                     <div className="flex items-start gap-2 mb-2">
-                                                                        <h3
-                                                                            className="font-semibold text-sm line-clamp-2 flex-1 hover:underline cursor-pointer text-primary"
-                                                                            title="Open full page"
-                                                                            onClick={() => navigate(`/issues/${issue.id}`)}
-                                                                        >
-                                                                            {issue.title}
-                                                                        </h3>
+                                                                        {isMobile ? (
+                                                                            <h3
+                                                                                className="font-semibold text-sm line-clamp-2 flex-1 hover:underline cursor-pointer text-primary"
+                                                                                title="Open full page"
+                                                                                onClick={() => setSelectedIssueId(issue.id)}
+                                                                            >
+                                                                                {issue.title}
+                                                                            </h3>
+                                                                        ) : (
+                                                                            <Link
+                                                                                to={`/issues/${issue.id}`}
+                                                                                className="font-semibold text-sm line-clamp-2 flex-1 hover:underline text-primary"
+                                                                                title="Open full page"
+                                                                            >
+                                                                                {issue.title}
+                                                                            </Link>
+                                                                        )}
                                                                         <button
                                                                             title="Quick preview"
                                                                             className="text-muted-foreground hover:text-primary transition-colors shrink-0 mt-0.5"

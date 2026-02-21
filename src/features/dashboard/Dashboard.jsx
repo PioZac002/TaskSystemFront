@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,7 @@ import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
+import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import {
     FolderKanban,
     CheckSquare,
@@ -34,6 +35,7 @@ function formatDate(dateString) {
 
 export default function Dashboard() {
     const navigate = useNavigate();
+    const { isMobile } = useResponsiveNavigation();
     const { projects, fetchProjects, loading:  projectsLoading } = useProjectStore();
     const { issues, fetchIssues, loading: issuesLoading } = useIssueStore();
     const { users, fetchUsers } = useUserStore();
@@ -234,11 +236,21 @@ export default function Dashboard() {
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <CardTitle
-                                                        className="font-mono truncate hover:underline cursor-pointer text-primary"
-                                                        title="Open full page"
-                                                        onClick={() => navigate(`/projects/${project.id}`)}
-                                                    >{project.name}</CardTitle>
+                                                    <CardTitle className="font-mono truncate text-primary">
+                                                        {isMobile ? (
+                                                            <span
+                                                                className="hover:underline cursor-pointer"
+                                                                title="Open full page"
+                                                                onClick={() => setSelectedProjectId(project.id)}
+                                                            >{project.name}</span>
+                                                        ) : (
+                                                            <Link
+                                                                to={`/projects/${project.id}`}
+                                                                className="hover:underline"
+                                                                title="Open full page"
+                                                            >{project.name}</Link>
+                                                        )}
+                                                    </CardTitle>
                                                     <button
                                                         title="Quick preview"
                                                         className="text-muted-foreground hover:text-primary transition-colors shrink-0"
@@ -295,11 +307,19 @@ export default function Dashboard() {
                                                     <span className="font-mono text-sm text-muted-foreground font-semibold">
                                                         {issue.key}
                                                     </span>
-                                                    <span
-                                                        className="font-medium truncate hover:underline cursor-pointer text-primary"
-                                                        title="Open full page"
-                                                        onClick={() => navigate(`/issues/${issue.id}`)}
-                                                    >{issue.title}</span>
+                                                    {isMobile ? (
+                                                        <span
+                                                            className="font-medium truncate hover:underline cursor-pointer text-primary"
+                                                            title="Open full page"
+                                                            onClick={() => setSelectedIssueId(issue.id)}
+                                                        >{issue.title}</span>
+                                                    ) : (
+                                                        <Link
+                                                            to={`/issues/${issue.id}`}
+                                                            className="font-medium truncate hover:underline text-primary"
+                                                            title="Open full page"
+                                                        >{issue.title}</Link>
+                                                    )}
                                                     <button
                                                         title="Quick preview"
                                                         className="text-muted-foreground hover:text-primary transition-colors shrink-0"
@@ -379,11 +399,21 @@ export default function Dashboard() {
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <CardTitle
-                                                        className="font-mono truncate hover:underline cursor-pointer text-primary"
-                                                        title="Open full page"
-                                                        onClick={() => navigate(`/projects/${project.id}`)}
-                                                    >{project.name}</CardTitle>
+                                                    <CardTitle className="font-mono truncate text-primary">
+                                                        {isMobile ? (
+                                                            <span
+                                                                className="hover:underline cursor-pointer"
+                                                                title="Open full page"
+                                                                onClick={() => setSelectedProjectId(project.id)}
+                                                            >{project.name}</span>
+                                                        ) : (
+                                                            <Link
+                                                                to={`/projects/${project.id}`}
+                                                                className="hover:underline"
+                                                                title="Open full page"
+                                                            >{project.name}</Link>
+                                                        )}
+                                                    </CardTitle>
                                                     <button
                                                         title="Quick preview"
                                                         className="text-muted-foreground hover:text-primary transition-colors shrink-0"
@@ -454,11 +484,19 @@ export default function Dashboard() {
                                                     <span className="font-mono text-sm text-muted-foreground font-semibold">
                                                         {issue.key}
                                                     </span>
-                                                    <span
-                                                        className="font-medium truncate hover:underline cursor-pointer text-primary"
-                                                        title="Open full page"
-                                                        onClick={() => navigate(`/issues/${issue.id}`)}
-                                                    >{issue.title}</span>
+                                                    {isMobile ? (
+                                                        <span
+                                                            className="font-medium truncate hover:underline cursor-pointer text-primary"
+                                                            title="Open full page"
+                                                            onClick={() => setSelectedIssueId(issue.id)}
+                                                        >{issue.title}</span>
+                                                    ) : (
+                                                        <Link
+                                                            to={`/issues/${issue.id}`}
+                                                            className="font-medium truncate hover:underline text-primary"
+                                                            title="Open full page"
+                                                        >{issue.title}</Link>
+                                                    )}
                                                     <button
                                                         title="Quick preview"
                                                         className="text-muted-foreground hover:text-primary transition-colors shrink-0"
