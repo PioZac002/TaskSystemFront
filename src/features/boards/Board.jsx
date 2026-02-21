@@ -227,13 +227,23 @@ export default function Board() {
                                                                         {issue.key}
                                                                     </p>
                                                                     <div className="flex items-start gap-2 mb-2">
-                                                                        <Link
-                                                                            to={`/issues/${issue.id}`}
-                                                                            className="font-semibold text-sm line-clamp-2 flex-1 hover:underline text-primary"
-                                                                            title="Open full page"
-                                                                        >
-                                                                            {issue.title}
-                                                                        </Link>
+                                                                        {isMobile ? (
+                                                                            <h3
+                                                                                className="font-semibold text-sm line-clamp-2 flex-1 hover:underline cursor-pointer text-primary"
+                                                                                title="Open full page"
+                                                                                onClick={() => setSelectedIssueId(issue.id)}
+                                                                            >
+                                                                                {issue.title}
+                                                                            </h3>
+                                                                        ) : (
+                                                                            <Link
+                                                                                to={`/issues/${issue.id}`}
+                                                                                className="font-semibold text-sm line-clamp-2 flex-1 hover:underline text-primary"
+                                                                                title="Open full page"
+                                                                            >
+                                                                                {issue.title}
+                                                                            </Link>
+                                                                        )}
                                                                         <button
                                                                             title="Quick preview"
                                                                             className="text-muted-foreground hover:text-primary transition-colors shrink-0 mt-0.5"
