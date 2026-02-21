@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -9,9 +10,10 @@ import { useProjectStore } from "@/store/projectStore";
 import { useIssueStore } from "@/store/issueStore";
 import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
-import { Plus, Search, X, FolderKanban, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Search, X, FolderKanban, CheckCircle2, Clock, AlertTriangle, Eye } from "lucide-react";
 
 export default function Projects() {
+    const navigate = useNavigate();
     const { projects, fetchProjects, loading } = useProjectStore();
     const { issues, fetchIssues } = useIssueStore();
     const [selectedProjectId, setSelectedProjectId] = useState(null);
@@ -135,15 +137,27 @@ export default function Projects() {
                         {filteredProjects.map(project => (
                             <Card
                                 key={project.id}
-                                className="cursor-pointer hover:shadow-xl transition-all hover:scale-105 hover:border-primary/50"
-                                onClick={() => setSelectedProjectId(project.id)}
+                                className="hover:shadow-xl transition-all hover:scale-105 hover:border-primary/50"
                             >
                                 <CardHeader>
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">
-                                            <CardTitle className="text-xl font-mono truncate">
-                                                {project.shortName}
-                                            </CardTitle>
+                                            <div className="flex items-center gap-2">
+                                                <CardTitle
+                                                    className="text-xl font-mono truncate hover:underline cursor-pointer text-primary"
+                                                    title="Open full page"
+                                                    onClick={() => navigate(`/projects/${project.id}`)}
+                                                >
+                                                    {project.shortName}
+                                                </CardTitle>
+                                                <button
+                                                    title="Quick preview"
+                                                    className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                                                    onClick={() => setSelectedProjectId(project.id)}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </button>
+                                            </div>
                                             <CardDescription className="line-clamp-2 mt-1">
                                                 {project.description || "No description provided"}
                                             </CardDescription>
