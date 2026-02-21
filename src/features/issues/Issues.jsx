@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +10,7 @@ import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
-import { Plus, Search, X, ListTodo } from "lucide-react";
+import { Plus, Search, X, ListTodo, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 function formatDate(dateString) {
@@ -23,6 +24,7 @@ function formatDate(dateString) {
 }
 
 export default function Issues() {
+    const navigate = useNavigate();
     const { issues, fetchIssues, loading } = useIssueStore();
     const { projects, fetchProjects } = useProjectStore();
     const [selectedIssueId, setSelectedIssueId] = useState(null);
@@ -178,8 +180,7 @@ export default function Issues() {
                         {filteredIssues.map(issue => (
                             <Card
                                 key={issue.id}
-                                className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.01]"
-                                onClick={() => setSelectedIssueId(issue.id)}
+                                className="hover:shadow-lg transition-all hover:scale-[1.01]"
                             >
                                 <CardContent className="p-4">
                                     <div className="flex items-center justify-between">
@@ -188,7 +189,18 @@ export default function Issues() {
                                                 <span className="font-mono text-sm text-muted-foreground font-semibold">
                                                     {issue.key}
                                                 </span>
-                                                <h3 className="font-semibold truncate">{issue.title}</h3>
+                                                <h3
+                                                    className="font-semibold truncate hover:underline cursor-pointer text-primary"
+                                                    title="Open full page"
+                                                    onClick={() => navigate(`/issues/${issue.id}`)}
+                                                >{issue.title}</h3>
+                                                <button
+                                                    title="Quick preview"
+                                                    className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                                                    onClick={() => setSelectedIssueId(issue.id)}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </button>
                                             </div>
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <Badge

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
+import { generateShortName } from "@/utils/shortNameGenerator";
 
 export function CreateProjectModal({ open, onOpenChange }) {
     const [shortName, setShortName] = useState("");
@@ -67,15 +68,25 @@ export function CreateProjectModal({ open, onOpenChange }) {
                         <Label htmlFor="shortName">
                             Short Name <span className="text-destructive">*</span>
                         </Label>
-                        <Input
-                            id="shortName"
-                            placeholder="PROJAB"
-                            value={shortName}
-                            onChange={handleShortNameChange}
-                            maxLength={6}
-                            required
-                            className="font-mono uppercase"
-                        />
+                        <div className="flex gap-2">
+                            <Input
+                                id="shortName"
+                                placeholder="e.g. PROJAB"
+                                value={shortName}
+                                onChange={handleShortNameChange}
+                                maxLength={6}
+                                required
+                                className="font-mono uppercase"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShortName(generateShortName())}
+                                className="shrink-0"
+                            >
+                                Suggest
+                            </Button>
+                        </div>
                         <p className="text-xs text-muted-foreground">
                             {shortName.length}/6 characters • Exactly 6 uppercase letters A-Z • Used in issue keys (e.g., {shortName || 'PROJAB'}-1, {shortName || 'PROJAB'}-2)
                         </p>

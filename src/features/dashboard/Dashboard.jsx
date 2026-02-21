@@ -19,7 +19,8 @@ import {
     Users,
     TrendingUp,
     Plus,
-    ArrowRight
+    ArrowRight,
+    Eye
 } from "lucide-react";
 
 function formatDate(dateString) {
@@ -227,13 +228,25 @@ export default function Dashboard() {
                             {yourProjects.map((project) => (
                                 <Card
                                     key={project.id}
-                                    className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
-                                    onClick={() => setSelectedProjectId(project.id)}
+                                    className="hover:shadow-lg transition-all hover:scale-105"
                                 >
                                     <CardHeader>
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1 min-w-0">
-                                                <CardTitle className="font-mono truncate">{project.name}</CardTitle>
+                                                <div className="flex items-center gap-2">
+                                                    <CardTitle
+                                                        className="font-mono truncate hover:underline cursor-pointer text-primary"
+                                                        title="Open full page"
+                                                        onClick={() => navigate(`/projects/${project.id}`)}
+                                                    >{project.name}</CardTitle>
+                                                    <button
+                                                        title="Quick preview"
+                                                        className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                                                        onClick={() => setSelectedProjectId(project.id)}
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                                 <CardDescription className="line-clamp-2 mt-1">
                                                     {project.description}
                                                 </CardDescription>
@@ -273,8 +286,7 @@ export default function Dashboard() {
                             {yourIssues.map((issue) => (
                                 <Card
                                     key={issue.id}
-                                    className="cursor-pointer hover:shadow-md transition-shadow"
-                                    onClick={() => setSelectedIssueId(issue.id)}
+                                    className="hover:shadow-md transition-shadow"
                                 >
                                     <CardContent className="p-4">
                                         <div className="flex items-center justify-between">
@@ -283,7 +295,18 @@ export default function Dashboard() {
                                                     <span className="font-mono text-sm text-muted-foreground font-semibold">
                                                         {issue.key}
                                                     </span>
-                                                    <span className="font-medium truncate">{issue.title}</span>
+                                                    <span
+                                                        className="font-medium truncate hover:underline cursor-pointer text-primary"
+                                                        title="Open full page"
+                                                        onClick={() => navigate(`/issues/${issue.id}`)}
+                                                    >{issue.title}</span>
+                                                    <button
+                                                        title="Quick preview"
+                                                        className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                                                        onClick={() => setSelectedIssueId(issue.id)}
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </button>
                                                 </div>
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <Badge
@@ -350,13 +373,25 @@ export default function Dashboard() {
                             {recentProjects.map((project) => (
                                 <Card
                                     key={project.id}
-                                    className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
-                                    onClick={() => setSelectedProjectId(project.id)}
+                                    className="hover:shadow-lg transition-all hover:scale-105"
                                 >
                                     <CardHeader>
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1 min-w-0">
-                                                <CardTitle className="font-mono truncate">{project.name}</CardTitle>
+                                                <div className="flex items-center gap-2">
+                                                    <CardTitle
+                                                        className="font-mono truncate hover:underline cursor-pointer text-primary"
+                                                        title="Open full page"
+                                                        onClick={() => navigate(`/projects/${project.id}`)}
+                                                    >{project.name}</CardTitle>
+                                                    <button
+                                                        title="Quick preview"
+                                                        className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                                                        onClick={() => setSelectedProjectId(project.id)}
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                                 <CardDescription className="line-clamp-2 mt-1">
                                                     {project. description}
                                                 </CardDescription>
@@ -410,8 +445,7 @@ export default function Dashboard() {
                             {recentIssues.map((issue) => (
                                 <Card
                                     key={issue.id}
-                                    className="cursor-pointer hover:shadow-md transition-shadow"
-                                    onClick={() => setSelectedIssueId(issue.id)}
+                                    className="hover:shadow-md transition-shadow"
                                 >
                                     <CardContent className="p-4">
                                         <div className="flex items-center justify-between">
@@ -420,7 +454,18 @@ export default function Dashboard() {
                                                     <span className="font-mono text-sm text-muted-foreground font-semibold">
                                                         {issue.key}
                                                     </span>
-                                                    <span className="font-medium truncate">{issue.title}</span>
+                                                    <span
+                                                        className="font-medium truncate hover:underline cursor-pointer text-primary"
+                                                        title="Open full page"
+                                                        onClick={() => navigate(`/issues/${issue.id}`)}
+                                                    >{issue.title}</span>
+                                                    <button
+                                                        title="Quick preview"
+                                                        className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                                                        onClick={() => setSelectedIssueId(issue.id)}
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </button>
                                                 </div>
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <Badge
