@@ -2,9 +2,11 @@ import axios from 'axios';
 import { storageService } from './storageService';
 import { tokenDebugger } from '@/utils/tokenDebugger';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://vfedora1.tail7fa028.ts. net: 6901';
+// In development, use empty baseURL so requests go through Vite's proxy (same-origin = no CORS = no OPTIONS)
+// In production, use the full URL from env
+const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || '');
 
-const apiClient = axios. create({
+const apiClient = axios.create({
     baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
@@ -83,8 +85,8 @@ apiClient.interceptors.response.use(
             console.log('🔐 [Token Refresh] 401 detected, attempting refresh...');
             tokenDebugger.log('401 detected, attempting token refresh');
 
-            // Jeśli to endpoint login/register - nie próbuj refreshować
-            if (originalRequest.url?. includes('/login') || originalRequest.url?.includes('/register')) {
+            // Jeśli to endpoint login/register/regenerate-tokens - nie próbuj refreshować
+            if (originalRequest.url?.includes('/login') || originalRequest.url?.includes('/register') || originalRequest.url?.includes('/regenerate-tokens')) {
                 console. log('⚠️ [Token Refresh] Skipping refresh for auth endpoint');
                 return Promise.reject(error);
             }
@@ -124,8 +126,11 @@ apiClient.interceptors.response.use(
             console.log('🔄 [Token Refresh] Refreshing with token:', refreshToken. substring(0, 20) + '...');
 
             try {
+                // Use raw axios to avoid the request interceptor (which would add the expired access token)
+                // Use relative URL in dev (proxy) or full URL in production
+                const refreshBaseURL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || '');
                 const response = await axios.post(
-                    `${API_BASE_URL}/api/v1/auth/regenerate-tokens`,
+                    `${refreshBaseURL}/api/v1/auth/regenerate-tokens`,
                     {
                         refreshToken: refreshToken
                     },
