@@ -17,20 +17,17 @@ class AuthService {
 
             console.log('✅ [AuthService] Login successful');
 
-            const accessToken = response.data.accessToken?. token || response.data.accessToken;
-            const refreshToken = response.data.refreshToken?.token || response. data.refreshToken;
-
-            this.setTokens(accessToken, refreshToken);
+            const accessToken = response.data.accessToken?.token || response.data.accessToken;
+            const refreshToken = response.data.refreshToken?.token || response.data.refreshToken;
 
             // Pobierz userId z tokena
             const userId = this.extractUserIdFromToken(accessToken);
 
             if (userId) {
-                storageService.setItem('userId', String(userId));
-
-                // Pobierz pełne dane użytkownika
-                const userResponse = await apiClient.get(`/api/v1/user/id/${userId}`);
-                storageService.setItem('user', JSON.stringify(userResponse.data));
+                // Pobierz pełne dane użytkownika - przekaż token inline (nie jest jeszcze w storage)
+                const userResponse = await apiClient.get(`/api/v1/user/id/${userId}`, {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
 
                 return { accessToken, refreshToken, userId, user: userResponse.data };
             }
@@ -54,8 +51,8 @@ class AuthService {
         });
 
         try {
-            const response = await apiClient.post('/api/v1/register', {
-                firstName:  userData.firstName,
+            await apiClient.post('/api/v1/register', {
+                firstName: userData.firstName,
                 lastName: userData.lastName,
                 email: userData.email,
                 password: userData.password,
@@ -67,38 +64,10 @@ class AuthService {
             // Po udanej rejestracji, automatycznie zaloguj użytkownika
             return await this.login(userData.email, userData.password);
         } catch (error) {
-            console. error('❌ [AuthService] Registration failed:', {
+            console.error('❌ [AuthService] Registration failed:', {
                 status: error.response?.status,
                 message: error.response?.data?.Message || error.message
             });
-            throw error;
-        }
-    }
-
-    async refreshTokens() {
-        console.log('🔄 [AuthService] Refreshing tokens...');
-
-        const refreshToken = this.getRefreshToken();
-
-        if (!refreshToken) {
-            throw new Error('No refresh token available');
-        }
-
-        try {
-            const response = await apiClient. post('/api/v1/auth/regenerate-tokens', {
-                refreshToken
-            });
-
-            const newAccessToken = response.data.accessToken?.token || response.data.accessToken;
-            const newRefreshToken = response.data.refreshToken?.token || response.data.refreshToken;
-
-            this.setTokens(newAccessToken, newRefreshToken);
-
-            console.log('✅ [AuthService] Tokens refreshed');
-
-            return { accessToken: newAccessToken, refreshToken: newRefreshToken };
-        } catch (error) {
-            console.error('❌ [AuthService] Token refresh failed');
             throw error;
         }
     }
@@ -107,19 +76,10 @@ class AuthService {
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
             return payload.sub || payload.userId || payload.nameid || payload.id;
-        } catch (error) {
+        } catch {
             console.error('❌ [AuthService] Failed to extract userId from token');
             return null;
         }
-    }
-
-    setTokens(accessToken, refreshToken) {
-        console.log('💾 [AuthService] Saving tokens');
-
-        storageService.setItem('accessToken', accessToken);
-        storageService.setItem('refreshToken', refreshToken);
-
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
     }
 
     getAccessToken() {

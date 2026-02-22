@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
@@ -8,8 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCommentStore } from "@/store/commentStore";
 import { useAuthStore } from "@/store/authStore";
 import { useUserStore } from "@/store/userStore";
+import { storageService } from "@/services/storageService";
+import { fileService } from "@/services/fileService";
 import { toast } from "sonner";
-import { Trash2, User } from "lucide-react";
+import { Trash2, User, Paperclip, X, ImageIcon } from "lucide-react";
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 function formatDate(dateString) {
     if (!dateString) return "";
@@ -39,17 +44,70 @@ function formatDate(dateString) {
     }
 }
 
+function AttachmentThumbnail({ fileId, canDelete, onDelete }) {
+    const [blobUrl, setBlobUrl] = useState(null);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        let url = null;
+        fileService.fetchFileBlob(fileId)
+            .then(u => {
+                url = u;
+                setBlobUrl(u);
+            })
+            .catch(() => setError(true));
+
+        return () => {
+            if (url) URL.revokeObjectURL(url);
+        };
+    }, [fileId]);
+
+    if (error) {
+        return (
+            <div className="relative w-20 h-20 rounded-md border border-border bg-muted flex items-center justify-center">
+                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative w-20 h-20 rounded-md overflow-hidden border border-border group">
+            {blobUrl ? (
+                <img
+                    src={blobUrl}
+                    alt={`Attachment ${fileId}`}
+                    className="w-full h-full object-cover"
+                />
+            ) : (
+                <div className="w-full h-full bg-muted animate-pulse" />
+            )}
+            {canDelete && (
+                <button
+                    onClick={() => onDelete(fileId)}
+                    className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete attachment"
+                >
+                    <X className="h-3 w-3" />
+                </button>
+            )}
+        </div>
+    );
+}
+
 export function CommentSection({ issueId }) {
     const [newComment, setNewComment] = useState("");
     const [sortOrder, setSortOrder] = useState("newest");
     const [filterUserId, setFilterUserId] = useState("all");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [pendingFiles, setPendingFiles] = useState([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef(null);
 
     // Pobierz userId z authStore zamiast localStorage
     const user = useAuthStore((state) => state.user);
     const currentUserId = user?.id || null;
 
-    const { comments, fetchCommentsByIssueId, createComment, deleteComment, loading } = useCommentStore();
+    const { comments, fetchCommentsByIssueId, createComment, deleteComment, uploadAttachment, deleteAttachment, loading } = useCommentStore();
     const { users, fetchUsers } = useUserStore();
 
     useEffect(() => {
@@ -57,16 +115,9 @@ export function CommentSection({ issueId }) {
             fetchCommentsByIssueId(issueId);
             fetchUsers();
         }
-
-        // Debug log
-        console.log('🔍 [CommentSection] Current user:', {
-            user,
-            currentUserId,
-            issueId
-        });
-    }, [issueId, fetchCommentsByIssueId, fetchUsers, user, currentUserId]);
+    }, [issueId, fetchCommentsByIssueId, fetchUsers]);
     
-    // Helper function to get user name by ID
+    // Helper function to get user name by ID (fallback when authorName not available)
     const getUserName = (userId) => {
         if (!userId) return "Unknown User";
         const foundUser = users.find(u => u.id === userId);
@@ -76,31 +127,57 @@ export function CommentSection({ issueId }) {
         return `User #${userId}`;
     };
 
+    const getCommentAuthorName = (comment) => {
+        if (comment.authorName) return comment.authorName;
+        return getUserName(comment.authorId);
+    };
+
+    const validateFile = (file) => {
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            toast.error(`File type not allowed. Use JPG, PNG, or WebP.`);
+            return false;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+            toast.error(`File too large. Maximum size is 10MB.`);
+            return false;
+        }
+        return true;
+    };
+
+    const handleFileSelect = (e) => {
+        const files = Array.from(e.target.files || []);
+        const valid = files.filter(validateFile);
+        if (valid.length > 0) {
+            setPendingFiles(prev => [...prev, ...valid]);
+        }
+        // Reset input so the same file can be selected again
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const removePendingFile = (index) => {
+        setPendingFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleAddComment = async () => {
         if (!newComment.trim()) {
             toast.error("Comment cannot be empty");
             return;
         }
         
-        // Prevent double submission
-        if (isSubmitting) {
-            return;
-        }
+        if (isSubmitting) return;
 
         // Spróbuj pobrać userId z różnych źródeł
         let authorId = currentUserId;
 
         if (!authorId) {
-            // Fallback 1: localStorage userId
-            const storedUserId = localStorage.getItem('userId');
+            const storedUserId = storageService.getItem('userId');
             if (storedUserId) {
                 authorId = Number(storedUserId);
             }
         }
 
         if (!authorId) {
-            // Fallback 2: user object z localStorage
-            const userStr = localStorage.getItem('user');
+            const userStr = storageService.getItem('user');
             if (userStr) {
                 try {
                     const userObj = JSON.parse(userStr);
@@ -113,37 +190,40 @@ export function CommentSection({ issueId }) {
 
         if (!authorId) {
             toast.error("Unable to identify user. Please try logging in again.");
-            console.error('❌ Cannot add comment - no valid authorId found');
             return;
         }
 
-        console.log('📤 [CommentSection] Sending comment:', {
-            issueId: Number(issueId),
-            content: newComment.trim(),
-            authorId
-        });
-
         setIsSubmitting(true);
         try {
-            await createComment({
+            const createdComment = await createComment({
                 issueId: Number(issueId),
                 content: newComment.trim(),
                 authorId: Number(authorId)
             });
 
+            // Upload pending files to the newly created comment
+            if (pendingFiles.length > 0 && createdComment?.id) {
+                setIsUploading(true);
+                for (const file of pendingFiles) {
+                    try {
+                        await uploadAttachment(file, createdComment.id);
+                    } catch (uploadErr) {
+                        console.error('Error uploading file:', uploadErr);
+                        toast.error(`Failed to upload ${file.name}`);
+                    }
+                }
+                setIsUploading(false);
+                setPendingFiles([]);
+            }
+
             toast.success("Comment added successfully!");
             setNewComment("");
-            // Don't refetch - the commentStore.createComment already appends the response to comments array (see commentStore.js line 25)
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to add comment";
-            console.error('❌ [CommentSection] Failed to add comment:', {
-                error,
-                response: error.response?.data,
-                status: error.response?.status
-            });
             toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
+            setIsUploading(false);
         }
     };
 
@@ -153,27 +233,37 @@ export function CommentSection({ issueId }) {
         try {
             await deleteComment(commentId);
             toast.success("Comment deleted successfully!");
-            // Don't refetch - the commentStore.deleteComment already filters out the deleted comment (see commentStore.js line 41)
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to delete comment";
             toast.error(errorMessage);
         }
     };
 
+    const handleDeleteAttachment = async (fileId, commentId) => {
+        if (!window.confirm("Delete this attachment?")) return;
+        try {
+            await deleteAttachment(fileId, commentId);
+            toast.success("Attachment deleted.");
+        } catch (attachErr) {
+            console.error('Error deleting attachment:', attachErr);
+            toast.error("Failed to delete attachment.");
+        }
+    };
+
     // Filtrowanie i sortowanie
-    let filteredComments = [... comments];
+    let filteredComments = [...comments];
 
     if (filterUserId !== "all") {
         filteredComments = filteredComments.filter(c => String(c.authorId) === filterUserId);
     }
 
-    filteredComments. sort((a, b) => {
-        const dateA = new Date(a. createdAt);
+    filteredComments.sort((a, b) => {
+        const dateA = new Date(a.createdAt);
         const dateB = new Date(b.createdAt);
         return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
     });
 
-    const uniqueAuthors = [... new Set(comments.map(c => c.authorId))];
+    const uniqueAuthors = [...new Set(comments.map(c => c.authorId))];
 
     return (
         <div className="space-y-4">
@@ -218,12 +308,48 @@ export function CommentSection({ issueId }) {
                             className="resize-none"
                             disabled={loading || isSubmitting}
                         />
-                        <div className="flex justify-end items-center">
+
+                        {/* Pending file list */}
+                        {pendingFiles.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {pendingFiles.map((file, idx) => (
+                                    <div key={idx} className="flex items-center gap-1 bg-muted rounded px-2 py-1 text-sm">
+                                        <Paperclip className="h-3 w-3" />
+                                        <span className="max-w-[120px] truncate">{file.name}</span>
+                                        <button onClick={() => removePendingFile(idx)} className="ml-1 text-muted-foreground hover:text-destructive">
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".jpg,.jpeg,.png,.webp"
+                                    multiple
+                                    className="hidden"
+                                    onChange={handleFileSelect}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={loading || isSubmitting}
+                                >
+                                    <Paperclip className="h-4 w-4 mr-1" />
+                                    Attach Image
+                                </Button>
+                            </div>
                             <Button
                                 onClick={handleAddComment}
-                                disabled={loading || !newComment.trim()}
+                                disabled={loading || isSubmitting || isUploading || !newComment.trim()}
                             >
-                                {loading ? "Adding..." : "Add Comment"}
+                                {isUploading ? "Uploading..." : isSubmitting ? "Adding..." : "Add Comment"}
                             </Button>
                         </div>
                     </div>
@@ -269,7 +395,7 @@ export function CommentSection({ issueId }) {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1">
-                                            <p className="font-medium">{getUserName(comment.authorId)}</p>
+                                            <p className="font-medium">{getCommentAuthorName(comment)}</p>
                                             <p className="text-xs text-muted-foreground">
                                                 {formatDate(comment.createdAt)}
                                             </p>
@@ -289,6 +415,20 @@ export function CommentSection({ issueId }) {
                                     <p className="text-sm whitespace-pre-wrap break-words">
                                         {comment.content}
                                     </p>
+
+                                    {/* Attachments */}
+                                    {comment.attachmentIds && comment.attachmentIds.length > 0 && (
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            {comment.attachmentIds.map(fileId => (
+                                                <AttachmentThumbnail
+                                                    key={fileId}
+                                                    fileId={fileId}
+                                                    canDelete={currentUserId === comment.authorId}
+                                                    onDelete={(id) => handleDeleteAttachment(id, comment.id)}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </CardContent>

@@ -7,10 +7,10 @@ export const useUserStore = create((set, get) => ({
     error: null,
 
     fetchUsers: async () => {
-        set({ loading: true, error:  null });
+        set({ loading: true, error: null });
         try {
             const response = await apiClient.get('/api/v1/user/all');
-            set({ users:  response.data, loading: false });
+            set({ users: response.data, loading: false });
         } catch (e) {
             console.error('Error fetching users:', e);
             set({ error: e.message || "Failed to fetch users", loading: false });
@@ -30,6 +30,23 @@ export const useUserStore = create((set, get) => ({
         }
     },
 
+    updateUser: async (id, data) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await apiClient.put(`/api/v1/user/${id}`, data);
+            // Update the cached user in the users list if present
+            set({
+                users: get().users.map(u => u.id === id ? response.data : u),
+                loading: false
+            });
+            return response.data;
+        } catch (e) {
+            console.error('Error updating user:', e);
+            set({ error: e.message || "Failed to update user", loading: false });
+            throw e;
+        }
+    },
+
     deleteUser: async (id) => {
         set({ loading: true, error: null });
         try {
@@ -40,7 +57,7 @@ export const useUserStore = create((set, get) => ({
             });
         } catch (e) {
             console.error('Error deleting user:', e);
-            set({ error: e. message || "Failed to delete user", loading: false });
+            set({ error: e.message || "Failed to delete user", loading: false });
             throw e;
         }
     }

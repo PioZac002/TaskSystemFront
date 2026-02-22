@@ -170,8 +170,13 @@ export const useAuthStore = create((set, get) => ({
         console.log('✅ [AuthStore] Auth set successfully');
     },
 
+    updateCachedUser: (userData) => {
+        storageService.setItem('user', JSON.stringify(userData));
+        set({ user: userData });
+    },
+
     logout: () => {
-        console. log('👋 [AuthStore] Logging out...');
+        console.log('👋 [AuthStore] Logging out...');
 
         storageService.clear();
 
