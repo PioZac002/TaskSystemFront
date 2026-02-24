@@ -11,10 +11,9 @@ import { useProjectStore } from "@/store/projectStore";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-<<<<<<< HEAD
-=======
+
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
->>>>>>> develop
+
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 

@@ -2,13 +2,10 @@ import axios from 'axios';
 import { storageService } from './storageService';
 import { tokenDebugger } from '@/utils/tokenDebugger';
 
-<<<<<<< HEAD
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'komuna.site:6901';
-=======
-// In development, use empty baseURL so requests go through Vite's proxy (same-origin = no CORS = no OPTIONS)
-// In production, use the full URL from env
+
+
+
 const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || 'http://komuna.site:6901');
->>>>>>> develop
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,

@@ -9,12 +9,8 @@ import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUserStore } from "@/store/userStore";
 import { useTeamStore } from "@/store/teamStore";
-<<<<<<< HEAD
 import { useAuthStore } from "@/store/authStore";
-=======
-import { useAuthStore } from "@/store/authStore";  // ✅ Import authStore
 import { storageService } from "@/services/storageService";
->>>>>>> develop
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 
