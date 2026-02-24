@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +10,8 @@ import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
-import { Plus, Search, X, ListTodo } from "lucide-react";
+import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
+import { Plus, Search, X, ListTodo, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 function formatDate(dateString) {
@@ -23,6 +25,7 @@ function formatDate(dateString) {
 }
 
 export default function Issues() {
+    const { isMobile } = useResponsiveNavigation();
     const { issues, fetchIssues, loading } = useIssueStore();
     const { projects, fetchProjects } = useProjectStore();
     const [selectedIssueId, setSelectedIssueId] = useState(null);
@@ -74,16 +77,17 @@ export default function Issues() {
                             Manage and track all your tasks • {filteredIssues.length} of {issues.length} issues
                         </p>
                     </div>
-                    <Button onClick={() => setCreateModalOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">Create </span>Issue
+                    <Button onClick={() => setCreateModalOpen(true)} className="shrink-0">
+                        <Plus className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Create Issue</span>
+                        <span className="sm:hidden">I</span>
                     </Button>
                 </div>
 
                 {/* Filters */}
                 <Card>
                     <CardContent className="pt-6">
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-4 max-w-full overflow-hidden">
                             {/* Search Bar */}
                             <div className="flex-1">
                                 <div className="relative">
@@ -100,7 +104,7 @@ export default function Issues() {
                             {/* Filter Row */}
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <Select value={projectFilter} onValueChange={setProjectFilter}>
-                                    <SelectTrigger className="w-full sm:w-[200px]">
+                                    <SelectTrigger className="w-full sm:w-[200px] max-w-full">
                                         <SelectValue placeholder="All Projects" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -114,7 +118,7 @@ export default function Issues() {
                                 </Select>
 
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-full sm:w-[180px]">
+                                    <SelectTrigger className="w-full sm:w-[180px] max-w-full">
                                         <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -126,7 +130,7 @@ export default function Issues() {
                                 </Select>
 
                                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                                    <SelectTrigger className="w-full sm:w-[180px]">
+                                    <SelectTrigger className="w-full sm:w-[180px] max-w-full">
                                         <SelectValue placeholder="Priority" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -173,12 +177,11 @@ export default function Issues() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-w-full">
                         {filteredIssues.map(issue => (
                             <Card
                                 key={issue.id}
-                                className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.01]"
-                                onClick={() => setSelectedIssueId(issue.id)}
+                                className="hover:shadow-lg transition-all hover:scale-[1.01]"
                             >
                                 <CardContent className="p-4">
                                     <div className="flex items-center justify-between">
@@ -187,7 +190,26 @@ export default function Issues() {
                                                 <span className="font-mono text-sm text-muted-foreground font-semibold">
                                                     {issue.key}
                                                 </span>
-                                                <h3 className="font-semibold truncate">{issue.title}</h3>
+                                                {isMobile ? (
+                                                    <h3
+                                                        className="font-semibold truncate hover:underline cursor-pointer text-primary"
+                                                        title="Open full page"
+                                                        onClick={() => setSelectedIssueId(issue.id)}
+                                                    >{issue.title}</h3>
+                                                ) : (
+                                                    <Link
+                                                        to={`/issues/${issue.id}`}
+                                                        className="font-semibold truncate hover:underline text-primary"
+                                                        title="Open full page"
+                                                    >{issue.title}</Link>
+                                                )}
+                                                <button
+                                                    title="Quick preview"
+                                                    className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                                                    onClick={() => setSelectedIssueId(issue.id)}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </button>
                                             </div>
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <Badge

@@ -1,9 +1,16 @@
 import axios from 'axios';
 import { storageService } from './storageService';
+import { tokenDebugger } from '@/utils/tokenDebugger';
 
+<<<<<<< HEAD
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'komuna.site:6901';
+=======
+// In development, use empty baseURL so requests go through Vite's proxy (same-origin = no CORS = no OPTIONS)
+// In production, use the full URL from env
+const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || 'http://komuna.site:6901');
+>>>>>>> develop
 
-const apiClient = axios. create({
+const apiClient = axios.create({
     baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
@@ -80,9 +87,10 @@ apiClient.interceptors.response.use(
         // Jeśli 401 i nie jest to już retry
         if (error.response?.status === 401 && !originalRequest._retry) {
             console.log('🔐 [Token Refresh] 401 detected, attempting refresh...');
+            tokenDebugger.log('401 detected, attempting token refresh');
 
-            // Jeśli to endpoint login/register - nie próbuj refreshować
-            if (originalRequest.url?. includes('/login') || originalRequest.url?.includes('/register')) {
+            // Jeśli to endpoint login/register/regenerate-tokens - nie próbuj refreshować
+            if (originalRequest.url?.includes('/login') || originalRequest.url?.includes('/register') || originalRequest.url?.includes('/regenerate-tokens')) {
                 console. log('⚠️ [Token Refresh] Skipping refresh for auth endpoint');
                 return Promise.reject(error);
             }
@@ -105,6 +113,9 @@ apiClient.interceptors.response.use(
             // ✅ Używaj storageService
             const refreshToken = storageService.getItem('refreshToken');
 
+            tokenDebugger.logStorageType(storageService.isPersistentSession());
+            tokenDebugger.logRefreshTokenState(refreshToken);
+
             if (!refreshToken) {
                 console.error('❌ [Token Refresh] No refresh token, logging out...');
                 isRefreshing = false;
@@ -119,8 +130,11 @@ apiClient.interceptors.response.use(
             console.log('🔄 [Token Refresh] Refreshing with token:', refreshToken. substring(0, 20) + '...');
 
             try {
+                // Use raw axios to avoid the request interceptor (which would add the expired access token)
+                // Use relative URL in dev (proxy) or full URL in production
+                const refreshBaseURL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || '');
                 const response = await axios.post(
-                    `${API_BASE_URL}/api/v1/auth/regenerate-tokens`,
+                    `${refreshBaseURL}/api/v1/auth/regenerate-tokens`,
                     {
                         refreshToken: refreshToken
                     },
@@ -132,6 +146,7 @@ apiClient.interceptors.response.use(
                 );
 
                 console.log('✅ [Token Refresh] Success!', response.data);
+                tokenDebugger.logRefreshCycle('response', response.data);
 
                 // Backend zwraca:  TokenResponseDto { AccessToken:  {Token, Expires}, RefreshToken: {Token, Expires} }
                 const newAccessToken = response.data.accessToken?. token || response.data.accessToken;
@@ -140,6 +155,8 @@ apiClient.interceptors.response.use(
                 if (! newAccessToken) {
                     throw new Error('No access token in refresh response');
                 }
+
+                tokenDebugger.inspectToken(newAccessToken, 'refreshed-accessToken');
 
                 // ✅ Zapisz nowe tokeny używając storageService
                 storageService.setItem('accessToken', newAccessToken);

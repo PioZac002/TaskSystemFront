@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { useEffect, useState } from "react";
 
 export const ThemeToggle = () => {
-    const [theme, setTheme] = useState("light"); // domyślny motyw
+    const [theme, setTheme] = useState("light");
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
+import { generateShortName } from "@/utils/shortNameGenerator";
 
 export function CreateProjectModal({ open, onOpenChange }) {
     const [shortName, setShortName] = useState("");
@@ -17,13 +18,13 @@ export function CreateProjectModal({ open, onOpenChange }) {
         e.preventDefault();
 
         // Walidacja
-        if (!shortName. trim()) {
+        if (!shortName.trim()) {
             toast.error("Project short name is required");
             return;
         }
 
-        if (shortName.length > 6) {
-            toast.error("Short name must be max 6 characters");
+        if (!/^[A-Z]{6}$/.test(shortName)) {
+            toast.error("Short name must be exactly 6 uppercase letters (A-Z only)");
             return;
         }
 
@@ -35,7 +36,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
                 description:  description.trim() || null
             });
 
-            toast. success("Project created successfully!");
+            toast.success("Project created successfully!");
 
             // Reset form
             setShortName("");
@@ -50,7 +51,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
     };
 
     const handleShortNameChange = (e) => {
-        const value = e.target.value. toUpperCase();
+        const value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
         if (value.length <= 6) {
             setShortName(value);
         }
@@ -67,17 +68,27 @@ export function CreateProjectModal({ open, onOpenChange }) {
                         <Label htmlFor="shortName">
                             Short Name <span className="text-destructive">*</span>
                         </Label>
-                        <Input
-                            id="shortName"
-                            placeholder="e.g., PROJ, APP, WEB"
-                            value={shortName}
-                            onChange={handleShortNameChange}
-                            maxLength={6}
-                            required
-                            className="font-mono uppercase"
-                        />
+                        <div className="flex gap-2">
+                            <Input
+                                id="shortName"
+                                placeholder="e.g. PROJAB"
+                                value={shortName}
+                                onChange={handleShortNameChange}
+                                maxLength={6}
+                                required
+                                className="font-mono uppercase"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShortName(generateShortName())}
+                                className="shrink-0"
+                            >
+                                Suggest
+                            </Button>
+                        </div>
                         <p className="text-xs text-muted-foreground">
-                            {shortName.length}/6 characters • Used in issue keys (e.g., {shortName || 'PROJ'}-1, {shortName || 'PROJ'}-2)
+                            {shortName.length}/6 characters • Exactly 6 uppercase letters A-Z • Used in issue keys (e.g., {shortName || 'PROJAB'}-1, {shortName || 'PROJAB'}-2)
                         </p>
                     </div>
 
@@ -87,12 +98,12 @@ export function CreateProjectModal({ open, onOpenChange }) {
                             id="description"
                             placeholder="Describe your project..."
                             value={description}
-                            onChange={(e) => setDescription(e. target.value)}
+                            onChange={(e) => setDescription(e.target.value)}
                             rows={4}
                         />
                     </div>
 
-                    <div className="flex justify-end gap-3">
+                    <div className="flex justify-end gap-3 mt-4">
                         <Button
                             type="button"
                             variant="outline"
@@ -101,7 +112,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={loading || !shortName.trim()}>
+                        <Button type="submit" disabled={loading || !/^[A-Z]{6}$/.test(shortName)}>
                             {loading ? "Creating..." : "Create Project"}
                         </Button>
                     </div>

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import apiClient from "@/services/apiClient";
 import { storageService } from "@/services/storageService";
+import { tokenDebugger } from "@/utils/tokenDebugger";
 
 export const useAuthStore = create((set, get) => ({
     user: null,
@@ -17,11 +18,18 @@ export const useAuthStore = create((set, get) => ({
             const accessToken = storageService.getItem('accessToken');
             const refreshToken = storageService.getItem('refreshToken');
 
+            // Storage consistency check
+            tokenDebugger.checkStorageConsistency(storageService.isPersistentSession());
+
             console.log('🔍 [AuthStore] Found tokens:', {
                 hasAccessToken: !!accessToken,
                 hasRefreshToken: !!refreshToken,
                 isPersistent: storageService.isPersistentSession()
             });
+
+            tokenDebugger.logStorageType(storageService.isPersistentSession());
+            tokenDebugger.inspectToken(accessToken, 'accessToken');
+            tokenDebugger.logRefreshTokenState(refreshToken);
 
             if (! accessToken || !refreshToken) {
                 console.log('❌ [AuthStore] No tokens found');
@@ -162,8 +170,13 @@ export const useAuthStore = create((set, get) => ({
         console.log('✅ [AuthStore] Auth set successfully');
     },
 
+    updateCachedUser: (userData) => {
+        storageService.setItem('user', JSON.stringify(userData));
+        set({ user: userData });
+    },
+
     logout: () => {
-        console. log('👋 [AuthStore] Logging out...');
+        console.log('👋 [AuthStore] Logging out...');
 
         storageService.clear();
 

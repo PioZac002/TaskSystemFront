@@ -1,25 +1,31 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+<<<<<<< HEAD
+=======
+import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
+>>>>>>> develop
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 
 const columns = [
     { id: "NEW", title: "To Do", color: "border-l-4 border-l-slate-400" },
     { id: "IN_PROGRESS", title: "In Progress", color: "border-l-4 border-l-blue-500" },
-    { id: "DONE", title:  "Done", color: "border-l-4 border-l-green-500" },
+    { id: "DONE", title: "Done", color: "border-l-4 border-l-green-500" },
 ];
 
 export default function Board() {
+    const { isMobile } = useResponsiveNavigation();
     const { issues, fetchIssues } = useIssueStore();
     const { projects, fetchProjects } = useProjectStore();
     const [selectedProjectId, setSelectedProjectId] = useState("all");
@@ -126,22 +132,45 @@ export default function Board() {
                                 </Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-3 space-y-2 min-h-[400px]">
+                        <CardContent className="p-3 space-y-2 min-h-[400px] max-h-[600px] overflow-y-auto">
                             {filteredIssues
                                 .filter(issue => issue.status === columns[activeColumnIndex].id)
+                                .slice(0, 10)
                                 .map((issue) => (
                                     <Card
                                         key={issue.id}
-                                        className="cursor-pointer hover:shadow-lg transition-shadow bg-card"
-                                        onClick={() => setSelectedIssueId(issue.id)}
+                                        className="hover:shadow-lg transition-shadow bg-card"
                                     >
                                         <CardContent className="p-3">
                                             <p className="font-mono text-xs text-muted-foreground mb-1">
                                                 {issue.key}
                                             </p>
-                                            <h3 className="font-semibold text-sm mb-2 line-clamp-2">
-                                                {issue.title}
-                                            </h3>
+                                            <div className="flex items-start gap-2 mb-2">
+                                                {isMobile ? (
+                                                    <h3
+                                                        className="font-semibold text-sm line-clamp-2 flex-1 hover:underline cursor-pointer text-primary"
+                                                        title="Open full page"
+                                                        onClick={() => setSelectedIssueId(issue.id)}
+                                                    >
+                                                        {issue.title}
+                                                    </h3>
+                                                ) : (
+                                                    <Link
+                                                        to={`/issues/${issue.id}`}
+                                                        className="font-semibold text-sm line-clamp-2 flex-1 hover:underline text-primary"
+                                                        title="Open full page"
+                                                    >
+                                                        {issue.title}
+                                                    </Link>
+                                                )}
+                                                <button
+                                                    title="Quick preview"
+                                                    className="text-muted-foreground hover:text-primary transition-colors shrink-0 mt-0.5"
+                                                    onClick={() => setSelectedIssueId(issue.id)}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </button>
+                                            </div>
                                             <Badge
                                                 variant={
                                                     issue.priority === "HIGH" ? "destructive" :
@@ -177,11 +206,11 @@ export default function Board() {
                                             <CardContent
                                                 ref={provided.innerRef}
                                                 {... provided.droppableProps}
-                                                className={`p-3 space-y-2 min-h-[500px] transition-colors ${
+                                                className={`p-3 space-y-2 min-h-[500px] max-h-[600px] overflow-y-auto transition-colors ${
                                                     snapshot. isDraggingOver ? "bg-accent/30" : ""
                                                 }`}
                                             >
-                                                {columnIssues.map((issue, index) => (
+                                                {columnIssues.slice(0, 10).map((issue, index) => (
                                                     <Draggable
                                                         key={issue.id}
                                                         draggableId={String(issue.id)}
@@ -192,18 +221,40 @@ export default function Board() {
                                                                 ref={provided.innerRef}
                                                                 {...provided.draggableProps}
                                                                 {...provided.dragHandleProps}
-                                                                className={`cursor-pointer hover:shadow-lg transition-all bg-card ${
+                                                                className={`hover:shadow-lg transition-all bg-card ${
                                                                     snapshot.isDragging ? "shadow-2xl rotate-2" : ""
                                                                 }`}
-                                                                onClick={() => setSelectedIssueId(issue.id)}
                                                             >
                                                                 <CardContent className="p-3">
                                                                     <p className="font-mono text-xs text-muted-foreground mb-1">
                                                                         {issue.key}
                                                                     </p>
-                                                                    <h3 className="font-semibold text-sm mb-2 line-clamp-2">
-                                                                        {issue.title}
-                                                                    </h3>
+                                                                    <div className="flex items-start gap-2 mb-2">
+                                                                        {isMobile ? (
+                                                                            <h3
+                                                                                className="font-semibold text-sm line-clamp-2 flex-1 hover:underline cursor-pointer text-primary"
+                                                                                title="Open full page"
+                                                                                onClick={() => setSelectedIssueId(issue.id)}
+                                                                            >
+                                                                                {issue.title}
+                                                                            </h3>
+                                                                        ) : (
+                                                                            <Link
+                                                                                to={`/issues/${issue.id}`}
+                                                                                className="font-semibold text-sm line-clamp-2 flex-1 hover:underline text-primary"
+                                                                                title="Open full page"
+                                                                            >
+                                                                                {issue.title}
+                                                                            </Link>
+                                                                        )}
+                                                                        <button
+                                                                            title="Quick preview"
+                                                                            className="text-muted-foreground hover:text-primary transition-colors shrink-0 mt-0.5"
+                                                                            onClick={() => setSelectedIssueId(issue.id)}
+                                                                        >
+                                                                            <Eye className="h-4 w-4" />
+                                                                        </button>
+                                                                    </div>
                                                                     <Badge
                                                                         variant={
                                                                             issue.priority === "HIGH" ? "destructive" :
