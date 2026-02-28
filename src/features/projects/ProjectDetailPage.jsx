@@ -157,7 +157,9 @@ export default function ProjectDetailPage() {
                                                             <span className="font-mono text-xs text-muted-foreground font-semibold">
                                                                 {issue.key}
                                                             </span>
-                                                            <h4 className="font-medium truncate">{issue.title}</h4>
+                                                            <h4 className="font-medium" title={issue.title}>
+                                                {issue.title.length > 70 ? issue.title.slice(0, 70) + '…' : issue.title}
+                                            </h4>
                                                         </div>
                                                         <div className="flex items-center gap-2 flex-wrap">
                                                             <Badge

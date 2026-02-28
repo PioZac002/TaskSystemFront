@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useSearchStore } from "@/store/searchStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useIssueStore } from "@/store/issueStore";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -20,6 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { SearchResults } from "./SearchResults";
+import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
+import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
 
 const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -32,8 +35,11 @@ const navItems = [
 
 export const TopBar = () => {
     const navigate = useNavigate();
+    const isMobile = useIsMobile();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    
+    const [selectedIssueId, setSelectedIssueId] = useState(null);
+    const [selectedProjectId, setSelectedProjectId] = useState(null);
+
     // Search state
     const { searchTerm, isSearchOpen, setSearchTerm, setSearchOpen, clearSearch } = useSearchStore();
     const { fetchProjects } = useProjectStore();
@@ -53,6 +59,22 @@ export const TopBar = () => {
     const handleLogout = () => {
         logout();
         navigate("/login");
+    };
+
+    const handleIssueSelect = (issueId) => {
+        if (isMobile) {
+            setSelectedIssueId(issueId);
+        } else {
+            navigate(`/issues/${issueId}`);
+        }
+    };
+
+    const handleProjectSelect = (projectId) => {
+        if (isMobile) {
+            setSelectedProjectId(projectId);
+        } else {
+            navigate(`/projects/${projectId}`);
+        }
     };
 
     // ✅ Oblicz display name i inicjały z firstName/lastName
@@ -126,7 +148,10 @@ export const TopBar = () => {
                             }}
                             onFocus={() => setSearchOpen(true)}
                         />
-                        <SearchResults />
+                        <SearchResults
+                            onIssueSelect={handleIssueSelect}
+                            onProjectSelect={handleProjectSelect}
+                        />
                     </div>
                 </div>
 
@@ -240,16 +265,31 @@ export const TopBar = () => {
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
-                        <div className="mt-2">
-                            <SearchResults />
+                        <div className="mt-2 relative">
+                            <SearchResults
+                                onIssueSelect={handleIssueSelect}
+                                onProjectSelect={handleProjectSelect}
+                            />
                         </div>
                     </div>
-                    <div 
-                        className="absolute inset-0 -z-10" 
+                    <div
+                        className="absolute inset-0 -z-10"
                         onClick={clearSearch}
                     />
                 </div>
             )}
+
+            {/* Modals for search results - rendered outside search overlay so they survive clearSearch() */}
+            <IssueDetailsModal
+                open={!!selectedIssueId}
+                onOpenChange={(open) => { if (!open) setSelectedIssueId(null); }}
+                issueId={selectedIssueId}
+            />
+            <ProjectDetailsModal
+                open={!!selectedProjectId}
+                onOpenChange={(open) => { if (!open) setSelectedProjectId(null); }}
+                projectId={selectedProjectId}
+            />
         </>
     );
 };

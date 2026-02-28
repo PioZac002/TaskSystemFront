@@ -202,8 +202,8 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                             className="text-lg md:text-xl font-semibold h-auto py-1"
                                         />
                                     ) : (
-                                        <DialogTitle className="text-lg md:text-2xl font-bold pr-4 md:pr-8">
-                                            {issue.title}
+                                        <DialogTitle className="text-lg md:text-2xl font-bold pr-4 md:pr-8" title={issue.title}>
+                                            {issue.title.length > 70 ? issue.title.slice(0, 70) + '…' : issue.title}
                                         </DialogTitle>
                                     )}
                                 </div>

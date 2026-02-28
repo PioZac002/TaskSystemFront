@@ -17,8 +17,13 @@ const apiClient = axios.create({
 console.log('🔧 [API Client] Initialized with baseURL:', API_BASE_URL);
 
 // Request interceptor - dodaj access token
-apiClient.interceptors. request.use(
+apiClient.interceptors.request.use(
     (config) => {
+        // Jeśli body to FormData, usuń Content-Type żeby axios sam ustawił multipart/form-data z boundary
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
+
         // ✅ Używaj storageService zamiast localStorage
         const token = storageService.getItem('accessToken');
 

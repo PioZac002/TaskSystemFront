@@ -191,7 +191,9 @@ export default function IssueDetailPage() {
                                     className="text-xl font-semibold h-auto py-1"
                                 />
                             ) : (
-                                <h1 className="text-2xl md:text-3xl font-bold">{issue.title}</h1>
+                                <h1 className="text-2xl md:text-3xl font-bold" title={issue.title}>
+                                    {issue.title.length > 70 ? issue.title.slice(0, 70) + '…' : issue.title}
+                                </h1>
                             )}
                         </div>
                     </div>

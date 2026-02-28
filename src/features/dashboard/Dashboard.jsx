@@ -309,15 +309,15 @@ export default function Dashboard() {
                                                     </span>
                                                     {isMobile ? (
                                                         <span
-                                                            className="font-medium truncate hover:underline cursor-pointer text-primary"
-                                                            title="Open full page"
+                                                            className="font-medium hover:underline cursor-pointer text-primary flex-1 min-w-0"
+                                                            title={issue.title}
                                                             onClick={() => setSelectedIssueId(issue.id)}
-                                                        >{issue.title}</span>
+                                                        >{issue.title.length > 30 ? issue.title.slice(0, 30) + '…' : issue.title}</span>
                                                     ) : (
                                                         <Link
                                                             to={`/issues/${issue.id}`}
-                                                            className="font-medium truncate hover:underline text-primary"
-                                                            title="Open full page"
+                                                            className="font-medium hover:underline text-primary"
+                                                            title={issue.title}
                                                         >{issue.title}</Link>
                                                     )}
                                                     <button
@@ -486,15 +486,15 @@ export default function Dashboard() {
                                                     </span>
                                                     {isMobile ? (
                                                         <span
-                                                            className="font-medium truncate hover:underline cursor-pointer text-primary"
-                                                            title="Open full page"
+                                                            className="font-medium hover:underline cursor-pointer text-primary flex-1 min-w-0"
+                                                            title={issue.title}
                                                             onClick={() => setSelectedIssueId(issue.id)}
-                                                        >{issue.title}</span>
+                                                        >{issue.title.length > 30 ? issue.title.slice(0, 30) + '…' : issue.title}</span>
                                                     ) : (
                                                         <Link
                                                             to={`/issues/${issue.id}`}
-                                                            className="font-medium truncate hover:underline text-primary"
-                                                            title="Open full page"
+                                                            className="font-medium hover:underline text-primary"
+                                                            title={issue.title}
                                                         >{issue.title}</Link>
                                                     )}
                                                     <button

@@ -138,7 +138,8 @@ export default function Board() {
                                 .map((issue) => (
                                     <Card
                                         key={issue.id}
-                                        className="hover:shadow-lg transition-shadow bg-card"
+                                        className="hover:shadow-lg transition-shadow bg-card cursor-pointer"
+                                        onClick={() => setSelectedIssueId(issue.id)}
                                     >
                                         <CardContent className="p-3">
                                             <p className="font-mono text-xs text-muted-foreground mb-1">
@@ -147,17 +148,17 @@ export default function Board() {
                                             <div className="flex items-start gap-2 mb-2">
                                                 {isMobile ? (
                                                     <h3
-                                                        className="font-semibold text-sm line-clamp-2 flex-1 hover:underline cursor-pointer text-primary"
-                                                        title="Open full page"
+                                                        className="font-semibold text-sm flex-1 min-w-0 hover:underline cursor-pointer text-primary"
+                                                        title={issue.title}
                                                         onClick={() => setSelectedIssueId(issue.id)}
                                                     >
-                                                        {issue.title}
+                                                        {issue.title.length > 30 ? issue.title.slice(0, 30) + '…' : issue.title}
                                                     </h3>
                                                 ) : (
                                                     <Link
                                                         to={`/issues/${issue.id}`}
-                                                        className="font-semibold text-sm line-clamp-2 flex-1 hover:underline text-primary"
-                                                        title="Open full page"
+                                                        className="font-semibold text-sm line-clamp-2 flex-1 min-w-0 hover:underline text-primary"
+                                                        title={issue.title}
                                                     >
                                                         {issue.title}
                                                     </Link>
@@ -231,17 +232,17 @@ export default function Board() {
                                                                     <div className="flex items-start gap-2 mb-2">
                                                                         {isMobile ? (
                                                                             <h3
-                                                                                className="font-semibold text-sm line-clamp-2 flex-1 hover:underline cursor-pointer text-primary"
-                                                                                title="Open full page"
+                                                                                className="font-semibold text-sm flex-1 min-w-0 hover:underline cursor-pointer text-primary"
+                                                                                title={issue.title}
                                                                                 onClick={() => setSelectedIssueId(issue.id)}
                                                                             >
-                                                                                {issue.title}
+                                                                                {issue.title.length > 30 ? issue.title.slice(0, 30) + '…' : issue.title}
                                                                             </h3>
                                                                         ) : (
                                                                             <Link
                                                                                 to={`/issues/${issue.id}`}
-                                                                                className="font-semibold text-sm line-clamp-2 flex-1 hover:underline text-primary"
-                                                                                title="Open full page"
+                                                                                className="font-semibold text-sm line-clamp-2 flex-1 min-w-0 hover:underline text-primary"
+                                                                                title={issue.title}
                                                                             >
                                                                                 {issue.title}
                                                                             </Link>

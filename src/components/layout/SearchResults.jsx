@@ -1,5 +1,4 @@
-import { useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Separator } from "@/components/ui/Separator";
@@ -21,13 +20,11 @@ const STATUS_COLORS = {
     DONE: "outline",
 };
 
-export function SearchResults() {
-    const navigate = useNavigate();
+export function SearchResults({ onIssueSelect, onProjectSelect }) {
     const { searchTerm, isSearchOpen, clearSearch } = useSearchStore();
     const { projects } = useProjectStore();
     const { issues } = useIssueStore();
 
-    // Filter results based on search term
     const filteredResults = useMemo(() => {
         if (!searchTerm || searchTerm.length < 2) {
             return { projects: [], issues: [] };
@@ -35,16 +32,16 @@ export function SearchResults() {
 
         const lowerTerm = searchTerm.toLowerCase();
 
-        const matchedProjects = projects.filter(project => 
+        const matchedProjects = projects.filter(project =>
             project.shortName?.toLowerCase().includes(lowerTerm) ||
             project.description?.toLowerCase().includes(lowerTerm)
-        ).slice(0, 5); // Limit to 5 results
+        ).slice(0, 5);
 
         const matchedIssues = issues.filter(issue =>
             issue.title?.toLowerCase().includes(lowerTerm) ||
             issue.key?.toLowerCase().includes(lowerTerm) ||
             issue.description?.toLowerCase().includes(lowerTerm)
-        ).slice(0, 5); // Limit to 5 results
+        ).slice(0, 5);
 
         return { projects: matchedProjects, issues: matchedIssues };
     }, [searchTerm, projects, issues]);
@@ -55,14 +52,16 @@ export function SearchResults() {
         return null;
     }
 
-    const handleProjectClick = (projectId) => {
-        navigate(`/projects`);
+    const handleProjectClick = (e, projectId) => {
+        e.stopPropagation();
         clearSearch();
+        onProjectSelect?.(projectId);
     };
 
-    const handleIssueClick = (issueId) => {
-        navigate(`/issues`);
+    const handleIssueClick = (e, issueId) => {
+        e.stopPropagation();
         clearSearch();
+        onIssueSelect?.(issueId);
     };
 
     return (
@@ -73,11 +72,11 @@ export function SearchResults() {
                         <h3 className="text-sm font-semibold text-muted-foreground">
                             Search Results for "{searchTerm}"
                         </h3>
-                        <Button 
-                            variant="ghost" 
+                        <Button
+                            variant="ghost"
                             size="icon"
                             className="h-6 w-6"
-                            onClick={clearSearch}
+                            onClick={(e) => { e.stopPropagation(); clearSearch(); }}
                         >
                             <X className="h-4 w-4" />
                         </Button>
@@ -102,10 +101,11 @@ export function SearchResults() {
                                     <div
                                         key={project.id}
                                         className="p-2 rounded-md hover:bg-accent cursor-pointer transition-colors"
-                                        onClick={() => handleProjectClick(project.id)}
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => handleProjectClick(e, project.id)}
                                     >
                                         <div className="flex items-center gap-2">
-                                            <Badge variant="outline" className="font-mono">
+                                            <Badge variant="outline" className="font-mono shrink-0">
                                                 {project.shortName}
                                             </Badge>
                                             <span className="text-sm truncate">
@@ -135,16 +135,17 @@ export function SearchResults() {
                                     <div
                                         key={issue.id}
                                         className="p-2 rounded-md hover:bg-accent cursor-pointer transition-colors"
-                                        onClick={() => handleIssueClick(issue.id)}
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => handleIssueClick(e, issue.id)}
                                     >
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <Badge variant="outline" className="font-mono text-xs">
+                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                            <Badge variant="outline" className="font-mono text-xs shrink-0">
                                                 {issue.key}
                                             </Badge>
-                                            <Badge variant={STATUS_COLORS[issue.status]} className="text-xs">
+                                            <Badge variant={STATUS_COLORS[issue.status]} className="text-xs shrink-0">
                                                 {issue.status?.replace('_', ' ')}
                                             </Badge>
-                                            <Badge variant={PRIORITY_COLORS[issue.priority]} className="text-xs">
+                                            <Badge variant={PRIORITY_COLORS[issue.priority]} className="text-xs shrink-0">
                                                 {issue.priority}
                                             </Badge>
                                         </div>
