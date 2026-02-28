@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/Badge";
 import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
+import { useUserStore } from "@/store/userStore";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
@@ -28,6 +29,14 @@ export default function Issues() {
     const { isMobile } = useResponsiveNavigation();
     const { issues, fetchIssues, loading } = useIssueStore();
     const { projects, fetchProjects } = useProjectStore();
+    const { users, fetchUsers } = useUserStore();
+
+    const getUserName = (userId) => {
+        if (!userId) return null;
+        const found = users.find(u => String(u.id) === String(userId));
+        if (found) return `${found.firstName || ''} ${found.lastName || ''}`.trim() || null;
+        return null;
+    };
     const [selectedIssueId, setSelectedIssueId] = useState(null);
     const [createModalOpen, setCreateModalOpen] = useState(false);
 
@@ -40,6 +49,7 @@ export default function Issues() {
     useEffect(() => {
         fetchIssues();
         fetchProjects();
+        fetchUsers();
     }, []);
 
     // Filtrowanie
@@ -238,7 +248,7 @@ export default function Issues() {
                                                 </span>
                                                 {issue.assigneeId && (
                                                     <span className="text-sm text-muted-foreground">
-                                                        👤 User #{issue.assigneeId}
+                                                        👤 {getUserName(issue.assigneeId) || `User #${issue.assigneeId}`}
                                                     </span>
                                                 )}
                                             </div>

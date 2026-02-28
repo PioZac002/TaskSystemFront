@@ -33,5 +33,17 @@ export const useProjectStore = create((set) => ({
             set({ error: e.message, loading: false });
             throw e;
         }
+    },
+
+    deleteProject: async (projectId) => {
+        try {
+            await apiClient.delete(`/api/v1/project/id/${projectId}`);
+            set((state) => ({
+                projects: state.projects.filter(p => p.id !== projectId)
+            }));
+        } catch (e) {
+            console.error('Error deleting project:', e);
+            throw e;
+        }
     }
 }));

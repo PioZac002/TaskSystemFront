@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
@@ -11,7 +11,7 @@ import { useUserStore } from "@/store/userStore";
 import { storageService } from "@/services/storageService";
 import { fileService } from "@/services/fileService";
 import { toast } from "sonner";
-import { Trash2, User, Paperclip, X, ImageIcon } from "lucide-react";
+import { Trash2, User, Paperclip, X, ImageIcon, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -44,22 +44,107 @@ function formatDate(dateString) {
     }
 }
 
-function AttachmentThumbnail({ fileId, canDelete, onDelete }) {
+function ImageLightbox({ fileIds, initialIndex, onClose }) {
+    const [currentIndex, setCurrentIndex] = useState(initialIndex);
+    const [blobUrl, setBlobUrl] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let active = true;
+        setLoading(true);
+        setBlobUrl(null);
+        fileService.fetchFileBlob(fileIds[currentIndex])
+            .then(url => { if (active) { setBlobUrl(url); setLoading(false); } })
+            .catch(() => { if (active) setLoading(false); });
+        return () => { active = false; };
+    }, [currentIndex, fileIds]);
+
+    const prev = useCallback(() => setCurrentIndex(i => Math.max(0, i - 1)), []);
+    const next = useCallback(() => setCurrentIndex(i => Math.min(fileIds.length - 1, i + 1)), [fileIds.length]);
+
+    useEffect(() => {
+        const handleKey = (e) => {
+            if (e.key === 'Escape') onClose();
+            if (e.key === 'ArrowLeft') prev();
+            if (e.key === 'ArrowRight') next();
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [onClose, prev, next]);
+
+    return (
+        <div
+            className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4"
+            onClick={onClose}
+        >
+            {/* Close */}
+            <button
+                className="absolute top-3 right-3 text-white/80 hover:text-white bg-black/40 rounded-full p-2 z-10"
+                onClick={onClose}
+            >
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+
+            {/* Counter */}
+            {fileIds.length > 1 && (
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 text-white/80 text-sm bg-black/40 rounded-full px-3 py-1 z-10">
+                    {currentIndex + 1} / {fileIds.length}
+                </div>
+            )}
+
+            {/* Prev */}
+            {currentIndex > 0 && (
+                <button
+                    className="absolute left-2 sm:left-4 text-white/80 hover:text-white bg-black/40 rounded-full p-2 sm:p-3 z-10"
+                    onClick={(e) => { e.stopPropagation(); prev(); }}
+                >
+                    <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
+                </button>
+            )}
+
+            {/* Image */}
+            <div className="max-w-[90vw] max-h-[85vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                {loading ? (
+                    <div className="w-16 h-16 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white" />
+                    </div>
+                ) : blobUrl ? (
+                    <img
+                        src={blobUrl}
+                        alt={`Attachment ${currentIndex + 1}`}
+                        className="max-w-[85vw] max-h-[80vh] object-contain rounded-lg shadow-2xl"
+                    />
+                ) : (
+                    <div className="text-white/60 flex flex-col items-center gap-2">
+                        <ImageIcon className="h-12 w-12" />
+                        <span className="text-sm">Failed to load image</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Next */}
+            {currentIndex < fileIds.length - 1 && (
+                <button
+                    className="absolute right-2 sm:right-4 text-white/80 hover:text-white bg-black/40 rounded-full p-2 sm:p-3 z-10"
+                    onClick={(e) => { e.stopPropagation(); next(); }}
+                >
+                    <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
+                </button>
+            )}
+        </div>
+    );
+}
+
+function AttachmentThumbnail({ fileId, canDelete, onDelete, onClick }) {
     const [blobUrl, setBlobUrl] = useState(null);
     const [error, setError] = useState(false);
 
     useEffect(() => {
         let url = null;
         fileService.fetchFileBlob(fileId)
-            .then(u => {
-                url = u;
-                setBlobUrl(u);
-            })
+            .then(u => { url = u; setBlobUrl(u); })
             .catch(() => setError(true));
-
-        return () => {
-            if (url) URL.revokeObjectURL(url);
-        };
+        return () => { if (url) URL.revokeObjectURL(url); };
     }, [fileId]);
 
     if (error) {
@@ -71,20 +156,28 @@ function AttachmentThumbnail({ fileId, canDelete, onDelete }) {
     }
 
     return (
-        <div className="relative w-20 h-20 rounded-md overflow-hidden border border-border group">
+        <div className="relative w-20 h-20 rounded-md overflow-hidden border border-border group cursor-pointer">
             {blobUrl ? (
                 <img
                     src={blobUrl}
                     alt={`Attachment ${fileId}`}
                     className="w-full h-full object-cover"
+                    onClick={onClick}
                 />
             ) : (
                 <div className="w-full h-full bg-muted animate-pulse" />
             )}
+            {/* Zoom overlay */}
+            <div
+                className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center"
+                onClick={onClick}
+            >
+                <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
             {canDelete && (
                 <button
-                    onClick={() => onDelete(fileId)}
-                    className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => { e.stopPropagation(); onDelete(fileId); }}
+                    className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     title="Delete attachment"
                 >
                     <X className="h-3 w-3" />
@@ -101,6 +194,7 @@ export function CommentSection({ issueId }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [pendingFiles, setPendingFiles] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [lightbox, setLightbox] = useState(null); // { fileIds, index }
     const fileInputRef = useRef(null);
 
     // Pobierz userId z authStore zamiast localStorage
@@ -150,8 +244,20 @@ export function CommentSection({ issueId }) {
         if (valid.length > 0) {
             setPendingFiles(prev => [...prev, ...valid]);
         }
-        // Reset input so the same file can be selected again
         if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handlePaste = (e) => {
+        const items = Array.from(e.clipboardData?.items || []);
+        const imageItems = items.filter(item => ALLOWED_TYPES.includes(item.type));
+        if (imageItems.length === 0) return;
+        e.preventDefault();
+        const files = imageItems.map(item => item.getAsFile()).filter(Boolean);
+        const valid = files.filter(validateFile);
+        if (valid.length > 0) {
+            setPendingFiles(prev => [...prev, ...valid]);
+            toast.success(`${valid.length} image${valid.length > 1 ? 's' : ''} pasted from clipboard`);
+        }
     };
 
     const removePendingFile = (index) => {
@@ -301,9 +407,10 @@ export function CommentSection({ issueId }) {
                 <CardContent className="pt-6">
                     <div className="space-y-3">
                         <Textarea
-                            placeholder="Write a comment..."
+                            placeholder="Write a comment... (paste images with Ctrl+V)"
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
+                            onPaste={handlePaste}
                             rows={3}
                             className="resize-none"
                             disabled={loading || isSubmitting}
@@ -419,12 +526,13 @@ export function CommentSection({ issueId }) {
                                     {/* Attachments */}
                                     {comment.attachmentIds && comment.attachmentIds.length > 0 && (
                                         <div className="mt-3 flex flex-wrap gap-2">
-                                            {comment.attachmentIds.map(fileId => (
+                                            {comment.attachmentIds.map((fileId, idx) => (
                                                 <AttachmentThumbnail
                                                     key={fileId}
                                                     fileId={fileId}
                                                     canDelete={currentUserId === comment.authorId}
                                                     onDelete={(id) => handleDeleteAttachment(id, comment.id)}
+                                                    onClick={() => setLightbox({ fileIds: comment.attachmentIds, index: idx })}
                                                 />
                                             ))}
                                         </div>
@@ -435,6 +543,14 @@ export function CommentSection({ issueId }) {
                     </Card>
                 ))}
             </div>
+
+            {lightbox && (
+                <ImageLightbox
+                    fileIds={lightbox.fileIds}
+                    initialIndex={lightbox.index}
+                    onClose={() => setLightbox(null)}
+                />
+            )}
         </div>
     );
 }

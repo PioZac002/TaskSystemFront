@@ -131,6 +131,13 @@ export default function Dashboard() {
 
     const loading = projectsLoading || issuesLoading;
 
+    const getUserName = (userId) => {
+        if (!userId) return null;
+        const found = users.find(u => String(u.id) === String(userId));
+        if (found) return `${found.firstName || ''} ${found.lastName || ''}`.trim() || null;
+        return null;
+    };
+
     // User-specific data
     const currentUserId = getUserIdFromToken();
 
@@ -355,6 +362,11 @@ export default function Dashboard() {
                                                     <span className="text-sm text-muted-foreground">
                                                         📅 {issue.dueDate}
                                                     </span>
+                                                    {issue.assignee && (
+                                                        <span className="text-sm text-muted-foreground">
+                                                            👤 {getUserName(issue.assignee) || `User #${issue.assignee}`}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

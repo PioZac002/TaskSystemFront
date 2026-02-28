@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { Separator } from "@/components/ui/Separator";
 import apiClient from "@/services/apiClient";
+import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
-import { Plus, ExternalLink, ListTodo, CheckCircle2, Clock, AlertCircle, Calendar, FolderKanban } from "lucide-react";
+import { Plus, ExternalLink, ListTodo, CheckCircle2, Clock, AlertCircle, Calendar, FolderKanban, Trash2 } from "lucide-react";
 import { IssueDetailsModal } from "./IssueDetailsModal";
 import { CreateIssueModal } from "./CreateIssueModal";
 
@@ -26,6 +27,19 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
     const [loading, setLoading] = useState(false);
     const [selectedIssueId, setSelectedIssueId] = useState(null);
     const [createIssueOpen, setCreateIssueOpen] = useState(false);
+    const { deleteProject } = useProjectStore();
+
+    const handleDeleteProject = async () => {
+        if (!window.confirm(`Are you sure you want to delete project "${project.shortName}"? This action cannot be undone.`)) return;
+        try {
+            await deleteProject(project.id);
+            toast.success("Project deleted successfully!");
+            onOpenChange(false);
+            if (onProjectUpdate) onProjectUpdate();
+        } catch (e) {
+            toast.error(e.response?.data?.Message || "Failed to delete project");
+        }
+    };
 
     useEffect(() => {
         if (open && projectId) {
@@ -91,10 +105,15 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
                                             </p>
                                         )}
                                     </div>
-                                    <Button onClick={() => setCreateIssueOpen(true)} size="sm" className="shrink-0 mr-8">
-                                        <Plus className="h-4 w-4 md:mr-2" />
-                                        <span className="hidden md:inline">Add Issue</span>
-                                    </Button>
+                                    <div className="flex gap-2 shrink-0 mr-8">
+                                        <Button onClick={() => setCreateIssueOpen(true)} size="sm">
+                                            <Plus className="h-4 w-4 md:mr-2" />
+                                            <span className="hidden md:inline">Add Issue</span>
+                                        </Button>
+                                        <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={handleDeleteProject}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
 

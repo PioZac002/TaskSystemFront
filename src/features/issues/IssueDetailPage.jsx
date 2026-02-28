@@ -16,15 +16,18 @@ import {
     Edit, Save, X, Trash2, Calendar, User as UserIcon,
     Users, Tag
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function IssueDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const isMobile = useIsMobile();
     const [issue, setIssue] = useState(null);
     const [users, setUsers] = useState([]);
     const [teams, setTeams] = useState([]);
     const [edit, setEdit] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [inlineSaving, setInlineSaving] = useState(false);
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -155,6 +158,36 @@ export default function IssueDetailPage() {
         }
     };
 
+    const handleInlineStatusChange = async (newStatus) => {
+        if (newStatus === issue.status) return;
+        setInlineSaving(true);
+        try {
+            await apiClient.put("/api/v1/issue/update-status", { issueId: Number(issue.id), newStatus });
+            setIssue(prev => ({ ...prev, status: newStatus }));
+            setForm(prev => ({ ...prev, status: newStatus }));
+            toast.success("Status updated");
+        } catch (e) {
+            toast.error("Failed to update status");
+        } finally {
+            setInlineSaving(false);
+        }
+    };
+
+    const handleInlinePriorityChange = async (newPriority) => {
+        if (newPriority === issue.priority) return;
+        setInlineSaving(true);
+        try {
+            await apiClient.put("/api/v1/issue/update-priority", { issueId: Number(issue.id), newPriority });
+            setIssue(prev => ({ ...prev, priority: newPriority }));
+            setForm(prev => ({ ...prev, priority: newPriority }));
+            toast.success("Priority updated");
+        } catch (e) {
+            toast.error("Failed to update priority");
+        } finally {
+            setInlineSaving(false);
+        }
+    };
+
     if (loading && !issue) {
         return (
             <AppLayout>
@@ -266,6 +299,20 @@ export default function IssueDetailPage() {
                                                 <SelectItem value="DONE">Done</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                    ) : !isMobile ? (
+                                        <Select value={issue.status} onValueChange={handleInlineStatusChange} disabled={inlineSaving}>
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue>
+                                                    {issue.status === 'NEW' ? 'To Do' :
+                                                        issue.status === 'IN_PROGRESS' ? 'In Progress' : 'Done'}
+                                                </SelectValue>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="NEW">To Do</SelectItem>
+                                                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                                <SelectItem value="DONE">Done</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     ) : (
                                         <Badge variant={
                                             issue.status === 'DONE' ? 'default' :
@@ -289,6 +336,17 @@ export default function IssueDetailPage() {
                                         <Select value={form.priority} onValueChange={(v) => handleChange("priority", v)}>
                                             <SelectTrigger>
                                                 <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="HIGH">High</SelectItem>
+                                                <SelectItem value="NORMAL">Normal</SelectItem>
+                                                <SelectItem value="LOW">Low</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : !isMobile ? (
+                                        <Select value={issue.priority} onValueChange={handleInlinePriorityChange} disabled={inlineSaving}>
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue>{issue.priority}</SelectValue>
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="HIGH">High</SelectItem>

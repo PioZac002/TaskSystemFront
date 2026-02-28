@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -7,10 +7,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { Separator } from "@/components/ui/Separator";
 import apiClient from "@/services/apiClient";
+import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
 import {
     Plus, ExternalLink, ListTodo, CheckCircle2, Clock,
-    AlertCircle, Calendar, FolderKanban
+    AlertCircle, Calendar, FolderKanban, Trash2
 } from "lucide-react";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
@@ -27,6 +28,8 @@ function formatDate(dateString) {
 
 export default function ProjectDetailPage() {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { deleteProject } = useProjectStore();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(false);
     const [selectedIssueId, setSelectedIssueId] = useState(null);
@@ -35,6 +38,17 @@ export default function ProjectDetailPage() {
     useEffect(() => {
         if (id) loadProjectDetails();
     }, [id]);
+
+    const handleDeleteProject = async () => {
+        if (!window.confirm(`Are you sure you want to delete project "${project.shortName}"? This action cannot be undone.`)) return;
+        try {
+            await deleteProject(project.id);
+            toast.success("Project deleted successfully!");
+            navigate('/projects');
+        } catch (e) {
+            toast.error(e.response?.data?.Message || "Failed to delete project");
+        }
+    };
 
     const loadProjectDetails = async () => {
         setLoading(true);
@@ -87,10 +101,16 @@ export default function ProjectDetailPage() {
                             <p className="text-muted-foreground mt-1">{project.description}</p>
                         )}
                     </div>
-                    <Button onClick={() => setCreateIssueOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Issue
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button onClick={() => setCreateIssueOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Issue
+                        </Button>
+                        <Button variant="outline" className="text-destructive hover:text-destructive" onClick={handleDeleteProject}>
+                            <Trash2 className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Delete Project</span>
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="md:flex gap-6">
