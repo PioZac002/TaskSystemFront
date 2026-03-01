@@ -18,9 +18,11 @@ function formatLabel(map, val) {
 }
 
 function getActivityDescription(activity, users) {
-    const { activityType, oldValue, newValue, authorUserId } = activity;
-    const author = users.find(u => u.id === authorUserId || String(u.id) === String(authorUserId));
-    const authorName = author ? `${author.firstName || ''} ${author.lastName || ''}`.trim() || author.email : `User #${authorUserId}`;
+    const { activityType, oldValue, newValue, eventAuthorUserId } = activity;
+    const author = users.find(u => u.id === eventAuthorUserId || String(u.id) === String(eventAuthorUserId));
+    const authorName = author
+        ? `${author.firstName || ''} ${author.lastName || ''}`.trim() || author.email
+        : `User #${eventAuthorUserId}`;
 
     switch (activityType) {
         case "CREATED_ISSUE":

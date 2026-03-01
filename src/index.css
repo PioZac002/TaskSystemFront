@@ -255,6 +255,10 @@
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
+
+  .animate-nav-in {
+    animation: nav-in 0.5s ease-out forwards;
+  }
 }
 
 /* Keyframes */
@@ -311,6 +315,11 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes nav-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes float {

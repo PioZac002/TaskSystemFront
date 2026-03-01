@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import {
     Zap,
@@ -83,7 +82,6 @@ export default function LandingPage() {
     }, [lightboxOpen]);
 
     // Refs for animation targets
-    const navRef = useRef(null);
     const heroRef = useRef(null);
     const heroBadgeRef = useRef(null);
     const heroTitleRef = useRef(null);
@@ -97,12 +95,6 @@ export default function LandingPage() {
 
     useEffect(() => {
         const ctx = gsap.context(() => {
-            // Nav slide down
-            gsap.fromTo(navRef.current,
-                { y: -80, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }
-            );
-
             // Hero staggered entrance
             const heroTl = gsap.timeline({ delay: 0.3 });
             heroTl
@@ -232,11 +224,10 @@ export default function LandingPage() {
 
             {/* Navigation */}
             <nav
-                ref={navRef}
-                className="fixed top-0 w-full z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800"
+                className="fixed top-0 w-full z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 animate-nav-in"
             >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
+                    <div className="flex justify-center items-center h-16 gap-12">
                         {/* Logo */}
                         <div className="flex items-center gap-2">
                             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 dark:bg-white">
@@ -245,7 +236,7 @@ export default function LandingPage() {
                             <span className="text-xl font-bold text-slate-900 dark:text-white">TaskSystem</span>
                         </div>
 
-                        {/* Desktop nav links */}
+                        {/* Nav links */}
                         <div className="hidden md:flex items-center gap-8">
                             <button
                                 onClick={() => scrollToSection("features")}
@@ -265,23 +256,6 @@ export default function LandingPage() {
                             >
                                 Technology
                             </button>
-                        </div>
-
-                        {/* Auth buttons */}
-                        <div className="flex items-center gap-3">
-                            <Button
-                                variant="ghost"
-                                onClick={() => navigate("/login")}
-                                className="text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                            >
-                                Sign in
-                            </Button>
-                            <Button
-                                onClick={() => navigate("/register")}
-                                className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100"
-                            >
-                                Get Started
-                            </Button>
                         </div>
                     </div>
                 </div>
@@ -312,22 +286,21 @@ export default function LandingPage() {
                         </p>
 
                         <div ref={heroCTARef} className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-                            <Button
-                                size="lg"
-                                className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 px-8"
+                            <button
+                                type="button"
                                 onClick={() => navigate("/register")}
+                                className="inline-flex items-center justify-center h-11 px-8 rounded-md text-base font-semibold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 transition-colors duration-200"
                             >
                                 Start for free
                                 <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                            <Button
-                                size="lg"
-                                variant="outline"
-                                className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 px-8"
-                                onClick={() => scrollToSection("features")}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => navigate("/login")}
+                                className="inline-flex items-center justify-center h-11 px-8 rounded-md text-base font-semibold border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200"
                             >
-                                See how it works
-                            </Button>
+                                Sign in
+                            </button>
                         </div>
 
                         <div className="pt-4 flex items-center justify-center gap-8 text-sm text-slate-500 dark:text-slate-500">
@@ -527,22 +500,21 @@ export default function LandingPage() {
                                 Join teams worldwide who are already shipping faster with TaskSystem
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <Button
-                                    size="lg"
-                                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 px-8"
+                                <button
+                                    type="button"
                                     onClick={() => navigate("/register")}
+                                    className="inline-flex items-center justify-center h-11 px-8 rounded-md text-base font-semibold bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200"
                                 >
                                     Create free account
                                     <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    variant="outline"
-                                    className="border-slate-600 dark:border-slate-300 text-slate-200 dark:text-slate-800 hover:bg-slate-800 dark:hover:bg-slate-100 px-8"
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => navigate("/login")}
+                                    className="inline-flex items-center justify-center h-11 px-8 rounded-md text-base font-semibold border border-slate-600 dark:border-slate-300 text-slate-200 dark:text-slate-800 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors duration-200"
                                 >
                                     Sign in
-                                </Button>
+                                </button>
                             </div>
                         </CardContent>
                     </Card>
