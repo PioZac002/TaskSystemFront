@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -14,6 +15,7 @@ import { toast } from "sonner";
 import { Edit, Save, X, Trash2, Calendar, User as UserIcon, Users, Tag } from "lucide-react";
 
 export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted, onIssueUpdated }) {
+    const { isMobile } = useResponsiveNavigation();
     const [issue, setIssue] = useState(null);
     const [users, setUsers] = useState([]);
     const [teams, setTeams] = useState([]);
@@ -203,7 +205,9 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                         />
                                     ) : (
                                         <DialogTitle className="text-lg md:text-2xl font-bold pr-4 md:pr-8" title={issue.title}>
-                                            {issue.title.length > 70 ? issue.title.slice(0, 70) + '…' : issue.title}
+                                            {isMobile
+                                                ? (issue.title.length > 30 ? issue.title.slice(0, 30) + '…' : issue.title)
+                                                : (issue.title.length > 70 ? issue.title.slice(0, 70) + '…' : issue.title)}
                                         </DialogTitle>
                                     )}
                                 </div>

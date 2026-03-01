@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 function formatDate(dateString) {
-    if (!dateString) return "No due date";
+    if (!dateString) return null;
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
         month: "short",
@@ -360,7 +360,7 @@ export default function Dashboard() {
                                                         {issue.priority}
                                                     </Badge>
                                                     <span className="text-sm text-muted-foreground">
-                                                        📅 {issue.dueDate}
+                                                        {issue.dueDate ? `📅 ${issue.dueDate}` : '—'}
                                                     </span>
                                                     {issue.assignee && (
                                                         <span className="text-sm text-muted-foreground">
@@ -542,11 +542,11 @@ export default function Dashboard() {
                                                         {issue.priority}
                                                     </Badge>
                                                     <span className="text-sm text-muted-foreground">
-                                                        📅 {issue.dueDate}
+                                                        {issue.dueDate ? `📅 ${issue.dueDate}` : '—'}
                                                     </span>
-                                                    {issue.assignee && (
+                                                    {issue.assignee && getUserName(issue.assignee) && (
                                                         <span className="text-sm text-muted-foreground">
-                                                            👤 User #{issue.assignee}
+                                                            👤 {getUserName(issue.assignee)}
                                                         </span>
                                                     )}
                                                 </div>

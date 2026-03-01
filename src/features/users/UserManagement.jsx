@@ -146,14 +146,14 @@ export default function UserManagement() {
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-semibold truncate">
-                                                    {user.firstName || "N/A"} {user.lastName || ""}
+                                                <p className="font-semibold" title={`${user.firstName || ''} ${user.lastName || ''}`.trim()}>
+                                                    {(() => { const n = `${user.firstName || 'N/A'} ${user.lastName || ''}`.trim(); return n.length > 21 ? n.slice(0, 21) + '…' : n; })()}
                                                 </p>
-                                                <p className="text-sm text-muted-foreground truncate">
-                                                    {user.email || "No email"}
+                                                <p className="text-sm text-muted-foreground" title={user.email || ''}>
+                                                    {(user.email || "No email").length > 21 ? (user.email || "No email").slice(0, 21) + '…' : (user.email || "No email")}
                                                 </p>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 shrink-0">
                                                 <Badge variant="secondary">
                                                     {user.role || "User"}
                                                 </Badge>

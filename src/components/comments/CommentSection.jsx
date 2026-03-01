@@ -196,6 +196,11 @@ export function CommentSection({ issueId }) {
     const [isUploading, setIsUploading] = useState(false);
     const [lightbox, setLightbox] = useState(null); // { fileIds, index }
     const fileInputRef = useRef(null);
+    const textareaRef = useRef(null);
+    const mentionRef = useRef(null);
+    const [mentionQuery, setMentionQuery] = useState("");
+    const [mentionStart, setMentionStart] = useState(-1);
+    const [showMentions, setShowMentions] = useState(false);
 
     // Pobierz userId z authStore zamiast localStorage
     const user = useAuthStore((state) => state.user);
@@ -210,7 +215,18 @@ export function CommentSection({ issueId }) {
             fetchUsers();
         }
     }, [issueId, fetchCommentsByIssueId, fetchUsers]);
-    
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (mentionRef.current && !mentionRef.current.contains(e.target) &&
+                textareaRef.current && !textareaRef.current.contains(e.target)) {
+                setShowMentions(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
+
     // Helper function to get user name by ID (fallback when authorName not available)
     const getUserName = (userId) => {
         if (!userId) return "Unknown User";
@@ -262,6 +278,48 @@ export function CommentSection({ issueId }) {
 
     const removePendingFile = (index) => {
         setPendingFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const mentionUsers = showMentions
+        ? users.filter(u => {
+            const full = `${u.firstName} ${u.lastName}`.toLowerCase();
+            return mentionQuery === "" || full.includes(mentionQuery.toLowerCase());
+        }).slice(0, 6)
+        : [];
+
+    const handleCommentChange = (e) => {
+        const val = e.target.value;
+        const cursor = e.target.selectionStart;
+        setNewComment(val);
+        const textBeforeCursor = val.slice(0, cursor);
+        const match = textBeforeCursor.match(/@(\w*)$/);
+        if (match) {
+            setMentionQuery(match[1]);
+            setMentionStart(cursor - match[0].length);
+            setShowMentions(true);
+        } else {
+            setShowMentions(false);
+        }
+    };
+
+    const insertMention = (u) => {
+        const tag = `@[${u.id}:${u.firstName} ${u.lastName}]`;
+        const before = newComment.slice(0, mentionStart);
+        const after = newComment.slice(mentionStart + 1 + mentionQuery.length);
+        setNewComment(before + tag + after);
+        setShowMentions(false);
+        textareaRef.current?.focus();
+    };
+
+    const renderContent = (text) => {
+        const parts = text.split(/(@\[\d+:[^\]]+\])/g);
+        return parts.map((part, i) => {
+            const match = part.match(/^@\[(\d+):([^\]]+)\]$/);
+            if (match) {
+                return <span key={i} className="font-bold text-primary">@{match[2]}</span>;
+            }
+            return part;
+        });
     };
 
     const handleAddComment = async () => {
@@ -406,15 +464,32 @@ export function CommentSection({ issueId }) {
             <Card className="bg-accent/50">
                 <CardContent className="pt-6">
                     <div className="space-y-3">
+                        <div className="relative">
                         <Textarea
-                            placeholder="Write a comment... (paste images with Ctrl+V)"
+                            ref={textareaRef}
+                            placeholder="Write a comment... (paste images with Ctrl+V, mention with @)"
                             value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
+                            onChange={handleCommentChange}
                             onPaste={handlePaste}
                             rows={3}
                             className="resize-none"
                             disabled={loading || isSubmitting}
                         />
+                        {showMentions && mentionUsers.length > 0 && (
+                            <div ref={mentionRef} className="absolute z-50 bg-background border rounded-md shadow-lg max-h-40 overflow-y-auto w-56 bottom-full mb-1">
+                                {mentionUsers.map(u => (
+                                    <button
+                                        key={u.id}
+                                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center gap-2"
+                                        onMouseDown={(e) => { e.preventDefault(); insertMention(u); }}
+                                    >
+                                        <User className="h-3 w-3 shrink-0" />
+                                        {u.firstName} {u.lastName}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        </div>
 
                         {/* Pending file list */}
                         {pendingFiles.length > 0 && (
@@ -520,7 +595,7 @@ export function CommentSection({ issueId }) {
                                     </div>
                                     <Separator className="my-2" />
                                     <p className="text-sm whitespace-pre-wrap break-words">
-                                        {comment.content}
+                                        {renderContent(comment.content)}
                                     </p>
 
                                     {/* Attachments */}

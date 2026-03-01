@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Dialog";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -23,6 +24,7 @@ function formatDate(dateString) {
 }
 
 export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUpdate }) {
+    const { isMobile } = useResponsiveNavigation();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(false);
     const [selectedIssueId, setSelectedIssueId] = useState(null);
@@ -226,8 +228,10 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
                                                                             <span className="font-mono text-xs text-muted-foreground font-semibold">
                                                                                 {issue.key}
                                                                             </span>
-                                                                            <h4 className="font-medium truncate text-sm md:text-base">
-                                                                                {issue.title}
+                                                                            <h4 className="font-medium text-sm md:text-base" title={issue.title}>
+                                                                                {isMobile
+                                                                                    ? (issue.title.length > 30 ? issue.title.slice(0, 30) + '…' : issue.title)
+                                                                                    : issue.title}
                                                                             </h4>
                                                                         </div>
                                                                         <div className="flex items-center gap-2 flex-wrap">

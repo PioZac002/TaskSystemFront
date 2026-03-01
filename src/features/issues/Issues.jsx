@@ -202,10 +202,10 @@ export default function Issues() {
                                                 </span>
                                                 {isMobile ? (
                                                     <h3
-                                                        className="font-semibold truncate hover:underline cursor-pointer text-primary"
-                                                        title="Open full page"
+                                                        className="font-semibold hover:underline cursor-pointer text-primary"
+                                                        title={issue.title}
                                                         onClick={() => setSelectedIssueId(issue.id)}
-                                                    >{issue.title}</h3>
+                                                    >{issue.title.length > 30 ? issue.title.slice(0, 30) + '…' : issue.title}</h3>
                                                 ) : (
                                                     <Link
                                                         to={`/issues/${issue.id}`}
