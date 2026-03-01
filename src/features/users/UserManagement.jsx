@@ -3,19 +3,36 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useUserStore } from "@/store/userStore";
-import { Search, Trash2, Mail, ArrowUpDown, UserCircle } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import apiClient from "@/services/apiClient";
+import { Search, Trash2, Mail, ArrowUpDown, UserCircle, KeyRound, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { getInitials } from "@/utils/formatters";
 
 export default function UserManagement() {
     const { users, fetchUsers, deleteUser, loading } = useUserStore();
+    const isAdmin = useAuthStore((state) => state.isAdmin);
+    const isCurrentUserAdmin = isAdmin();
+
     const [searchTerm, setSearchTerm] = useState("");
     const [sortField, setSortField] = useState("id");
     const [sortOrder, setSortOrder] = useState("asc");
+
+    const [resetPasswordDialog, setResetPasswordDialog] = useState({ open: false, user: null });
+    const [resetNewPassword, setResetNewPassword] = useState("");
+    const [resetConfirmPassword, setResetConfirmPassword] = useState("");
+    const [resetLoading, setResetLoading] = useState(false);
+
+    const [changeRoleDialog, setChangeRoleDialog] = useState({ open: false, user: null });
+    const [selectedRole, setSelectedRole] = useState("");
+    const [roleLoading, setRoleLoading] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -42,6 +59,60 @@ export default function UserManagement() {
         } else {
             setSortField(field);
             setSortOrder("asc");
+        }
+    };
+
+    const openResetPassword = (user) => {
+        setResetNewPassword("");
+        setResetConfirmPassword("");
+        setResetPasswordDialog({ open: true, user });
+    };
+
+    const handleResetPassword = async () => {
+        if (resetNewPassword !== resetConfirmPassword) {
+            toast.error("Passwords do not match.");
+            return;
+        }
+        if (resetNewPassword.length < 6) {
+            toast.error("Password must be at least 6 characters.");
+            return;
+        }
+        setResetLoading(true);
+        try {
+            await apiClient.put('/api/v1/admin/password', {
+                userId: resetPasswordDialog.user.id,
+                newPassword: resetNewPassword,
+            });
+            toast.success("Password reset successfully!");
+            setResetPasswordDialog({ open: false, user: null });
+        } catch (error) {
+            const message = error.response?.data?.Message || error.response?.data?.message || error.message || "Failed to reset password";
+            toast.error(message);
+        } finally {
+            setResetLoading(false);
+        }
+    };
+
+    const openChangeRole = (user) => {
+        setSelectedRole(user.role || "USER");
+        setChangeRoleDialog({ open: true, user });
+    };
+
+    const handleChangeRole = async () => {
+        setRoleLoading(true);
+        try {
+            await apiClient.put('/api/v1/user/role', {
+                userId: changeRoleDialog.user.id,
+                role: selectedRole,
+            });
+            toast.success("Role updated successfully!");
+            setChangeRoleDialog({ open: false, user: null });
+            await fetchUsers();
+        } catch (error) {
+            const message = error.response?.data?.Message || error.response?.data?.message || error.message || "Failed to update role";
+            toast.error(message);
+        } finally {
+            setRoleLoading(false);
         }
     };
 
@@ -157,6 +228,16 @@ export default function UserManagement() {
                                                 <Badge variant="secondary">
                                                     {user.role || "User"}
                                                 </Badge>
+                                                {isCurrentUserAdmin && (
+                                                    <>
+                                                        <Button size="sm" variant="outline" onClick={() => openResetPassword(user)} title="Reset password">
+                                                            <KeyRound className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button size="sm" variant="outline" onClick={() => openChangeRole(user)} title="Change role">
+                                                            <Shield className="h-4 w-4" />
+                                                        </Button>
+                                                    </>
+                                                )}
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -257,17 +338,29 @@ export default function UserManagement() {
                                                 <Badge variant="outline">{user.id}</Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleDeleteUser(
-                                                        user.id,
-                                                        `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || `User #${user.id}`
+                                                <div className="flex items-center justify-end gap-1">
+                                                    {isCurrentUserAdmin && (
+                                                        <>
+                                                            <Button size="sm" variant="outline" onClick={() => openResetPassword(user)} title="Reset password">
+                                                                <KeyRound className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button size="sm" variant="outline" onClick={() => openChangeRole(user)} title="Change role">
+                                                                <Shield className="h-4 w-4" />
+                                                            </Button>
+                                                        </>
                                                     )}
-                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleDeleteUser(
+                                                            user.id,
+                                                            `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || `User #${user.id}`
+                                                        )}
+                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -278,6 +371,82 @@ export default function UserManagement() {
                     </>
                 )}
             </div>
+
+            {/* Reset Password Dialog */}
+            <Dialog open={resetPasswordDialog.open} onOpenChange={(open) => setResetPasswordDialog(prev => ({ ...prev, open }))}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Reset Password</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <p className="text-sm text-muted-foreground">
+                            Set a new password for <strong>{resetPasswordDialog.user ? `${resetPasswordDialog.user.firstName || ''} ${resetPasswordDialog.user.lastName || ''}`.trim() || resetPasswordDialog.user.email : ''}</strong>
+                        </p>
+                        <div className="space-y-2">
+                            <Label htmlFor="resetNewPassword">New Password</Label>
+                            <Input
+                                id="resetNewPassword"
+                                type="password"
+                                value={resetNewPassword}
+                                onChange={(e) => setResetNewPassword(e.target.value)}
+                                disabled={resetLoading}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="resetConfirmPassword">Confirm Password</Label>
+                            <Input
+                                id="resetConfirmPassword"
+                                type="password"
+                                value={resetConfirmPassword}
+                                onChange={(e) => setResetConfirmPassword(e.target.value)}
+                                disabled={resetLoading}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setResetPasswordDialog({ open: false, user: null })} disabled={resetLoading}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleResetPassword} disabled={resetLoading}>
+                            {resetLoading ? "Resetting..." : "Reset Password"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Change Role Dialog */}
+            <Dialog open={changeRoleDialog.open} onOpenChange={(open) => setChangeRoleDialog(prev => ({ ...prev, open }))}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Change Role</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <p className="text-sm text-muted-foreground">
+                            Change role for <strong>{changeRoleDialog.user ? `${changeRoleDialog.user.firstName || ''} ${changeRoleDialog.user.lastName || ''}`.trim() || changeRoleDialog.user.email : ''}</strong>
+                        </p>
+                        <div className="space-y-2">
+                            <Label>Role</Label>
+                            <Select value={selectedRole} onValueChange={setSelectedRole}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="USER">User</SelectItem>
+                                    <SelectItem value="ADMIN">Admin</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setChangeRoleDialog({ open: false, user: null })} disabled={roleLoading}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleChangeRole} disabled={roleLoading}>
+                            {roleLoading ? "Saving..." : "Save Role"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { useAuthStore } from "@/store/authStore";
 import { useUserStore } from "@/store/userStore";
+import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
-import { User, Mail, Save } from "lucide-react";
+import { User, Mail, Save, Lock } from "lucide-react";
 
 export default function Profile() {
     const user = useAuthStore((state) => state.user);
@@ -20,6 +21,12 @@ export default function Profile() {
     const [lastName, setLastName] = useState(user?.lastName || "");
     const [email, setEmail] = useState(user?.email || "");
     const [slackUserId, setSlackUserId] = useState(user?.slackUserId || "");
+
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+    const [changePasswordError, setChangePasswordError] = useState("");
 
     // Sync form fields when user data loads
     useEffect(() => {
@@ -65,6 +72,34 @@ export default function Profile() {
         } catch (error) {
             const message = error.response?.data?.Message || error.message || "Failed to update profile";
             toast.error(message);
+        }
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        setChangePasswordError("");
+
+        if (newPassword !== confirmPassword) {
+            setChangePasswordError("New passwords do not match.");
+            return;
+        }
+        if (newPassword.length < 6) {
+            setChangePasswordError("New password must be at least 6 characters.");
+            return;
+        }
+
+        setChangePasswordLoading(true);
+        try {
+            await apiClient.put('/api/v1/user/me/password', { currentPassword, newPassword });
+            toast.success("Password changed successfully!");
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+        } catch (error) {
+            const message = error.response?.data?.Message || error.response?.data?.message || error.message || "Failed to change password";
+            setChangePasswordError(message);
+        } finally {
+            setChangePasswordLoading(false);
         }
     };
 
@@ -152,6 +187,60 @@ export default function Profile() {
                             <Button type="submit" className="w-full" disabled={loading}>
                                 <Save className="mr-2 h-4 w-4" />
                                 {loading ? "Saving..." : "Save Changes"}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                {/* Change Password */}
+                <Card className="border-border/50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Lock className="h-5 w-5" />
+                            Change Password
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleChangePassword} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="currentPassword">Current Password</Label>
+                                <Input
+                                    id="currentPassword"
+                                    type="password"
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    disabled={changePasswordLoading}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="newPassword">New Password</Label>
+                                <Input
+                                    id="newPassword"
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    disabled={changePasswordLoading}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                                <Input
+                                    id="confirmPassword"
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    disabled={changePasswordLoading}
+                                    required
+                                />
+                            </div>
+                            {changePasswordError && (
+                                <p className="text-sm text-destructive">{changePasswordError}</p>
+                            )}
+                            <Button type="submit" className="w-full" disabled={changePasswordLoading}>
+                                <Lock className="mr-2 h-4 w-4" />
+                                {changePasswordLoading ? "Changing..." : "Change Password"}
                             </Button>
                         </form>
                     </CardContent>

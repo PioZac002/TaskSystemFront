@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/Badge";
 import { Separator } from "@/components/ui/Separator";
 import { CommentSection } from "@/components/comments/CommentSection";
+import { ActivityLog } from "@/components/activity/ActivityLog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 import {
@@ -274,11 +276,19 @@ export default function IssueDetailPage() {
 
                         <Separator />
 
-                        {/* Comments */}
-                        <div>
-                            <Label className="text-base font-semibold mb-4 block">Activity</Label>
-                            <CommentSection issueId={issue.id} />
-                        </div>
+                        {/* Activity Tabs */}
+                        <Tabs defaultValue="comments">
+                            <TabsList className="mb-4">
+                                <TabsTrigger value="comments">Comments</TabsTrigger>
+                                <TabsTrigger value="activity">Activity Log</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="comments">
+                                <CommentSection issueId={issue.id} />
+                            </TabsContent>
+                            <TabsContent value="activity">
+                                <ActivityLog issueId={issue.id} />
+                            </TabsContent>
+                        </Tabs>
                     </div>
 
                     {/* Sidebar */}

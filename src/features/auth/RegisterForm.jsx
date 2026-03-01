@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { gsap } from "gsap";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -11,7 +12,10 @@ import { authService } from "@/services/authService";
 
 export default function RegisterForm() {
     const navigate = useNavigate();
+    const location = useLocation();
     const setAuth = useAuthStore((state) => state.setAuth);
+    const cardRef = useRef(null);
+
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -20,14 +24,24 @@ export default function RegisterForm() {
     const [slackUserId, setSlackUserId] = useState("");
     const [loading, setLoading] = useState(false);
 
+    // Animate card in on mount — direction depends on where we came from
+    useEffect(() => {
+        const fromLogin = location.state?.from === "login";
+        gsap.fromTo(
+            cardRef.current,
+            { opacity: 0, x: fromLogin ? 60 : 0, y: fromLogin ? 0 : 30, scale: 0.97 },
+            { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.45, ease: "power3.out" }
+        );
+    }, []);
+
     const handleRegister = async (e) => {
         e.preventDefault();
-        if (! firstName || !lastName || !email || !password || !confirmPassword) {
+        if (!firstName || !lastName || !email || !password || !confirmPassword) {
             toast.error("Fill in all required fields");
             return;
         }
         if (password !== confirmPassword) {
-            toast. error("Passwords don't match!");
+            toast.error("Passwords don't match!");
             return;
         }
         if (password.length < 6) {
@@ -36,17 +50,14 @@ export default function RegisterForm() {
         }
 
         setLoading(true);
-
         try {
-            // Jeśli SlackUserId nie został podany, wygeneruj automatycznie
-            const finalSlackUserId = slackUserId. trim() || `U${Date.now()}`;
-
+            const finalSlackUserId = slackUserId.trim() || `U${Date.now()}`;
             const data = await authService.register({
                 firstName,
                 lastName,
                 email,
                 password,
-                slackUserId: finalSlackUserId
+                slackUserId: finalSlackUserId,
             });
 
             if (data.user) {
@@ -62,15 +73,26 @@ export default function RegisterForm() {
         }
     };
 
+    const handleGoToLogin = () => {
+        gsap.to(cardRef.current, {
+            opacity: 0,
+            x: 60,
+            scale: 0.97,
+            duration: 0.3,
+            ease: "power2.in",
+            onComplete: () => navigate("/login", { state: { from: "register" } }),
+        });
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
             {/* Background decorations */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+                <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
             </div>
 
-            <Card className="w-full max-w-md relative z-10 shadow-2xl border-slate-200 dark:border-slate-800">
+            <Card ref={cardRef} className="w-full max-w-md relative z-10 shadow-2xl border-slate-200 dark:border-slate-800">
                 <CardHeader className="space-y-4 text-center pb-8">
                     <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
                         <Layers className="w-8 h-8 text-primary-foreground" />
@@ -82,6 +104,7 @@ export default function RegisterForm() {
                         </CardDescription>
                     </div>
                 </CardHeader>
+
                 <CardContent>
                     <form onSubmit={handleRegister} className="space-y-5">
                         {/* First Name */}
@@ -147,7 +170,8 @@ export default function RegisterForm() {
                         {/* Slack User ID */}
                         <div className="space-y-2">
                             <Label htmlFor="slackUserId" className="text-sm font-medium">
-                                Slack User ID <span className="text-muted-foreground text-xs">(optional)</span>
+                                Slack User ID{" "}
+                                <span className="text-muted-foreground text-xs">(optional)</span>
                             </Label>
                             <div className="relative">
                                 <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -161,9 +185,7 @@ export default function RegisterForm() {
                                     disabled={loading}
                                 />
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                Leave empty to auto-generate
-                            </p>
+                            <p className="text-xs text-muted-foreground">Leave empty to auto-generate</p>
                         </div>
 
                         {/* Password */}
@@ -184,9 +206,7 @@ export default function RegisterForm() {
                                     required
                                 />
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                Minimum 6 characters
-                            </p>
+                            <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
                         </div>
 
                         {/* Confirm Password */}
@@ -209,7 +229,7 @@ export default function RegisterForm() {
                             </div>
                         </div>
 
-                        {/* Submit Button */}
+                        {/* Submit */}
                         <Button
                             type="submit"
                             className="w-full h-11 text-base font-semibold"
@@ -218,15 +238,16 @@ export default function RegisterForm() {
                             {loading ? "Creating account..." : "Create Account"}
                         </Button>
 
-                        {/* Login Link */}
+                        {/* Login link */}
                         <div className="text-center text-sm pt-2">
                             <span className="text-muted-foreground">Already have an account? </span>
-                            <Link
-                                to="/login"
+                            <button
+                                type="button"
+                                onClick={handleGoToLogin}
                                 className="font-semibold text-primary hover:underline"
                             >
                                 Sign in
-                            </Link>
+                            </button>
                         </div>
                     </form>
                 </CardContent>

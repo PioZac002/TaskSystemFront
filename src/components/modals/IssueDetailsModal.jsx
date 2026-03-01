@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Separator } from "@/components/ui/Separator";
 import { Card, CardContent } from "@/components/ui/Card";
 import { CommentSection } from "@/components/comments/CommentSection";
+import { ActivityLog } from "@/components/activity/ActivityLog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 import { Edit, Save, X, Trash2, Calendar, User as UserIcon, Users, Tag } from "lucide-react";
@@ -423,11 +425,19 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
 
                                     <Separator />
 
-                                    {/* Comments */}
-                                    <div>
-                                        <Label className="text-base font-semibold mb-4 block">Activity</Label>
-                                        <CommentSection issueId={issue.id} />
-                                    </div>
+                                    {/* Activity Tabs */}
+                                    <Tabs defaultValue="comments">
+                                        <TabsList className="mb-4">
+                                            <TabsTrigger value="comments">Comments</TabsTrigger>
+                                            <TabsTrigger value="activity">Activity Log</TabsTrigger>
+                                        </TabsList>
+                                        <TabsContent value="comments">
+                                            <CommentSection issueId={issue.id} />
+                                        </TabsContent>
+                                        <TabsContent value="activity">
+                                            <ActivityLog issueId={issue.id} />
+                                        </TabsContent>
+                                    </Tabs>
                                 </div>
 
                                 {/* Desktop Sidebar - Hidden on Mobile */}

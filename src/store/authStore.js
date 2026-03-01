@@ -10,6 +10,7 @@ export const useAuthStore = create((set, get) => ({
     isAuthenticated: false,
     loading: true,
     initialized: false,
+    systemVersion: null,
 
     initialize:  async () => {
         console.log('🔐 [AuthStore] Initializing auth state...');
@@ -58,6 +59,7 @@ export const useAuthStore = create((set, get) => ({
                     loading: false,
                     initialized: true
                 });
+                get().fetchSystemVersion();
             } else {
                 console. log('❌ [AuthStore] Failed to load user data');
                 get().logout();
@@ -185,8 +187,36 @@ export const useAuthStore = create((set, get) => ({
             accessToken: null,
             refreshToken: null,
             isAuthenticated: false,
+            systemVersion: null,
         });
 
         console.log('✅ [AuthStore] Logout complete');
+    },
+
+    fetchSystemVersion: async () => {
+        try {
+            const res = await apiClient.get('/api/v1/test/version');
+            const version = typeof res.data === 'string' ? res.data : res.data?.version || String(res.data);
+            set({ systemVersion: version });
+        } catch {
+            // non-critical, fail silently
+        }
+    },
+
+    isAdmin: () => {
+        try {
+            const token = storageService.getItem('accessToken');
+            if (!token) return false;
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const roles = payload.roles || payload.authorities || payload.role || [];
+            if (Array.isArray(roles)) {
+                return roles.some(r =>
+                    r === 'ROLE_ADMIN' || r?.authority === 'ROLE_ADMIN' || r === 2 || r?.id === 2
+                );
+            }
+            return String(roles) === 'ROLE_ADMIN' || roles === 2;
+        } catch {
+            return false;
+        }
     },
 }));

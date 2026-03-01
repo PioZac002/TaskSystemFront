@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useAuthStore } from "@/store/authStore";
 import {
     LayoutDashboard,
     FolderKanban,
@@ -23,6 +24,11 @@ const navItems = [
 
 export const Sidebar = () => {
     const [collapsed, setCollapsed] = useState(false);
+    const systemVersion = useAuthStore((state) => state.systemVersion);
+
+    const versionLabel = systemVersion
+        ? 'v' + systemVersion.replace(/^v/, '').split('.').slice(0, 3).join('.').substring(0, 9)
+        : null;
 
     return (
         <aside
@@ -34,11 +40,16 @@ export const Sidebar = () => {
             {/* Logo */}
             <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
                 {!collapsed ? (
-                    <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent">
                             <CheckSquare className="h-5 w-5 text-primary-foreground" />
                         </div>
-                        <span className="text-lg font-bold text-sidebar-foreground">TaskSystem</span>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-lg font-bold text-sidebar-foreground leading-tight">TaskSystem</span>
+                            {versionLabel && (
+                                <span className="text-[10px] font-mono text-sidebar-foreground/40 leading-tight">{versionLabel}</span>
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent mx-auto">
