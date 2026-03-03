@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import apiClient from "@/services/apiClient";
 import { useUserStore } from "@/store/userStore";
-import { GitBranch, MessageCircle, User, ArrowUpDown } from "lucide-react";
+import { useTeamStore } from "@/store/teamStore";
+import { GitBranch, MessageCircle, User, ArrowUpDown, Tag, FileText, Calendar, Users } from "lucide-react";
 
 const PRIORITY_MAP = {
     "0": "LOW", "1": "NORMAL", "2": "HIGH",
@@ -17,8 +18,8 @@ function formatLabel(map, val) {
     return map[String(val)] ?? val ?? "—";
 }
 
-function getActivityDescription(activity, users) {
-    const { activityType, oldValue, newValue, eventAuthorUserId } = activity;
+function getActivityDescription(activity, users, teams) {
+    const { activityType, eventAuthorUserId } = activity;
     const author = users.find(u => u.id === eventAuthorUserId || String(u.id) === String(eventAuthorUserId));
     const authorName = author
         ? `${author.firstName || ''} ${author.lastName || ''}`.trim() || author.email
@@ -30,6 +31,7 @@ function getActivityDescription(activity, users) {
         case "CREATED_COMMENT":
             return { text: "Added a comment", authorName, icon: MessageCircle, color: "bg-blue-500" };
         case "UPDATED_ASSIGNEE": {
+            const { oldValue, newValue } = activity;
             const oldUser = users.find(u => u.id === Number(oldValue) || String(u.id) === String(oldValue));
             const newUser = users.find(u => u.id === Number(newValue) || String(u.id) === String(newValue));
             const oldName = oldUser ? `${oldUser.firstName || ''} ${oldUser.lastName || ''}`.trim() : (oldValue || "Unassigned");
@@ -38,14 +40,35 @@ function getActivityDescription(activity, users) {
         }
         case "UPDATED_PRIORITY":
             return {
-                text: `Changed priority: ${formatLabel(PRIORITY_MAP, oldValue)} → ${formatLabel(PRIORITY_MAP, newValue)}`,
+                text: `Changed priority: ${formatLabel(PRIORITY_MAP, activity.oldPriority)} → ${formatLabel(PRIORITY_MAP, activity.newPriority)}`,
                 authorName, icon: ArrowUpDown, color: "bg-orange-500"
             };
         case "UPDATED_STATUS":
             return {
-                text: `Changed status: ${formatLabel(STATUS_MAP, oldValue)} → ${formatLabel(STATUS_MAP, newValue)}`,
+                text: `Changed status: ${formatLabel(STATUS_MAP, activity.oldStatus)} → ${formatLabel(STATUS_MAP, activity.newStatus)}`,
                 authorName, icon: ArrowUpDown, color: "bg-cyan-500"
             };
+        case "UPDATED_TEAM": {
+            const oldTeam = activity.oldTeamId === -1 ? null : teams.find(t => t.id === activity.oldTeamId);
+            const newTeam = teams.find(t => t.id === activity.newTeamId);
+            const oldName = oldTeam ? oldTeam.name : "None";
+            const newName = newTeam ? newTeam.name : `Team #${activity.newTeamId}`;
+            return { text: `Changed team: ${oldName} → ${newName}`, authorName, icon: Users, color: "bg-indigo-500" };
+        }
+        case "UPDATED_DUEDATE": {
+            const fmt = (dt) => dt ? new Date(dt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "None";
+            return {
+                text: `Changed due date: ${fmt(activity.oldDateTime)} → ${fmt(activity.newDateTime)}`,
+                authorName, icon: Calendar, color: "bg-yellow-500"
+            };
+        }
+        case "UPDATED_TITLE":
+            return {
+                text: `Changed title: "${activity.oldValue}" → "${activity.newValue}"`,
+                authorName, icon: Tag, color: "bg-pink-500"
+            };
+        case "UPDATED_DESCRIPTION":
+            return { text: "Updated description", authorName, icon: FileText, color: "bg-teal-500" };
         default:
             return { text: activityType, authorName, icon: GitBranch, color: "bg-muted-foreground" };
     }
@@ -55,9 +78,11 @@ export function ActivityLog({ issueId }) {
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
     const { users, fetchUsers } = useUserStore();
+    const { teams, fetchTeams } = useTeamStore();
 
     useEffect(() => {
         fetchUsers();
+        fetchTeams();
         apiClient.get(`/api/v1/issue/${issueId}/activities`)
             .then(r => setActivities(r.data))
             .catch(() => {})
@@ -75,7 +100,7 @@ export function ActivityLog({ issueId }) {
     return (
         <div className="relative ml-3 border-l-2 border-border space-y-0">
             {activities.map((activity, i) => {
-                const { text, authorName, icon: Icon, color } = getActivityDescription(activity, users);
+                const { text, authorName, icon: Icon, color } = getActivityDescription(activity, users, teams);
                 const timestamp = activity.timestamp
                     ? new Date(activity.timestamp).toLocaleString('en-US', {
                         month: 'short', day: 'numeric', year: 'numeric',
