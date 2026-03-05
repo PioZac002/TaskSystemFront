@@ -1,0 +1,55 @@
+name: Deploy vFedora1
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+jobs:
+  build:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v3
+      with:
+        versionSpec: "5.x"
+    - name: Run GitVersion
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+    - name: Install dependencies
+      run: |
+        rm -rf node_modules package-lock.json
+        npm install
+    - name: Build React project
+      run: npm run build
+    - name: install ssh keys
+      run: |
+          mkdir -p ~/.ssh
+          cat <<EOF > ~/.ssh/id_rsa
+          ${{ secrets.SSH_PRIVATE_KEY }}
+          EOF
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          echo "Key fingerprint:"
+          ssh-keygen -lf ~/.ssh/id_rsa
+          echo "Key type:"
+          head -1 ~/.ssh/id_rsa
+    - name: deploy
+      run: |
+        VERSION=${{ steps.gitversion.outputs.fullSemVer }}
+        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+        mkdir -p ${{ secrets.WORK_DIR }}/versions/$VERSION;
+        if [ -L ${{ secrets.WORK_DIR }}/latest ]; then
+          unlink ${{ secrets.WORK_DIR }}/latest;
+        fi
+        ln -s ${{ secrets.WORK_DIR }}/versions/$VERSION ${{ secrets.WORK_DIR }}/latest "
+        rsync -avz dist/* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR }}/versions/$VERSION/
