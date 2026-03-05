@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -13,10 +13,11 @@ import { useAuthStore } from "@/store/authStore";
 import { storageService } from "@/services/storageService";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
+import { Image, X, Upload } from "lucide-react";
 
 /**
  * CreateIssueModal component for creating new issues
- * 
+ *
  * @param {Object} props
  * @param {boolean} props.open - Whether the modal is open
  * @param {Function} props.onOpenChange - Callback when modal open state changes
@@ -27,17 +28,19 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [priority, setPriority] = useState("NORMAL");
-    const [projectId, setProjectId] = useState(preSelectedProjectId ?  String(preSelectedProjectId) : "");
+    const [projectId, setProjectId] = useState(preSelectedProjectId ? String(preSelectedProjectId) : "");
     const [assigneeId, setAssigneeId] = useState("unassigned");
     const [teamId, setTeamId] = useState("none");
     const [dueDate, setDueDate] = useState("");
     const [loading, setLoading] = useState(false);
+    const [attachedImages, setAttachedImages] = useState([]);
+    const fileInputRef = useRef(null);
 
     const { createIssue, fetchIssues } = useIssueStore();
     const { projects, fetchProjects } = useProjectStore();
     const { users, fetchUsers } = useUserStore();
     const { teams, fetchTeams } = useTeamStore();
-    const user = useAuthStore((state) => state.user);  // ✅ Pobierz user z authStore
+    const user = useAuthStore((state) => state.user);
 
     useEffect(() => {
         if (open) {
@@ -47,8 +50,56 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
             if (preSelectedProjectId) {
                 setProjectId(String(preSelectedProjectId));
             }
+        } else {
+            // Reset images when modal closes
+            setAttachedImages([]);
         }
     }, [open, preSelectedProjectId]);
+
+    // Global paste handler for clipboard images
+    const handleGlobalPaste = useCallback((e) => {
+        if (!open) return;
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (const item of items) {
+            if (item.type.startsWith("image/")) {
+                const file = item.getAsFile();
+                if (file) addImage(file);
+            }
+        }
+    }, [open]);
+
+    useEffect(() => {
+        window.addEventListener("paste", handleGlobalPaste);
+        return () => window.removeEventListener("paste", handleGlobalPaste);
+    }, [handleGlobalPaste]);
+
+    const addImage = (file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setAttachedImages(prev => [
+                ...prev,
+                { file, url: e.target.result, name: file.name || `image-${Date.now()}.png` }
+            ]);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeImage = (index) => {
+        setAttachedImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleFileUpload = (e) => {
+        const files = Array.from(e.target.files).filter(f => f.type.startsWith("image/"));
+        files.forEach(addImage);
+        e.target.value = "";
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+        files.forEach(addImage);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -63,46 +114,28 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
             return;
         }
 
-        // ✅ DEBUG - sprawdź wszystkie możliwe źródła userId
-        console.log("🔍 Checking for userId...");
-        console.log("1️⃣ storageService.userId:", storageService.getItem('userId'));
-        console.log("2️⃣ storageService.user:", storageService.getItem('user'));
-        console.log("3️⃣ authStore.user:", user);
-
-        // ✅ Spróbuj pobrać userId z wielu źródeł
         let authorId = null;
-
-        // Opcja 1: z authStore
         if (user?.id) {
             authorId = user.id;
-            console.log("✅ Got userId from authStore:", authorId);
-        }
-        // Opcja 2: ze storageService 'userId'
-        else if (storageService.getItem('userId')) {
-            authorId = Number(storageService.getItem('userId'));
-            console.log("✅ Got userId from storageService.userId:", authorId);
-        }
-        // Opcja 3: ze storageService 'user' (sparsowany JSON)
-        else if (storageService.getItem('user')) {
+        } else if (storageService.getItem("userId")) {
+            authorId = Number(storageService.getItem("userId"));
+        } else if (storageService.getItem("user")) {
             try {
-                const userObj = JSON.parse(storageService.getItem('user'));
+                const userObj = JSON.parse(storageService.getItem("user"));
                 authorId = userObj?.id;
-                console.log("✅ Got userId from storageService.user:", authorId);
             } catch (e) {
-                console.error("❌ Failed to parse storageService.user:", e);
+                console.error("Failed to parse user:", e);
             }
         }
 
         if (!authorId) {
             toast.error("You must be logged in to create an issue");
-            console.error('❌ No userId found anywhere! Check localStorage and authStore');
             return;
         }
 
         setLoading(true);
 
         try {
-            // ✅ KROK 1: Utwórz issue
             const payload = {
                 title: title.trim(),
                 description: description.trim() || null,
@@ -113,7 +146,6 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
                 projectId: Number(projectId),
             };
 
-            // Dodaj assigneeId jeśli wybrano
             if (assigneeId && assigneeId !== "unassigned") {
                 const assigneeIdNum = Number(assigneeId);
                 if (!isNaN(assigneeIdNum) && assigneeIdNum > 0) {
@@ -121,38 +153,53 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
                 }
             }
 
-            // Dodaj dueDate jeśli wybrano
             if (dueDate) {
                 payload.dueDate = dueDate;
             }
 
-            console.log("📤 Creating issue with payload:", JSON.stringify(payload, null, 2));
-
             const createdIssue = await createIssue(payload);
 
-            console.log("✅ Issue created:", createdIssue);
-
-            // ✅ KROK 2: Przypisz team (jeśli wybrano)
+            // Assign team if selected
             if (teamId && teamId !== "none") {
                 const teamIdNum = Number(teamId);
                 if (!isNaN(teamIdNum) && teamIdNum > 0) {
                     try {
-                        console.log(`📤 Assigning team ${teamIdNum} to issue ${createdIssue.id}`);
-
                         await apiClient.put("/api/v1/issue/assign-team", {
                             issueId: createdIssue.id,
                             teamId: teamIdNum,
                         });
-
-                        console.log("✅ Team assigned successfully");
                     } catch (teamError) {
-                        console.error("⚠️ Failed to assign team:", teamError);
                         toast.warning("Issue created, but failed to assign team");
                     }
                 }
             }
 
-            toast.success("Issue created successfully!");
+            // Upload images as attachments
+            if (attachedImages.length > 0 && createdIssue.id) {
+                let uploadedCount = 0;
+                for (const img of attachedImages) {
+                    try {
+                        const formData = new FormData();
+                        formData.append("file", img.file);
+                        await apiClient.post(`/api/v1/issue/${createdIssue.id}/attachments`, formData, {
+                            headers: { "Content-Type": "multipart/form-data" },
+                        });
+                        uploadedCount++;
+                    } catch (e) {
+                        console.warn("Image upload failed:", e);
+                    }
+                }
+                if (uploadedCount > 0) {
+                    toast.success(`Issue created with ${uploadedCount} attachment(s)!`);
+                } else {
+                    toast.success("Issue created successfully!");
+                    if (attachedImages.length > 0) {
+                        toast.warning("Image attachments could not be uploaded");
+                    }
+                }
+            } else {
+                toast.success("Issue created successfully!");
+            }
 
             // Reset form
             setTitle("");
@@ -162,20 +209,19 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
             setAssigneeId("unassigned");
             setTeamId("none");
             setDueDate("");
+            setAttachedImages([]);
 
             await fetchIssues();
-            
-            // Call the callback to refresh parent component
+
             if (onIssueCreated) {
                 onIssueCreated();
             }
-            
+
             onOpenChange(false);
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to create issue";
             toast.error(errorMessage);
-            console.error("❌ Create issue error:", error);
-            console.error("❌ Error response:", error.response?.data);
+            console.error("Create issue error:", error);
         } finally {
             setLoading(false);
         }
@@ -214,6 +260,65 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
                         />
                     </div>
 
+                    {/* Image Attachments */}
+                    <div className="space-y-2">
+                        <Label>
+                            Attachments
+                            <span className="ml-1 text-xs text-muted-foreground">(optional)</span>
+                        </Label>
+
+                        {/* Drop zone */}
+                        <div
+                            className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary/60 hover:bg-accent/30 transition-colors"
+                            onClick={() => fileInputRef.current?.click()}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={handleDrop}
+                        >
+                            <Image className="mx-auto h-7 w-7 text-muted-foreground mb-2" />
+                            <p className="text-sm text-muted-foreground">
+                                Drop images here or{" "}
+                                <span className="text-primary font-medium">click to upload</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                You can also paste screenshots with <kbd className="px-1 py-0.5 rounded border text-xs font-mono bg-muted">Ctrl+V</kbd>
+                            </p>
+                        </div>
+
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={handleFileUpload}
+                        />
+
+                        {/* Thumbnails */}
+                        {attachedImages.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {attachedImages.map((img, i) => (
+                                    <div key={i} className="relative group">
+                                        <img
+                                            src={img.url}
+                                            alt={img.name}
+                                            className="h-16 w-16 object-cover rounded-md border border-border"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                            onClick={() => removeImage(i)}
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5 w-16 truncate" title={img.name}>
+                                            {img.name}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     {/* Project */}
                     <div className="space-y-2">
                         <Label htmlFor="project">Project *</Label>
@@ -243,9 +348,10 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="HIGH">High</SelectItem>
-                                <SelectItem value="NORMAL">Normal</SelectItem>
-                                <SelectItem value="LOW">Low</SelectItem>
+                                <SelectItem value="CRITICAL">🔴 Critical</SelectItem>
+                                <SelectItem value="HIGH">🟠 High</SelectItem>
+                                <SelectItem value="NORMAL">🟡 Normal</SelectItem>
+                                <SelectItem value="LOW">🟢 Low</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -261,7 +367,7 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
                                 <SelectContent>
                                     <SelectItem value="unassigned">Unassigned</SelectItem>
                                     {users.map((user) => (
-                                        <SelectItem key={user. id} value={String(user. id)}>
+                                        <SelectItem key={user.id} value={String(user.id)}>
                                             {user.firstName} {user.lastName}
                                         </SelectItem>
                                     ))}
@@ -277,7 +383,7 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="none">No team</SelectItem>
-                                    {teams. map((team) => (
+                                    {teams.map((team) => (
                                         <SelectItem key={team.id} value={String(team.id)}>
                                             {team.name}
                                         </SelectItem>
@@ -309,7 +415,7 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
                             Cancel
                         </Button>
                         <Button type="submit" disabled={loading || !projectId || projectId === ""}>
-                            {loading ?  "Creating..." : "Create Issue"}
+                            {loading ? "Creating..." : "Create Issue"}
                         </Button>
                     </div>
                 </form>

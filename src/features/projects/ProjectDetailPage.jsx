@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
+import { STATUS_LABELS, PRIORITY_LABELS, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
 function formatDate(dateString) {
     if (!dateString) return "No date";
@@ -183,26 +184,16 @@ export default function ProjectDetailPage() {
                                                         </div>
                                                         <div className="flex items-center gap-2 flex-wrap">
                                                             <Badge
-                                                                variant={
-                                                                    issue.status === 'DONE' ? 'default' :
-                                                                        issue.status === 'IN_PROGRESS' ? 'secondary' :
-                                                                            'outline'
-                                                                }
-                                                                className="text-xs"
+                                                                variant="secondary"
+                                                                className={`text-xs ${getStatusBadgeClass(issue.status)}`}
                                                             >
-                                                                {issue.status === 'NEW' ? 'To Do' :
-                                                                    issue.status === 'IN_PROGRESS' ? 'In Progress' :
-                                                                        'Done'}
+                                                                {STATUS_LABELS[issue.status] || issue.status}
                                                             </Badge>
                                                             <Badge
-                                                                variant={
-                                                                    issue.priority === 'HIGH' ? 'destructive' :
-                                                                        issue.priority === 'NORMAL' ? 'secondary' :
-                                                                            'outline'
-                                                                }
+                                                                variant={getPriorityBadgeVariant(issue.priority)}
                                                                 className="text-xs"
                                                             >
-                                                                {issue.priority}
+                                                                {PRIORITY_LABELS[issue.priority] || issue.priority}
                                                             </Badge>
                                                         </div>
                                                     </div>
