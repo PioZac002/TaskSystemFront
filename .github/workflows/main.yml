@@ -1,0 +1,25 @@
+name: Deploy vFedora1
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: install ssh keys
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+    - name: deploy
+      run: |
+        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "piotrWasHere
+        "
