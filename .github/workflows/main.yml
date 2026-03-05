@@ -1,5 +1,8 @@
 name: Deploy vFedora1
 on:
+  push:
+    tags:
+      - "*"
   workflow_dispatch:
 jobs:
   build:
@@ -23,7 +26,9 @@ jobs:
       with:
         node-version: '22.x'
     - name: Install dependencies
-      run: npm ci
+      run: |
+        rm -rf node_modules package-lock.json
+        npm install
     - name: Build React project
       run: npm run build
     - name: install ssh keys
