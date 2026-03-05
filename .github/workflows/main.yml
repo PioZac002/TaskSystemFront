@@ -1,31 +1,23 @@
 name: Deploy vFedora1
 on:
-  push:
-    tags:
-      - "*"
-  workflow_dispatch:
-
+  workflow_dispatch:
 jobs:
-  build:
-    name: Build and deploy
-    runs-on: ubuntu-latest
-
-    steps:
-
-    - steps:
-  - name: install ssh keys
-    run: |
-      mkdir -p ~/.ssh
-      cat <<EOF > ~/.ssh/id_rsa
-      ${{ secrets.SSH_PRIVATE_KEY }}
-      EOF
-      chmod 600 ~/.ssh/id_rsa
-      ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-      echo "Key fingerprint:"
-      ssh-keygen -lf ~/.ssh/id_rsa
-      echo "Key type:"
-      head -1 ~/.ssh/id_rsa
-
-  - name: deploy
-    run: |
-      ssh -vvv ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "touch piotrWasHere"
+  build:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: install ssh keys
+        run: |
+          mkdir -p ~/.ssh
+          cat <<EOF > ~/.ssh/id_rsa
+          ${{ secrets.SSH_PRIVATE_KEY }}
+          EOF
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          echo "Key fingerprint:"
+          ssh-keygen -lf ~/.ssh/id_rsa
+          echo "Key type:"
+          head -1 ~/.ssh/id_rsa
+      - name: deploy
+        run: |
+          ssh -vvv ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "touch piotrWasHereeeeee"
