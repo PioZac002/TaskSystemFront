@@ -23,6 +23,7 @@ import {
     ArrowRight,
     Eye
 } from "lucide-react";
+import { STATUS_LABELS, PRIORITY_LABELS, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
 function formatDate(dateString) {
     if (!dateString) return null;
@@ -117,16 +118,16 @@ export default function Dashboard() {
 
     // Recent issues (ostatnie 4, posortowane po dacie utworzenia)
     const recentIssues = issues
-        . sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 4)
         .map(issue => ({
             id: issue.id,
             key: issue.key,
             title: issue.title,
-            priority: issue.priority?. toLowerCase() || 'normal',
-            status: issue.status?. toLowerCase() || 'new',
-            assignee: issue. assigneeId || null,
-            dueDate: formatDate(issue. dueDate),
+            priority: issue.priority || 'NORMAL',
+            status: issue.status || 'NEW',
+            assignee: issue.assigneeId || null,
+            dueDate: formatDate(issue.dueDate),
         }));
 
     const loading = projectsLoading || issuesLoading;
@@ -168,8 +169,8 @@ export default function Dashboard() {
             id: issue.id,
             key: issue.key,
             title: issue.title,
-            priority: issue.priority?.toLowerCase() || 'normal',
-            status: issue.status?.toLowerCase() || 'new',
+            priority: issue.priority || 'NORMAL',
+            status: issue.status || 'NEW',
             assignee: issue.assigneeId || null,
             dueDate: formatDate(issue.dueDate),
         }));
@@ -296,7 +297,7 @@ export default function Dashboard() {
                     <div>
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-2xl font-semibold">Your Issues</h2>
-                            <Button variant="ghost" size="sm" onClick={() => navigate('/issues')}>
+                            <Button variant="ghost" size="sm" onClick={() => navigate(`/issues?assignee=${currentUserId}`)}>
                                 View all
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
@@ -337,27 +338,13 @@ export default function Dashboard() {
                                                 </div>
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <Badge
-                                                        variant={issue.status === 'done' ? 'default' : 'secondary'}
-                                                        className={
-                                                            issue.status === 'done' ? 'bg-green-500' :
-                                                                issue.status === 'in_progress' ? 'bg-blue-500' :
-                                                                    issue.status === 'review' ? 'bg-purple-500' :
-                                                                        'bg-gray-500'
-                                                        }
+                                                        variant="secondary"
+                                                        className={getStatusBadgeClass(issue.status)}
                                                     >
-                                                        {issue.status === 'new' ? 'To Do' :
-                                                            issue.status === 'in_progress' ? 'In Progress' :
-                                                                issue.status === 'review' ? 'Review' :
-                                                                    'Done'}
+                                                        {STATUS_LABELS[issue.status] || issue.status}
                                                     </Badge>
-                                                    <Badge
-                                                        variant={
-                                                            issue.priority === 'high' ? 'destructive' :
-                                                                issue.priority === 'normal' ? 'secondary' :
-                                                                    'outline'
-                                                        }
-                                                    >
-                                                        {issue.priority}
+                                                    <Badge variant={getPriorityBadgeVariant(issue.priority)}>
+                                                        {PRIORITY_LABELS[issue.priority] || issue.priority}
                                                     </Badge>
                                                     <span className="text-sm text-muted-foreground">
                                                         {issue.dueDate ? `📅 ${issue.dueDate}` : '—'}
@@ -519,27 +506,13 @@ export default function Dashboard() {
                                                 </div>
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <Badge
-                                                        variant={issue.status === 'done' ? 'default' : 'secondary'}
-                                                        className={
-                                                            issue.status === 'done' ?  'bg-green-500' :
-                                                                issue.status === 'in_progress' ? 'bg-blue-500' :
-                                                                    issue.status === 'review' ? 'bg-purple-500' :
-                                                                        'bg-gray-500'
-                                                        }
+                                                        variant="secondary"
+                                                        className={getStatusBadgeClass(issue.status)}
                                                     >
-                                                        {issue.status === 'new' ? 'To Do' :
-                                                            issue.status === 'in_progress' ? 'In Progress' :
-                                                                issue.status === 'review' ?  'Review' :
-                                                                    'Done'}
+                                                        {STATUS_LABELS[issue.status] || issue.status}
                                                     </Badge>
-                                                    <Badge
-                                                        variant={
-                                                            issue.priority === 'high' ? 'destructive' :
-                                                                issue.priority === 'normal' ? 'secondary' :
-                                                                    'outline'
-                                                        }
-                                                    >
-                                                        {issue.priority}
+                                                    <Badge variant={getPriorityBadgeVariant(issue.priority)}>
+                                                        {PRIORITY_LABELS[issue.priority] || issue.priority}
                                                     </Badge>
                                                     <span className="text-sm text-muted-foreground">
                                                         {issue.dueDate ? `📅 ${issue.dueDate}` : '—'}

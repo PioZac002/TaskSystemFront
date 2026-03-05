@@ -5,13 +5,20 @@ import { useTeamStore } from "@/store/teamStore";
 import { GitBranch, MessageCircle, User, ArrowUpDown, Tag, FileText, Calendar, Users } from "lucide-react";
 
 const PRIORITY_MAP = {
-    "0": "LOW", "1": "NORMAL", "2": "HIGH",
-    "LOW": "Low", "NORMAL": "Normal", "HIGH": "High",
+    "0": "LOW", "1": "NORMAL", "2": "HIGH", "3": "CRITICAL",
+    "LOW": "Low", "NORMAL": "Normal", "HIGH": "High", "CRITICAL": "Critical",
 };
 
 const STATUS_MAP = {
-    "0": "To Do", "1": "In Progress", "3": "Done",
-    "NEW": "To Do", "IN_PROGRESS": "In Progress", "DONE": "Done",
+    "0": "New", "1": "In Progress", "3": "Done",
+    "NEW": "New",
+    "TRIAGE": "Triage",
+    "TODO": "To Do",
+    "IN_PROGRESS": "In Progress",
+    "WAITING_FOR_TEAM": "Waiting for Team",
+    "CODE_REVIEW": "Code Review",
+    "DONE": "Done",
+    "CANCELED": "Canceled",
 };
 
 function formatLabel(map, val) {

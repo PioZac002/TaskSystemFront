@@ -19,6 +19,7 @@ import {
     Users, Tag
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
 export default function IssueDetailPage() {
     const { id } = useParams();
@@ -87,52 +88,17 @@ export default function IssueDetailPage() {
             if (!issue) return;
             setLoading(true);
 
-            if (form.title !== issue.title) {
-                await apiClient.put("/api/v1/issue/rename", {
-                    id: Number(issue.id),
-                    newTitle: form.title,
-                });
-            }
-
-            if (form.status !== issue.status) {
-                await apiClient.put("/api/v1/issue/update-status", {
-                    issueId: Number(issue.id),
-                    newStatus: form.status,
-                });
-            }
-
-            if (form.priority !== issue.priority) {
-                await apiClient.put("/api/v1/issue/update-priority", {
-                    issueId: Number(issue.id),
-                    newPriority: form.priority,
-                });
-            }
-
-            if (form.dueDate && form.dueDate !== issue.dueDate?.slice(0, 10)) {
-                await apiClient.put("/api/v1/issue/update-due-date", {
-                    issueId: Number(issue.id),
-                    dueDate: form.dueDate,
-                });
-            }
-
-            if (form.assigneeId &&
-                form.assigneeId !== "unassigned" &&
-                String(form.assigneeId) !== String(issue.assigneeId)) {
-                await apiClient.put("/api/v1/issue/assign", {
-                    issueId: Number(issue.id),
-                    assigneeId: Number(form.assigneeId),
-                });
-            }
-
-            const currentTeamId = issue.team?.id ? String(issue.team.id) : "none";
-            if (form.teamId &&
-                form.teamId !== "none" &&
-                form.teamId !== currentTeamId) {
-                await apiClient.put("/api/v1/issue/assign-team", {
-                    issueId: Number(issue.id),
-                    teamId: Number(form.teamId),
-                });
-            }
+            await apiClient.put("/api/v1/issue/update", {
+                IssueId: Number(issue.id),
+                Title: form.title || null,
+                Description: form.description.trim() || null,
+                Status: form.status || null,
+                Priority: form.priority || null,
+                TeamId: form.teamId && form.teamId !== "none" ? Number(form.teamId) : null,
+                ProjectId: issue.projectId || null,
+                DueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+                AssigneeId: form.assigneeId && form.assigneeId !== "unassigned" ? Number(form.assigneeId) : null,
+            });
 
             toast.success("Issue updated successfully!");
             setEdit(false);
@@ -160,11 +126,24 @@ export default function IssueDetailPage() {
         }
     };
 
+    const buildUpdatePayload = (overrides = {}) => ({
+        IssueId: Number(issue.id),
+        Title: issue.title || null,
+        Description: issue.description?.trim() || null,
+        Status: issue.status || null,
+        Priority: issue.priority || null,
+        TeamId: issue.team?.id || null,
+        ProjectId: issue.projectId || null,
+        DueDate: issue.dueDate || null,
+        AssigneeId: issue.assigneeId || null,
+        ...overrides,
+    });
+
     const handleInlineStatusChange = async (newStatus) => {
         if (newStatus === issue.status) return;
         setInlineSaving(true);
         try {
-            await apiClient.put("/api/v1/issue/update-status", { issueId: Number(issue.id), newStatus });
+            await apiClient.put("/api/v1/issue/update", buildUpdatePayload({ Status: newStatus }));
             setIssue(prev => ({ ...prev, status: newStatus }));
             setForm(prev => ({ ...prev, status: newStatus }));
             toast.success("Status updated");
@@ -179,7 +158,7 @@ export default function IssueDetailPage() {
         if (newPriority === issue.priority) return;
         setInlineSaving(true);
         try {
-            await apiClient.put("/api/v1/issue/update-priority", { issueId: Number(issue.id), newPriority });
+            await apiClient.put("/api/v1/issue/update", buildUpdatePayload({ Priority: newPriority }));
             setIssue(prev => ({ ...prev, priority: newPriority }));
             setForm(prev => ({ ...prev, priority: newPriority }));
             toast.success("Priority updated");
@@ -211,12 +190,8 @@ export default function IssueDetailPage() {
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <span className="text-sm font-mono text-muted-foreground">{issue.key}</span>
-                                <Badge variant={
-                                    issue.status === 'DONE' ? 'default' :
-                                        issue.status === 'IN_PROGRESS' ? 'secondary' : 'outline'
-                                } className="text-xs">
-                                    {issue.status === 'NEW' ? 'To Do' :
-                                        issue.status === 'IN_PROGRESS' ? 'In Progress' : 'Done'}
+                                <Badge variant="secondary" className={`text-xs ${getStatusBadgeClass(issue.status)}`}>
+                                    {STATUS_LABELS[issue.status] || issue.status}
                                 </Badge>
                             </div>
                             {edit ? (
@@ -304,32 +279,27 @@ export default function IssueDetailPage() {
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="NEW">To Do</SelectItem>
-                                                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                                <SelectItem value="DONE">Done</SelectItem>
+                                                {ALL_STATUSES.map(s => (
+                                                    <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     ) : !isMobile ? (
                                         <Select value={issue.status} onValueChange={handleInlineStatusChange} disabled={inlineSaving}>
                                             <SelectTrigger className="w-full">
                                                 <SelectValue>
-                                                    {issue.status === 'NEW' ? 'To Do' :
-                                                        issue.status === 'IN_PROGRESS' ? 'In Progress' : 'Done'}
+                                                    {STATUS_LABELS[issue.status] || issue.status}
                                                 </SelectValue>
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="NEW">To Do</SelectItem>
-                                                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                                <SelectItem value="DONE">Done</SelectItem>
+                                                {ALL_STATUSES.map(s => (
+                                                    <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     ) : (
-                                        <Badge variant={
-                                            issue.status === 'DONE' ? 'default' :
-                                                issue.status === 'IN_PROGRESS' ? 'secondary' : 'outline'
-                                        }>
-                                            {issue.status === 'NEW' ? 'To Do' :
-                                                issue.status === 'IN_PROGRESS' ? 'In Progress' : 'Done'}
+                                        <Badge variant="secondary" className={getStatusBadgeClass(issue.status)}>
+                                            {STATUS_LABELS[issue.status] || issue.status}
                                         </Badge>
                                     )}
                                 </div>
@@ -348,28 +318,27 @@ export default function IssueDetailPage() {
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="HIGH">High</SelectItem>
-                                                <SelectItem value="NORMAL">Normal</SelectItem>
-                                                <SelectItem value="LOW">Low</SelectItem>
+                                                {ALL_PRIORITIES.map(p => (
+                                                    <SelectItem key={p} value={p}>{PRIORITY_LABELS[p]}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     ) : !isMobile ? (
                                         <Select value={issue.priority} onValueChange={handleInlinePriorityChange} disabled={inlineSaving}>
                                             <SelectTrigger className="w-full">
-                                                <SelectValue>{issue.priority}</SelectValue>
+                                                <SelectValue>
+                                                    {PRIORITY_LABELS[issue.priority] || issue.priority}
+                                                </SelectValue>
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="HIGH">High</SelectItem>
-                                                <SelectItem value="NORMAL">Normal</SelectItem>
-                                                <SelectItem value="LOW">Low</SelectItem>
+                                                {ALL_PRIORITIES.map(p => (
+                                                    <SelectItem key={p} value={p}>{PRIORITY_LABELS[p]}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     ) : (
-                                        <Badge variant={
-                                            issue.priority === 'HIGH' ? 'destructive' :
-                                                issue.priority === 'NORMAL' ? 'secondary' : 'outline'
-                                        }>
-                                            {issue.priority}
+                                        <Badge variant={getPriorityBadgeVariant(issue.priority)}>
+                                            {PRIORITY_LABELS[issue.priority] || issue.priority}
                                         </Badge>
                                     )}
                                 </div>

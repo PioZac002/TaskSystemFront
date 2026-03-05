@@ -13,6 +13,7 @@ import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
+import { PRIORITY_LABELS, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
@@ -172,13 +173,10 @@ export default function Board() {
                                                 </button>
                                             </div>
                                             <Badge
-                                                variant={
-                                                    issue.priority === "HIGH" ? "destructive" :
-                                                        issue.priority === "NORMAL" ? "secondary" :  "outline"
-                                                }
+                                                variant={getPriorityBadgeVariant(issue.priority)}
                                                 className="text-xs"
                                             >
-                                                {issue.priority}
+                                                {PRIORITY_LABELS[issue.priority] || issue.priority}
                                             </Badge>
                                         </CardContent>
                                     </Card>
@@ -256,13 +254,10 @@ export default function Board() {
                                                                         </button>
                                                                     </div>
                                                                     <Badge
-                                                                        variant={
-                                                                            issue.priority === "HIGH" ? "destructive" :
-                                                                                issue. priority === "NORMAL" ? "secondary" : "outline"
-                                                                        }
+                                                                        variant={getPriorityBadgeVariant(issue.priority)}
                                                                         className="text-xs"
                                                                     >
-                                                                        {issue.priority}
+                                                                        {PRIORITY_LABELS[issue.priority] || issue.priority}
                                                                     </Badge>
                                                                 </CardContent>
                                                             </Card>

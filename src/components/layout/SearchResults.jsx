@@ -7,18 +7,7 @@ import { useIssueStore } from "@/store/issueStore";
 import { useSearchStore } from "@/store/searchStore";
 import { FolderKanban, ListTodo, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-
-const PRIORITY_COLORS = {
-    HIGH: "destructive",
-    NORMAL: "default",
-    LOW: "secondary",
-};
-
-const STATUS_COLORS = {
-    NEW: "secondary",
-    IN_PROGRESS: "default",
-    DONE: "outline",
-};
+import { STATUS_LABELS, PRIORITY_LABELS, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
 export function SearchResults({ onIssueSelect, onProjectSelect }) {
     const { searchTerm, isSearchOpen, clearSearch } = useSearchStore();
@@ -142,11 +131,11 @@ export function SearchResults({ onIssueSelect, onProjectSelect }) {
                                             <Badge variant="outline" className="font-mono text-xs shrink-0">
                                                 {issue.key}
                                             </Badge>
-                                            <Badge variant={STATUS_COLORS[issue.status]} className="text-xs shrink-0">
-                                                {issue.status?.replace('_', ' ')}
+                                            <Badge variant="secondary" className={`text-xs shrink-0 ${getStatusBadgeClass(issue.status)}`}>
+                                                {STATUS_LABELS[issue.status] || issue.status}
                                             </Badge>
-                                            <Badge variant={PRIORITY_COLORS[issue.priority]} className="text-xs shrink-0">
-                                                {issue.priority}
+                                            <Badge variant={getPriorityBadgeVariant(issue.priority)} className="text-xs shrink-0">
+                                                {PRIORITY_LABELS[issue.priority] || issue.priority}
                                             </Badge>
                                         </div>
                                         <p className="text-sm truncate">{issue.title}</p>

@@ -20,7 +20,7 @@ export default function Profile() {
     const [firstName, setFirstName] = useState(user?.firstName || "");
     const [lastName, setLastName] = useState(user?.lastName || "");
     const [email, setEmail] = useState(user?.email || "");
-    const [slackUserId, setSlackUserId] = useState(user?.slackUserId || "");
+    const [userSlackId, setSlackUserId] = useState(user?.userSlackId || "");
 
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -34,7 +34,7 @@ export default function Profile() {
             setFirstName(user.firstName || "");
             setLastName(user.lastName || "");
             setEmail(user.email || "");
-            setSlackUserId(user.slackUserId || "");
+            setSlackUserId(user.userSlackId || "");
         }
     }, [user]);
 
@@ -62,7 +62,7 @@ export default function Profile() {
                 firstName,
                 lastName,
                 email,
-                slackUserId,
+                userSlackId: userSlackId.trim() || null,
                 disabled: user.disabled ?? false,
             });
 
@@ -175,10 +175,10 @@ export default function Profile() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="slackUserId">Slack User ID</Label>
+                                <Label htmlFor="userSlackId">Slack User ID</Label>
                                 <Input
-                                    id="slackUserId"
-                                    value={slackUserId}
+                                    id="userSlackId"
+                                    value={userSlackId}
                                     onChange={(e) => setSlackUserId(e.target.value)}
                                     placeholder="e.g. U01AB2C3D"
                                     disabled={loading}
