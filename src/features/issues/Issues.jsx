@@ -19,7 +19,7 @@ import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import {
     Plus, Search, X, ListTodo, Eye, ChevronDown,
-    SlidersHorizontal, ArrowUpDown, RotateCcw
+    SlidersHorizontal, ArrowUpDown, RotateCcw, Check
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -68,15 +68,19 @@ function PillMultiSelect({ label, options, selected, onToggle }) {
                             onClick={() => onToggle(opt.value)}
                             className={`w-full flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-left transition-colors ${
                                 selected.includes(opt.value)
-                                    ? "bg-primary text-primary-foreground font-medium"
-                                    : "hover:bg-accent"
+                                    ? "bg-accent font-medium text-foreground"
+                                    : "hover:bg-accent text-foreground"
                             }`}
                         >
-                            <span className={`flex-shrink-0 h-3.5 w-3.5 rounded-sm border ${
+                            <span className={`flex-shrink-0 h-3.5 w-3.5 rounded-sm border flex items-center justify-center transition-colors ${
                                 selected.includes(opt.value)
-                                    ? "bg-primary-foreground border-primary-foreground"
-                                    : "border-muted-foreground"
-                            }`} />
+                                    ? "bg-primary border-primary"
+                                    : "border-muted-foreground/60 dark:border-muted-foreground/40"
+                            }`}>
+                                {selected.includes(opt.value) && (
+                                    <Check className="h-2.5 w-2.5 text-primary-foreground stroke-[3]" />
+                                )}
+                            </span>
                             {opt.label}
                         </button>
                     ))}
@@ -213,11 +217,11 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
                 <div className="grid grid-cols-2 gap-2">
                     <div>
                         <Label className="text-xs text-muted-foreground">From</Label>
-                        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-9 mt-1" />
+                        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-9 mt-1 [color-scheme:light] dark:[color-scheme:dark]" />
                     </div>
                     <div>
                         <Label className="text-xs text-muted-foreground">To</Label>
-                        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-9 mt-1" />
+                        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-9 mt-1 [color-scheme:light] dark:[color-scheme:dark]" />
                     </div>
                 </div>
             </div>
@@ -237,12 +241,6 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
                 </Select>
             </div>
 
-            {hasActiveFilters && (
-                <Button variant="destructive" size="sm" className="w-full" onClick={clearFilters}>
-                    <RotateCcw className="mr-2 h-3.5 w-3.5" />
-                    Reset all filters
-                </Button>
-            )}
         </div>
     );
 }
@@ -547,11 +545,11 @@ export default function Issues() {
                                 <div className="space-y-2">
                                     <div>
                                         <Label className="text-xs">From</Label>
-                                        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-8 mt-1" />
+                                        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-8 mt-1 [color-scheme:light] dark:[color-scheme:dark]" />
                                     </div>
                                     <div>
                                         <Label className="text-xs">To</Label>
-                                        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-8 mt-1" />
+                                        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-8 mt-1 [color-scheme:light] dark:[color-scheme:dark]" />
                                     </div>
                                     {(dateFrom || dateTo) && (
                                         <Button
@@ -580,18 +578,6 @@ export default function Issues() {
                             </SelectContent>
                         </Select>
 
-                        {/* Reset all */}
-                        {hasActiveFilters && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={clearFilters}
-                                className="h-9 text-destructive border-destructive/40 hover:bg-destructive/10 hover:border-destructive"
-                            >
-                                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                                Reset all
-                            </Button>
-                        )}
                     </div>
                 )}
 

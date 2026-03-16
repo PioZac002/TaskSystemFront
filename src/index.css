@@ -53,6 +53,13 @@
   --color-muted-foreground: #9ca3af;
   --color-border: #374151;
   --color-input: #374151;
+  /* Missing overrides — these stay light-mode without explicit dark values */
+  --color-popover: #111827;
+  --color-popover-foreground: #f9fafb;
+  --color-accent: #1e3a5f;
+  --color-accent-foreground: #f9fafb;
+  --color-secondary: #1f2937;
+  --color-secondary-foreground: #f9fafb;
 }
 
 /* Custom Utilities dla Tailwind v4 */
