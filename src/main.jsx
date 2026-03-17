@@ -58,7 +58,7 @@ function App() {
                 <Route path="/issues" element={<ProtectedRoute><Issues /></ProtectedRoute>} />
                 <Route path="/issues/:id" element={<ProtectedRoute><IssueDetailPage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+                <Route path="/users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
                 <Route path="/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
             </Routes>

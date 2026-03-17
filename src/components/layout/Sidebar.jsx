@@ -13,18 +13,21 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems = [
+const ALL_NAV_ITEMS = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Projects", url: "/projects", icon: FolderKanban },
     { title: "Issues", url: "/issues", icon: CheckSquare },
     { title: "Board", url: "/board", icon: KanbanSquare },
     { title: "Teams", url: "/teams", icon: Users },
-    { title: "Users", url: "/users", icon: UserCircle },
+    { title: "Users", url: "/users", icon: UserCircle, adminOnly: true },
 ];
 
 export const Sidebar = () => {
     const [collapsed, setCollapsed] = useState(false);
     const systemVersion = useAuthStore((state) => state.systemVersion);
+    const isAdmin = useAuthStore((state) => state.isAdmin);
+    const isAdminUser = isAdmin();
+    const navItems = ALL_NAV_ITEMS.filter(item => !item.adminOnly || isAdminUser);
 
     const versionLabel = systemVersion
         ? 'v' + systemVersion.replace(/^v/, '').split('.').slice(0, 3).join('.').substring(0, 9)
