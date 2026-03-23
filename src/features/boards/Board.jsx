@@ -272,7 +272,7 @@ export default function Board() {
                 Priority:    issue.priority || null,
                 TeamId:      issue.team?.id || null,
                 ProjectId:   issue.projectId || null,
-                DueDate:     issue.dueDate || null,
+                DueDate:     issue.dueDate ? issue.dueDate.slice(0, 10) : null,
                 AssigneeId:  issue.assigneeId || null,
             });
             toast.success("Status updated!");
@@ -413,20 +413,14 @@ export default function Board() {
                         <DragDropContext onDragEnd={handleDragEnd}>
                             <div
                                 ref={kanbanRef}
-                                className={cn(
-                                    "flex-1 overflow-y-hidden hidden md:flex divide-x divide-border",
-                                    boardMode === "detailed" && "overflow-x-auto"
-                                )}
+                                className="flex-1 overflow-y-hidden hidden md:flex divide-x divide-border overflow-x-hidden"
                             >
                                 {activeColumns.map((col) => {
                                     const colIssues = filteredIssues.filter(i => col.statuses.includes(i.status));
                                     return (
                                         <div
                                             key={col.id}
-                                            className={cn(
-                                                "board-column flex flex-col overflow-hidden bg-background",
-                                                boardMode === "detailed" ? "min-w-[210px] shrink-0" : "flex-1"
-                                            )}
+                                            className="board-column flex flex-col overflow-hidden bg-background flex-1 min-w-0"
                                         >
                                             {/* Column header — color accent via top border */}
                                             <div
@@ -474,7 +468,11 @@ export default function Board() {
                                                                                 <p className="font-mono text-[10px] text-muted-foreground mb-0.5">{issue.key}</p>
                                                                                 <Link
                                                                                     to={`/issues/${issue.id}`}
-                                                                                    className="text-sm font-semibold line-clamp-2 hover:underline text-foreground block"
+                                                                                    title={issue.title}
+                                                                                    className={cn(
+                                                                                        "text-sm font-semibold hover:underline text-foreground block",
+                                                                                        boardMode === "detailed" ? "truncate" : "line-clamp-2"
+                                                                                    )}
                                                                                 >
                                                                                     {issue.title}
                                                                                 </Link>

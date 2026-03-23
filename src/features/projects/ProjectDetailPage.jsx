@@ -11,11 +11,13 @@ import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
 import {
     Plus, ExternalLink, ListTodo, CheckCircle2, Clock,
-    AlertCircle, Calendar, FolderKanban, Trash2
+    AlertCircle, Calendar, FolderKanban, Trash2, Search, X
 } from "lucide-react";
+import { Input } from "@/components/ui/Input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
-import { STATUS_LABELS, PRIORITY_LABELS, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
 function formatDate(dateString) {
     if (!dateString) return "No date";
@@ -35,6 +37,9 @@ export default function ProjectDetailPage() {
     const [loading, setLoading] = useState(false);
     const [selectedIssueId, setSelectedIssueId] = useState(null);
     const [createIssueOpen, setCreateIssueOpen] = useState(false);
+    const [issueSearch, setIssueSearch]         = useState("");
+    const [issueStatus, setIssueStatus]         = useState("all");
+    const [issuePriority, setIssuePriority]     = useState("all");
 
     useEffect(() => {
         if (id) loadProjectDetails();
@@ -75,6 +80,17 @@ export default function ProjectDetailPage() {
     if (!project) return null;
 
     const issues = project?.issues || [];
+    const filteredIssues = issues.filter(i => {
+        if (issueStatus !== "all" && i.status !== issueStatus) return false;
+        if (issuePriority !== "all" && i.priority !== issuePriority) return false;
+        if (issueSearch) {
+            const s = issueSearch.toLowerCase();
+            if (!(i.title?.toLowerCase().includes(s) || i.key?.toLowerCase().includes(s))) return false;
+        }
+        return true;
+    });
+    const hasFilters = issueSearch || issueStatus !== "all" || issuePriority !== "all";
+
     const todoIssues = issues.filter(i => i.status === 'NEW');
     const inProgressIssues = issues.filter(i => i.status === 'IN_PROGRESS');
     const doneIssues = issues.filter(i => i.status === 'DONE');
@@ -148,9 +164,58 @@ export default function ProjectDetailPage() {
 
                         {/* Issues List */}
                         <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold">Issues ({issues.length})</h3>
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-lg font-semibold">
+                                    Issues ({hasFilters ? `${filteredIssues.length} / ${issues.length}` : issues.length})
+                                </h3>
                             </div>
+
+                            {/* Filter toolbar */}
+                            {issues.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-2 mb-4">
+                                    <div className="relative flex-1 min-w-[160px]">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Search issues…"
+                                            value={issueSearch}
+                                            onChange={(e) => setIssueSearch(e.target.value)}
+                                            className="pl-8 h-9 text-sm"
+                                        />
+                                    </div>
+                                    <Select value={issueStatus} onValueChange={setIssueStatus}>
+                                        <SelectTrigger className="w-[130px] h-9 text-sm">
+                                            <SelectValue placeholder="All statuses" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All statuses</SelectItem>
+                                            {ALL_STATUSES.map(s => (
+                                                <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={issuePriority} onValueChange={setIssuePriority}>
+                                        <SelectTrigger className="w-[130px] h-9 text-sm">
+                                            <SelectValue placeholder="All priorities" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All priorities</SelectItem>
+                                            {ALL_PRIORITIES.map(p => (
+                                                <SelectItem key={p} value={p}>{PRIORITY_LABELS[p]}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {hasFilters && (
+                                        <Button
+                                            variant="ghost" size="sm"
+                                            onClick={() => { setIssueSearch(""); setIssueStatus("all"); setIssuePriority("all"); }}
+                                            className="h-9 gap-1 text-muted-foreground hover:text-foreground px-2"
+                                        >
+                                            <X className="h-3.5 w-3.5" />
+                                            <span className="text-xs">Clear</span>
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
 
                             {issues.length === 0 ? (
                                 <Card className="bg-muted/30">
@@ -163,9 +228,17 @@ export default function ProjectDetailPage() {
                                         </Button>
                                     </CardContent>
                                 </Card>
+                            ) : filteredIssues.length === 0 ? (
+                                <div className="rounded-xl border border-dashed border-border py-10 text-center space-y-2">
+                                    <ListTodo className="h-8 w-8 mx-auto text-muted-foreground/30" />
+                                    <p className="text-sm text-muted-foreground">No issues match your filters</p>
+                                    <Button variant="outline" size="sm" onClick={() => { setIssueSearch(""); setIssueStatus("all"); setIssuePriority("all"); }}>
+                                        Clear Filters
+                                    </Button>
+                                </div>
                             ) : (
                                 <div className="space-y-2">
-                                    {issues.map(issue => (
+                                    {filteredIssues.map(issue => (
                                         <Card
                                             key={issue.id}
                                             className="hover:bg-accent cursor-pointer transition-all hover:shadow-md"

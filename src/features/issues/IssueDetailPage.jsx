@@ -13,10 +13,11 @@ import { CommentSection } from "@/components/comments/CommentSection";
 import { ActivityLog } from "@/components/activity/ActivityLog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import apiClient from "@/services/apiClient";
+import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
 import {
     Edit, Save, X, Trash2, Calendar, User as UserIcon,
-    Users, Tag
+    Users, Tag, FolderKanban
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
@@ -39,13 +40,17 @@ export default function IssueDetailPage() {
         dueDate: "",
         assigneeId: "",
         teamId: "",
+        projectId: "",
     });
+
+    const { projects, fetchProjects } = useProjectStore();
 
     useEffect(() => {
         if (id) {
             loadData();
             setEdit(false);
         }
+        fetchProjects();
     }, [id]);
 
     const loadData = async () => {
@@ -70,6 +75,7 @@ export default function IssueDetailPage() {
                 dueDate: issueData.dueDate ? issueData.dueDate.slice(0, 10) : "",
                 assigneeId: issueData.assigneeId ? String(issueData.assigneeId) : "unassigned",
                 teamId: issueData.team?.id ? String(issueData.team.id) : "none",
+                projectId: issueData.projectId ? String(issueData.projectId) : "",
             });
         } catch (error) {
             toast.error("Failed to load issue details");
@@ -95,12 +101,24 @@ export default function IssueDetailPage() {
                 Status: form.status || null,
                 Priority: form.priority || null,
                 TeamId: form.teamId && form.teamId !== "none" ? Number(form.teamId) : null,
-                ProjectId: issue.projectId || null,
-                DueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+                ProjectId: form.projectId ? Number(form.projectId) : (issue.projectId || null),
+                DueDate: form.dueDate || null,
                 AssigneeId: form.assigneeId && form.assigneeId !== "unassigned" ? Number(form.assigneeId) : null,
             });
 
             toast.success("Issue updated successfully!");
+
+            // Optimistically update issue state so UI reflects new values immediately
+            setIssue(prev => ({
+                ...prev,
+                title: form.title,
+                description: form.description,
+                status: form.status,
+                priority: form.priority,
+                assigneeId: form.assigneeId && form.assigneeId !== "unassigned" ? Number(form.assigneeId) : null,
+                projectId: form.projectId ? Number(form.projectId) : prev.projectId,
+                dueDate: form.dueDate || null,
+            }));
             setEdit(false);
             await loadData();
         } catch (error) {
@@ -134,7 +152,7 @@ export default function IssueDetailPage() {
         Priority: issue.priority || null,
         TeamId: issue.team?.id || null,
         ProjectId: issue.projectId || null,
-        DueDate: issue.dueDate || null,
+        DueDate: issue.dueDate ? issue.dueDate.slice(0, 10) : null,
         AssigneeId: issue.assigneeId || null,
         ...overrides,
     });
@@ -180,6 +198,7 @@ export default function IssueDetailPage() {
     if (!issue) return null;
 
     const assignedUser = users.find(u => u.id === issue?.assigneeId);
+    const currentProject = projects.find(p => p.id === issue?.projectId);
 
     return (
         <AppLayout>
@@ -345,6 +364,34 @@ export default function IssueDetailPage() {
 
                                 <Separator />
 
+                                {/* Project */}
+                                <div>
+                                    <Label className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                                        <FolderKanban className="h-4 w-4" />
+                                        Project
+                                    </Label>
+                                    {edit ? (
+                                        <Select value={form.projectId} onValueChange={(v) => handleChange("projectId", v)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select project" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {projects.map((p) => (
+                                                    <SelectItem key={p.id} value={String(p.id)}>
+                                                        {p.shortName}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <p className="text-sm font-mono">
+                                            {currentProject?.shortName || 'No project'}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <Separator />
+
                                 {/* Assignee */}
                                 <div>
                                     <Label className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
@@ -414,6 +461,7 @@ export default function IssueDetailPage() {
                                             type="date"
                                             value={form.dueDate}
                                             onChange={(e) => handleChange("dueDate", e.target.value)}
+                                            className="[color-scheme:light] dark:[color-scheme:dark]"
                                         />
                                     ) : (
                                         <p className="text-sm">

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useUserStore } from "@/store/userStore";
 import { useAuthStore } from "@/store/authStore";
 import apiClient from "@/services/apiClient";
-import { Search, Trash2, KeyRound, Shield, UserCircle, ArrowUpDown } from "lucide-react";
+import { Search, Trash2, KeyRound, Shield, UserCircle, ArrowUpDown, Info } from "lucide-react";
 import { toast } from "sonner";
 import { getInitials } from "@/utils/formatters";
 import { gsap } from "gsap";
@@ -24,7 +24,7 @@ const isUserAdmin  = (user) => getUserRoles(user).some(r =>
 const getRoleLabel = (user) => isUserAdmin(user) ? "Admin" : "User";
 
 // ─── User row ─────────────────────────────────────────────────────────────────
-function UserRow({ user, onResetPassword, onChangeRole, onDelete }) {
+function UserRow({ user, onResetPassword, onChangeRole, onDelete, onPreview }) {
     const admin    = isUserAdmin(user);
     const initials = getInitials(user.firstName, user.lastName);
     const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "—";
@@ -43,8 +43,13 @@ function UserRow({ user, onResetPassword, onChangeRole, onDelete }) {
                 </AvatarFallback>
             </Avatar>
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
+            {/* Info — tappable on mobile to show preview */}
+            <button
+                type="button"
+                className="flex-1 min-w-0 text-left"
+                onClick={() => onPreview(user)}
+                title="View user details"
+            >
                 <div className="flex items-center gap-1.5 min-w-0">
                     <span className="font-semibold text-sm text-foreground truncate">{fullName}</span>
                     <Badge
@@ -63,7 +68,7 @@ function UserRow({ user, onResetPassword, onChangeRole, onDelete }) {
                     )}
                 </div>
                 <p className="text-xs text-muted-foreground truncate mt-0.5">{user.email || "—"}</p>
-            </div>
+            </button>
 
             {/* ID */}
             <Badge variant="outline" className="shrink-0 text-[10px] hidden sm:flex tabular-nums">
@@ -72,6 +77,14 @@ function UserRow({ user, onResetPassword, onChangeRole, onDelete }) {
 
             {/* Actions */}
             <div className="flex items-center gap-0.5 shrink-0">
+                <Button
+                    size="sm" variant="ghost"
+                    onClick={() => onPreview(user)}
+                    title="View details"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground sm:hidden"
+                >
+                    <Info className="h-3.5 w-3.5" />
+                </Button>
                 <Button
                     size="sm" variant="ghost"
                     onClick={() => onResetPassword(user)}
@@ -117,6 +130,8 @@ export default function UserManagement() {
     const [changeRoleDialog, setChangeRoleDialog] = useState({ open: false, user: null });
     const [selectedRole, setSelectedRole]         = useState("");
     const [roleLoading, setRoleLoading]           = useState(false);
+
+    const [previewUser, setPreviewUser] = useState(null);
 
     const headerRef = useRef(null);
     const listRef   = useRef(null);
@@ -343,6 +358,7 @@ export default function UserManagement() {
                                         u.id,
                                         `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email || `User #${u.id}`
                                     )}
+                                    onPreview={setPreviewUser}
                                 />
                             </div>
                         ))}
@@ -401,6 +417,74 @@ export default function UserManagement() {
                             {resetLoading ? "Resetting…" : "Reset Password"}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── User Preview Dialog ── */}
+            <Dialog
+                open={!!previewUser}
+                onOpenChange={(open) => { if (!open) setPreviewUser(null); }}
+            >
+                <DialogContent className="max-w-sm p-0 overflow-hidden">
+                    <div className="h-1 w-full bg-gradient-to-r from-primary via-accent to-primary/60" />
+                    <div className="px-6 pt-5 pb-6">
+                        <DialogHeader className="mb-5">
+                            <DialogTitle className="flex items-center gap-2.5 text-base">
+                                {previewUser && (() => {
+                                    const a = isUserAdmin(previewUser);
+                                    const initials = getInitials(previewUser.firstName, previewUser.lastName);
+                                    return (
+                                        <>
+                                            <Avatar className="h-8 w-8 shrink-0">
+                                                <AvatarFallback className={cn(
+                                                    "text-sm font-semibold",
+                                                    a ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                                                      : "bg-primary/10 text-primary"
+                                                )}>
+                                                    {initials}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <span className="truncate">
+                                                {`${previewUser.firstName || ""} ${previewUser.lastName || ""}`.trim() || "—"}
+                                            </span>
+                                        </>
+                                    );
+                                })()}
+                            </DialogTitle>
+                        </DialogHeader>
+                        {previewUser && (
+                            <div className="space-y-3 text-sm">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-muted-foreground">Email</span>
+                                    <span className="font-medium truncate max-w-[200px]">{previewUser.email || "—"}</span>
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-muted-foreground">Role</span>
+                                    <Badge
+                                        variant="secondary"
+                                        className={cn(
+                                            "text-xs",
+                                            isUserAdmin(previewUser) && "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                                        )}
+                                    >
+                                        {getRoleLabel(previewUser)}
+                                    </Badge>
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-muted-foreground">ID</span>
+                                    <span className="font-mono text-xs">#{previewUser.id}</span>
+                                </div>
+                                {previewUser.disabled && (
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-muted-foreground">Status</span>
+                                        <Badge variant="outline" className="text-xs text-destructive border-destructive/40">
+                                            Disabled
+                                        </Badge>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
 

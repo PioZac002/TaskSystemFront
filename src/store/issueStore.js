@@ -57,7 +57,7 @@ export const useIssueStore = create((set, get) => ({
                 Priority: issue?.priority || null,
                 TeamId: issue?.team?.id || null,
                 ProjectId: issue?.projectId || null,
-                DueDate: issue?.dueDate || null,
+                DueDate: issue?.dueDate ? issue.dueDate.slice(0, 10) : null,
                 AssigneeId: issue?.assigneeId || null,
             });
 
