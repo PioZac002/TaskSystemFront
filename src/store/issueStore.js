@@ -46,23 +46,27 @@ export const useIssueStore = create((set, get) => ({
         }
     },
 
-    // Add updateIssueStatus function
     updateIssueStatus: async (issueId, newStatus) => {
+        const issue = get().issues.find(i => i.id === Number(issueId));
         try {
-            await apiClient.put('/api/v1/issue/update-status', {
-                issueId: Number(issueId),
-                newStatus: newStatus
+            await apiClient.put('/api/v1/issue/update', {
+                IssueId: Number(issueId),
+                Title: issue?.title || null,
+                Description: issue?.description?.trim() || null,
+                Status: newStatus,
+                Priority: issue?.priority || null,
+                TeamId: issue?.team?.id || null,
+                ProjectId: issue?.projectId || null,
+                DueDate: issue?.dueDate ? issue.dueDate.slice(0, 10) : null,
+                AssigneeId: issue?.assigneeId || null,
             });
-            
-            // Update local state
+
             set((state) => ({
-                issues: state.issues.map(issue =>
-                    issue.id === issueId
-                        ? { ...issue, status: newStatus }
-                        : issue
+                issues: state.issues.map(i =>
+                    i.id === Number(issueId) ? { ...i, status: newStatus } : i
                 )
             }));
-            
+
             return true;
         } catch (e) {
             console.error('Error updating issue status:', e);

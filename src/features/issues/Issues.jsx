@@ -1,7 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -16,31 +15,96 @@ import { useUserStore } from "@/store/userStore";
 import { useTeamStore } from "@/store/teamStore";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
+import { AddButton } from "@/components/ui/AddButton";
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import {
     Plus, Search, X, ListTodo, Eye, ChevronDown,
-    SlidersHorizontal, ArrowUpDown, RotateCcw
+    SlidersHorizontal, ArrowUpDown, RotateCcw, Check,
+    Calendar, User,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
     STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES,
-    getStatusBadgeClass, getPriorityBadgeVariant
+    getStatusBadgeClass, getPriorityBadgeVariant,
 } from "@/utils/issueConstants";
+import { gsap } from "gsap";
+import { cn } from "@/lib/utils";
 
 function formatDate(dateString) {
-    if (!dateString) return "No due date";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    if (!dateString) return null;
+    return new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 const SORT_OPTIONS = [
     { value: "createdAt__desc", label: "Newest first" },
-    { value: "createdAt__asc", label: "Oldest first" },
+    { value: "createdAt__asc",  label: "Oldest first" },
     { value: "updatedAt__desc", label: "Recently updated" },
-    { value: "updatedAt__asc", label: "Least recently updated" },
+    { value: "updatedAt__asc",  label: "Least recently updated" },
 ];
 
-// Pill-style multi-select toggle group
+// ─── Issue row (Board / Dashboard card style) ─────────────────────────────────
+function IssueRow({ issue, isMobile, onPreview, getUserName }) {
+    const date = formatDate(issue.dueDate);
+    const name = getUserName(issue.assigneeId);
+
+    return (
+        <div className="group flex items-start gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:border-border/80 hover:shadow-sm transition-all duration-150">
+            <div className="flex-1 min-w-0">
+                {/* Key + title */}
+                <div className="flex items-center gap-2 mb-1.5 min-w-0">
+                    <span className="font-mono text-[10px] text-muted-foreground shrink-0 font-medium">
+                        {issue.key}
+                    </span>
+                    {isMobile ? (
+                        <span
+                            className="text-sm font-semibold text-foreground cursor-pointer hover:underline line-clamp-1 flex-1 min-w-0"
+                            onClick={() => onPreview(issue.id)}
+                        >
+                            {issue.title}
+                        </span>
+                    ) : (
+                        <Link
+                            to={`/issues/${issue.id}`}
+                            className="text-sm font-semibold text-foreground hover:underline line-clamp-1 flex-1 min-w-0"
+                        >
+                            {issue.title}
+                        </Link>
+                    )}
+                </div>
+                {/* Meta row */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge variant="secondary" className={cn("text-xs", getStatusBadgeClass(issue.status))}>
+                        {STATUS_LABELS[issue.status] || issue.status}
+                    </Badge>
+                    <Badge variant={getPriorityBadgeVariant(issue.priority)} className="text-xs">
+                        {PRIORITY_LABELS[issue.priority] || issue.priority}
+                    </Badge>
+                    {date && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3 shrink-0" />
+                            {date}
+                        </span>
+                    )}
+                    {name && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <User className="h-3 w-3 shrink-0" />
+                            {name}
+                        </span>
+                    )}
+                </div>
+            </div>
+            <button
+                title="Quick preview"
+                onClick={() => onPreview(issue.id)}
+                className="shrink-0 text-muted-foreground hover:text-primary transition-opacity opacity-0 group-hover:opacity-100 mt-0.5"
+            >
+                <Eye className="h-4 w-4" />
+            </button>
+        </div>
+    );
+}
+
+// ─── Pill multi-select ────────────────────────────────────────────────────────
 function PillMultiSelect({ label, options, selected, onToggle }) {
     const hasSelected = selected.length > 0;
     return (
@@ -66,17 +130,23 @@ function PillMultiSelect({ label, options, selected, onToggle }) {
                         <button
                             key={opt.value}
                             onClick={() => onToggle(opt.value)}
-                            className={`w-full flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-left transition-colors ${
+                            className={cn(
+                                "w-full flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-left transition-colors",
                                 selected.includes(opt.value)
-                                    ? "bg-primary text-primary-foreground font-medium"
-                                    : "hover:bg-accent"
-                            }`}
+                                    ? "bg-accent font-medium text-foreground"
+                                    : "hover:bg-accent text-foreground"
+                            )}
                         >
-                            <span className={`flex-shrink-0 h-3.5 w-3.5 rounded-sm border ${
+                            <span className={cn(
+                                "flex-shrink-0 h-3.5 w-3.5 rounded-sm border flex items-center justify-center transition-colors",
                                 selected.includes(opt.value)
-                                    ? "bg-primary-foreground border-primary-foreground"
-                                    : "border-muted-foreground"
-                            }`} />
+                                    ? "bg-primary border-primary"
+                                    : "border-muted-foreground/60 dark:border-muted-foreground/40"
+                            )}>
+                                {selected.includes(opt.value) && (
+                                    <Check className="h-2.5 w-2.5 text-primary-foreground stroke-[3]" />
+                                )}
+                            </span>
                             {opt.label}
                         </button>
                     ))}
@@ -97,23 +167,22 @@ function PillMultiSelect({ label, options, selected, onToggle }) {
     );
 }
 
-// The filter panel (shared between desktop and mobile)
+// ─── Filter panel (shared desktop + mobile sheet) ────────────────────────────
 function FilterPanel({ state, handlers, projects, teams, users }) {
     const {
         statusFilter, priorityFilter, projectFilter, teamFilter,
-        assigneeFilter, sortValue, dateFrom, dateTo, hasActiveFilters,
+        assigneeFilter, sortValue, dateFrom, dateTo,
     } = state;
     const {
         toggleStatus, togglePriority, setProjectFilter, setTeamFilter,
-        setAssigneeFilter, setSortValue, setDateFrom, setDateTo, clearFilters,
+        setAssigneeFilter, setSortValue, setDateFrom, setDateTo,
     } = handlers;
 
-    const statusOptions = ALL_STATUSES.map(s => ({ value: s, label: STATUS_LABELS[s] }));
+    const statusOptions   = ALL_STATUSES.map(s => ({ value: s, label: STATUS_LABELS[s] }));
     const priorityOptions = ALL_PRIORITIES.map(p => ({ value: p, label: PRIORITY_LABELS[p] }));
 
     return (
         <div className="space-y-5">
-            {/* Status */}
             <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Status</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -121,11 +190,12 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
                         <button
                             key={opt.value}
                             onClick={() => toggleStatus(opt.value)}
-                            className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-all ${
+                            className={cn(
+                                "text-xs px-2.5 py-1 rounded-full border font-medium transition-all",
                                 statusFilter.includes(opt.value)
                                     ? "border-primary bg-primary text-primary-foreground"
                                     : "border-border hover:border-primary/50 hover:bg-accent"
-                            }`}
+                            )}
                         >
                             {opt.label}
                         </button>
@@ -133,7 +203,6 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
                 </div>
             </div>
 
-            {/* Priority */}
             <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Priority</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -141,11 +210,12 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
                         <button
                             key={opt.value}
                             onClick={() => togglePriority(opt.value)}
-                            className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-all ${
+                            className={cn(
+                                "text-xs px-2.5 py-1 rounded-full border font-medium transition-all",
                                 priorityFilter.includes(opt.value)
                                     ? "border-primary bg-primary text-primary-foreground"
                                     : "border-border hover:border-primary/50 hover:bg-accent"
-                            }`}
+                            )}
                         >
                             {opt.label}
                         </button>
@@ -155,45 +225,32 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
 
             <Separator />
 
-            {/* Project */}
             <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Project</p>
                 <Select value={projectFilter} onValueChange={setProjectFilter}>
-                    <SelectTrigger className="h-9">
-                        <SelectValue placeholder="All Projects" />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="All Projects" /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Projects</SelectItem>
-                        {projects.map(p => (
-                            <SelectItem key={p.id} value={String(p.id)}>{p.shortName}</SelectItem>
-                        ))}
+                        {projects.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.shortName}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
 
-            {/* Team */}
             <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Team</p>
                 <Select value={teamFilter} onValueChange={setTeamFilter}>
-                    <SelectTrigger className="h-9">
-                        <SelectValue placeholder="All Teams" />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="All Teams" /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Teams</SelectItem>
-                        {teams.map(t => (
-                            <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                        ))}
+                        {teams.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
 
-            {/* Assignee */}
             <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Assignee</p>
                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                    <SelectTrigger className="h-9">
-                        <SelectValue placeholder="All Assignees" />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="All Assignees" /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Assignees</SelectItem>
                         {users.map(u => (
@@ -207,68 +264,58 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
 
             <Separator />
 
-            {/* Date Range */}
             <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Created Date Range</p>
                 <div className="grid grid-cols-2 gap-2">
                     <div>
                         <Label className="text-xs text-muted-foreground">From</Label>
-                        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-9 mt-1" />
+                        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-9 mt-1 [color-scheme:light] dark:[color-scheme:dark]" />
                     </div>
                     <div>
                         <Label className="text-xs text-muted-foreground">To</Label>
-                        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-9 mt-1" />
+                        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-9 mt-1 [color-scheme:light] dark:[color-scheme:dark]" />
                     </div>
                 </div>
             </div>
 
-            {/* Sort */}
             <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Sort By</p>
                 <Select value={sortValue} onValueChange={setSortValue}>
-                    <SelectTrigger className="h-9">
-                        <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                        {SORT_OPTIONS.map(opt => (
-                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                        ))}
+                        {SORT_OPTIONS.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
-
-            {hasActiveFilters && (
-                <Button variant="destructive" size="sm" className="w-full" onClick={clearFilters}>
-                    <RotateCcw className="mr-2 h-3.5 w-3.5" />
-                    Reset all filters
-                </Button>
-            )}
         </div>
     );
 }
 
+// ─── Main component ────────────────────────────────────────────────────────────
 export default function Issues() {
     const { isMobile } = useResponsiveNavigation();
     const { issues, fetchIssues, loading } = useIssueStore();
-    const { projects, fetchProjects } = useProjectStore();
-    const { users, fetchUsers } = useUserStore();
-    const { teams, fetchTeams } = useTeamStore();
+    const { projects, fetchProjects }      = useProjectStore();
+    const { users, fetchUsers }            = useUserStore();
+    const { teams, fetchTeams }            = useTeamStore();
     const [searchParams] = useSearchParams();
 
     const [selectedIssueId, setSelectedIssueId] = useState(null);
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
-    // Filter state
-    const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState([]);
+    const [searchTerm,     setSearchTerm]     = useState("");
+    const [statusFilter,   setStatusFilter]   = useState([]);
     const [priorityFilter, setPriorityFilter] = useState([]);
-    const [projectFilter, setProjectFilter] = useState("all");
-    const [teamFilter, setTeamFilter] = useState("all");
+    const [projectFilter,  setProjectFilter]  = useState("all");
+    const [teamFilter,     setTeamFilter]     = useState("all");
     const [assigneeFilter, setAssigneeFilter] = useState("all");
-    const [sortValue, setSortValue] = useState("createdAt__desc");
-    const [dateFrom, setDateFrom] = useState("");
-    const [dateTo, setDateTo] = useState("");
+    const [sortValue,      setSortValue]      = useState("createdAt__desc");
+    const [dateFrom,       setDateFrom]       = useState("");
+    const [dateTo,         setDateTo]         = useState("");
+
+    const headerRef = useRef(null);
+    const listRef   = useRef(null);
 
     useEffect(() => {
         fetchIssues();
@@ -277,22 +324,48 @@ export default function Issues() {
         fetchTeams();
     }, []);
 
-    // Apply URL params on mount (for dashboard "view all" links)
+    // Apply URL params on mount (dashboard "view all" links)
     useEffect(() => {
-        const assignee = searchParams.get("assignee");
-        const status = searchParams.get("status");
-        const priority = searchParams.get("priority");
-        const project = searchParams.get("project");
-        const team = searchParams.get("team");
-        const sort = searchParams.get("sort");
+        const assignee  = searchParams.get("assignee");
+        const status    = searchParams.get("status");
+        const priority  = searchParams.get("priority");
+        const project   = searchParams.get("project");
+        const team      = searchParams.get("team");
+        const sort      = searchParams.get("sort");
 
         if (assignee) setAssigneeFilter(assignee);
-        if (status) setStatusFilter(status.split(",").filter(Boolean));
+        if (status)   setStatusFilter(status.split(",").filter(Boolean));
         if (priority) setPriorityFilter(priority.split(",").filter(Boolean));
-        if (project) setProjectFilter(project);
-        if (team) setTeamFilter(team);
+        if (project)  setProjectFilter(project);
+        if (team)     setTeamFilter(team);
         if (sort && SORT_OPTIONS.find(o => o.value === sort)) setSortValue(sort);
     }, []);
+
+    // Header slide-in on mount
+    useEffect(() => {
+        const ctx = gsap.context(() => {
+            if (headerRef.current) {
+                gsap.fromTo(headerRef.current,
+                    { y: -28, opacity: 0 },
+                    { y: 0, opacity: 1, duration: 0.5, ease: "power3.out", clearProps: "y,transform" }
+                );
+            }
+        });
+        return () => ctx.revert();
+    }, []);
+
+    // Rows stagger after data loads
+    useEffect(() => {
+        if (!loading && listRef.current) {
+            const rows = listRef.current.querySelectorAll(".issue-row");
+            if (rows.length > 0) {
+                gsap.fromTo(rows,
+                    { opacity: 0, y: 10 },
+                    { opacity: 1, y: 0, duration: 0.3, stagger: 0.03, ease: "power2.out", clearProps: "transform,opacity" }
+                );
+            }
+        }
+    }, [loading]);
 
     const getUserName = useCallback((userId) => {
         if (!userId) return null;
@@ -301,28 +374,13 @@ export default function Issues() {
         return null;
     }, [users]);
 
-    const toggleStatus = (status) => {
-        setStatusFilter(prev =>
-            prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
-        );
-    };
-
-    const togglePriority = (priority) => {
-        setPriorityFilter(prev =>
-            prev.includes(priority) ? prev.filter(p => p !== priority) : [...prev, priority]
-        );
-    };
+    const toggleStatus   = (s) => setStatusFilter(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+    const togglePriority = (p) => setPriorityFilter(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
 
     const clearFilters = () => {
-        setSearchTerm("");
-        setStatusFilter([]);
-        setPriorityFilter([]);
-        setProjectFilter("all");
-        setTeamFilter("all");
-        setAssigneeFilter("all");
-        setSortValue("createdAt__desc");
-        setDateFrom("");
-        setDateTo("");
+        setSearchTerm(""); setStatusFilter([]); setPriorityFilter([]);
+        setProjectFilter("all"); setTeamFilter("all"); setAssigneeFilter("all");
+        setSortValue("createdAt__desc"); setDateFrom(""); setDateTo("");
         toast.success("Filters cleared");
     };
 
@@ -339,72 +397,82 @@ export default function Issues() {
     ].filter(Boolean).length;
 
     const hasActiveFilters = activeFilterCount > 0;
-
-    // Parse sort
     const [sortField, sortDir] = sortValue.split("__");
 
-    // Filter + sort
     const filteredIssues = issues
         .filter(issue => {
             const matchesSearch =
-                (issue.title?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-                (issue.key?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-                (issue.description?.toLowerCase() || "").includes(searchTerm.toLowerCase());
-
-            const matchesStatus = statusFilter.length === 0 || statusFilter.includes(issue.status);
+                (issue.title?.toLowerCase()       || "").includes(searchTerm.toLowerCase()) ||
+                (issue.key?.toLowerCase()          || "").includes(searchTerm.toLowerCase()) ||
+                (issue.description?.toLowerCase()  || "").includes(searchTerm.toLowerCase());
+            const matchesStatus   = statusFilter.length === 0 || statusFilter.includes(issue.status);
             const matchesPriority = priorityFilter.length === 0 || priorityFilter.includes(issue.priority);
-            const matchesProject = projectFilter === "all" || String(issue.projectId) === projectFilter;
-            const matchesTeam = teamFilter === "all" || String(issue.team?.id) === teamFilter;
+            const matchesProject  = projectFilter === "all" || String(issue.projectId) === projectFilter;
+            const matchesTeam     = teamFilter === "all" || String(issue.team?.id) === teamFilter;
             const matchesAssignee = assigneeFilter === "all" || String(issue.assigneeId) === assigneeFilter;
-
-            const issueDate = issue.createdAt ? new Date(issue.createdAt) : null;
+            const issueDate       = issue.createdAt ? new Date(issue.createdAt) : null;
             const matchesDateFrom = !dateFrom || !issueDate || issueDate >= new Date(dateFrom);
-            const matchesDateTo = !dateTo || !issueDate || issueDate <= new Date(dateTo + "T23:59:59");
-
+            const matchesDateTo   = !dateTo   || !issueDate || issueDate <= new Date(dateTo + "T23:59:59");
             return matchesSearch && matchesStatus && matchesPriority &&
                 matchesProject && matchesTeam && matchesAssignee &&
                 matchesDateFrom && matchesDateTo;
         })
         .sort((a, b) => {
-            const dir = sortDir === "desc" ? -1 : 1;
+            const dir  = sortDir === "desc" ? -1 : 1;
             const valA = new Date(a[sortField] || 0);
             const valB = new Date(b[sortField] || 0);
             return (valA - valB) * dir;
         });
 
-    const filterPanelState = {
-        statusFilter, priorityFilter, projectFilter, teamFilter,
-        assigneeFilter, sortValue, dateFrom, dateTo, hasActiveFilters,
-    };
-    const filterPanelHandlers = {
-        toggleStatus, togglePriority, setProjectFilter, setTeamFilter,
-        setAssigneeFilter, setSortValue, setDateFrom, setDateTo, clearFilters,
-    };
+    const filterPanelState    = { statusFilter, priorityFilter, projectFilter, teamFilter, assigneeFilter, sortValue, dateFrom, dateTo, hasActiveFilters };
+    const filterPanelHandlers = { toggleStatus, togglePriority, setProjectFilter, setTeamFilter, setAssigneeFilter, setSortValue, setDateFrom, setDateTo, clearFilters };
 
+    // Stats
+    const openIssues   = issues.filter(i => i.status !== "DONE" && i.status !== "CANCELED").length;
+    const activeIssues = issues.filter(i => i.status === "IN_PROGRESS").length;
+    const doneIssues   = issues.filter(i => i.status === "DONE").length;
+
+    const statItems = [
+        { label: "Total",  value: issues.length,            color: "text-violet-600 dark:text-violet-400"   },
+        { label: "Open",   value: openIssues,               color: "text-blue-600 dark:text-blue-400"       },
+        { label: "Active", value: activeIssues,             color: "text-orange-600 dark:text-orange-400"   },
+        { label: "Done",   value: doneIssues,               color: "text-emerald-600 dark:text-emerald-400" },
+        ...(hasActiveFilters ? [{ label: "Shown", value: filteredIssues.length, color: "text-muted-foreground" }] : []),
+    ];
+
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <AppLayout>
-            <div className="space-y-4">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold">Issues</h1>
-                        <p className="text-muted-foreground text-sm">
-                            {filteredIssues.length} of {issues.length} issues
-                            {hasActiveFilters && " (filtered)"}
-                        </p>
+            {/* ── Full-bleed Stats Bar ── */}
+            <div ref={headerRef} className="-mx-6 md:-mx-8 -mt-6 md:-mt-8 mb-6 border-b border-border bg-card">
+                <div className="flex items-center gap-2 px-4 md:px-6 py-4">
+                    <div className="flex items-center justify-between md:justify-start md:gap-6 flex-1">
+                        {statItems.map((s, i) => (
+                            <div key={s.label} className="flex items-center gap-2 md:gap-5 shrink-0">
+                                {i > 0 && <div className="hidden md:block w-px h-6 bg-border shrink-0" />}
+                                <div>
+                                    <p className={cn("text-[10px] uppercase tracking-wider font-medium", s.color)}>
+                                        {s.label}
+                                    </p>
+                                    <p className="text-xl font-bold leading-none mt-0.5 tabular-nums">{s.value}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    <Button onClick={() => setCreateModalOpen(true)} className="shrink-0">
-                        <Plus className="h-4 w-4 sm:mr-2" />
-                        <span className="hidden sm:inline">Create Issue</span>
-                    </Button>
+                    {/* Desktop create button */}
+                    <div className="hidden md:flex shrink-0 ml-4">
+                        <AddButton label="New Issue" onClick={() => setCreateModalOpen(true)} />
+                    </div>
                 </div>
+            </div>
 
-                {/* Search bar + mobile filter button */}
+            <div className="space-y-4">
+                {/* ── Search + mobile controls ── */}
                 <div className="flex gap-2">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search by title, key, or description..."
+                            placeholder="Search by title, key, or description…"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-10"
@@ -419,7 +487,7 @@ export default function Issues() {
                         )}
                     </div>
 
-                    {/* Mobile: single "Filters" button */}
+                    {/* Mobile: filters sheet button */}
                     {isMobile && (
                         <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
                             <SheetTrigger asChild>
@@ -453,7 +521,12 @@ export default function Issues() {
                         </Sheet>
                     )}
 
-                    {/* Clear button always visible when filters active */}
+                    {/* Mobile create button */}
+                    <Button size="sm" onClick={() => setCreateModalOpen(true)} className="md:hidden shrink-0 px-3">
+                        <Plus className="h-4 w-4" />
+                    </Button>
+
+                    {/* Clear filters */}
                     {hasActiveFilters && (
                         <Button
                             variant="ghost"
@@ -467,10 +540,9 @@ export default function Issues() {
                     )}
                 </div>
 
-                {/* Desktop filter bar */}
+                {/* ── Desktop filter bar ── */}
                 {!isMobile && (
                     <div className="flex flex-wrap gap-2 items-center">
-                        {/* Multi-select pills */}
                         <PillMultiSelect
                             label="Status"
                             options={ALL_STATUSES.map(s => ({ value: s, label: STATUS_LABELS[s] }))}
@@ -484,35 +556,28 @@ export default function Issues() {
                             onToggle={togglePriority}
                         />
 
-                        {/* Project select */}
                         <Select value={projectFilter} onValueChange={setProjectFilter}>
-                            <SelectTrigger className={`h-9 text-sm w-auto min-w-[110px] ${projectFilter !== "all" ? "border-primary" : ""}`}>
+                            <SelectTrigger className={cn("h-9 text-sm w-auto min-w-[110px]", projectFilter !== "all" && "border-primary")}>
                                 <SelectValue placeholder="Project" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Projects</SelectItem>
-                                {projects.map(p => (
-                                    <SelectItem key={p.id} value={String(p.id)}>{p.shortName}</SelectItem>
-                                ))}
+                                {projects.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.shortName}</SelectItem>)}
                             </SelectContent>
                         </Select>
 
-                        {/* Team select */}
                         <Select value={teamFilter} onValueChange={setTeamFilter}>
-                            <SelectTrigger className={`h-9 text-sm w-auto min-w-[100px] ${teamFilter !== "all" ? "border-primary" : ""}`}>
+                            <SelectTrigger className={cn("h-9 text-sm w-auto min-w-[100px]", teamFilter !== "all" && "border-primary")}>
                                 <SelectValue placeholder="Team" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Teams</SelectItem>
-                                {teams.map(t => (
-                                    <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                                ))}
+                                {teams.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
 
-                        {/* Assignee select */}
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className={`h-9 text-sm w-auto min-w-[110px] ${assigneeFilter !== "all" ? "border-primary" : ""}`}>
+                            <SelectTrigger className={cn("h-9 text-sm w-auto min-w-[110px]", assigneeFilter !== "all" && "border-primary")}>
                                 <SelectValue placeholder="Assignee" />
                             </SelectTrigger>
                             <SelectContent>
@@ -547,19 +612,14 @@ export default function Issues() {
                                 <div className="space-y-2">
                                     <div>
                                         <Label className="text-xs">From</Label>
-                                        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-8 mt-1" />
+                                        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-8 mt-1 [color-scheme:light] dark:[color-scheme:dark]" />
                                     </div>
                                     <div>
                                         <Label className="text-xs">To</Label>
-                                        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-8 mt-1" />
+                                        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-8 mt-1 [color-scheme:light] dark:[color-scheme:dark]" />
                                     </div>
                                     {(dateFrom || dateTo) && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="w-full h-7 text-xs"
-                                            onClick={() => { setDateFrom(""); setDateTo(""); }}
-                                        >
+                                        <Button variant="ghost" size="sm" className="w-full h-7 text-xs" onClick={() => { setDateFrom(""); setDateTo(""); }}>
                                             Clear dates
                                         </Button>
                                     )}
@@ -567,175 +627,94 @@ export default function Issues() {
                             </PopoverContent>
                         </Popover>
 
-                        {/* Sort */}
                         <Select value={sortValue} onValueChange={setSortValue}>
                             <SelectTrigger className="h-9 w-auto text-sm gap-1.5">
                                 <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                {SORT_OPTIONS.map(opt => (
-                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                ))}
+                                {SORT_OPTIONS.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                             </SelectContent>
                         </Select>
-
-                        {/* Reset all */}
-                        {hasActiveFilters && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={clearFilters}
-                                className="h-9 text-destructive border-destructive/40 hover:bg-destructive/10 hover:border-destructive"
-                            >
-                                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                                Reset all
-                            </Button>
-                        )}
                     </div>
                 )}
 
-                {/* Active filter chips (mobile) */}
+                {/* ── Active filter chips (mobile) ── */}
                 {isMobile && hasActiveFilters && (
                     <div className="flex flex-wrap gap-1.5">
                         {statusFilter.map(s => (
                             <Badge key={s} variant="secondary" className="gap-1 pr-1 text-xs">
                                 {STATUS_LABELS[s]}
-                                <button onClick={() => toggleStatus(s)} className="hover:text-destructive ml-0.5">
-                                    <X className="h-3 w-3" />
-                                </button>
+                                <button onClick={() => toggleStatus(s)} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
                             </Badge>
                         ))}
                         {priorityFilter.map(p => (
                             <Badge key={p} variant="secondary" className="gap-1 pr-1 text-xs">
                                 {PRIORITY_LABELS[p]}
-                                <button onClick={() => togglePriority(p)} className="hover:text-destructive ml-0.5">
-                                    <X className="h-3 w-3" />
-                                </button>
+                                <button onClick={() => togglePriority(p)} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
                             </Badge>
                         ))}
                         {assigneeFilter !== "all" && (
                             <Badge variant="secondary" className="gap-1 pr-1 text-xs">
                                 {getUserName(assigneeFilter) || `User #${assigneeFilter}`}
-                                <button onClick={() => setAssigneeFilter("all")} className="hover:text-destructive ml-0.5">
-                                    <X className="h-3 w-3" />
-                                </button>
+                                <button onClick={() => setAssigneeFilter("all")} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
                             </Badge>
                         )}
                         {projectFilter !== "all" && (
                             <Badge variant="secondary" className="gap-1 pr-1 text-xs">
                                 {projects.find(p => String(p.id) === projectFilter)?.shortName || projectFilter}
-                                <button onClick={() => setProjectFilter("all")} className="hover:text-destructive ml-0.5">
-                                    <X className="h-3 w-3" />
-                                </button>
+                                <button onClick={() => setProjectFilter("all")} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
                             </Badge>
                         )}
                         {teamFilter !== "all" && (
                             <Badge variant="secondary" className="gap-1 pr-1 text-xs">
                                 {teams.find(t => String(t.id) === teamFilter)?.name || teamFilter}
-                                <button onClick={() => setTeamFilter("all")} className="hover:text-destructive ml-0.5">
-                                    <X className="h-3 w-3" />
-                                </button>
+                                <button onClick={() => setTeamFilter("all")} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
                             </Badge>
                         )}
                         {(dateFrom || dateTo) && (
                             <Badge variant="secondary" className="gap-1 pr-1 text-xs">
                                 {dateFrom && dateTo ? `${dateFrom} – ${dateTo}` : dateFrom || dateTo}
-                                <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="hover:text-destructive ml-0.5">
-                                    <X className="h-3 w-3" />
-                                </button>
+                                <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
                             </Badge>
                         )}
                     </div>
                 )}
 
-                {/* Issues List */}
+                {/* ── Issue list ── */}
                 {loading ? (
-                    <div className="text-center py-12">
-                        <p className="text-muted-foreground">Loading issues...</p>
+                    <div className="space-y-2">
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="h-[68px] rounded-xl bg-muted/40 animate-pulse" />
+                        ))}
                     </div>
                 ) : filteredIssues.length === 0 ? (
-                    <Card>
-                        <CardContent className="py-12 text-center">
-                            <ListTodo className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                            <p className="text-lg font-medium mb-2">
-                                {hasActiveFilters ? "No issues match your filters" : "No issues found"}
-                            </p>
-                            <p className="text-sm text-muted-foreground mb-4">
-                                {hasActiveFilters
-                                    ? "Try adjusting your search criteria"
-                                    : "Create your first issue to get started"}
-                            </p>
-                            {hasActiveFilters && (
-                                <Button variant="outline" onClick={clearFilters}>
-                                    <RotateCcw className="mr-2 h-4 w-4" />
-                                    Reset Filters
-                                </Button>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <div className="rounded-xl border border-dashed border-border py-14 text-center space-y-3">
+                        <ListTodo className="mx-auto h-10 w-10 text-muted-foreground/30" />
+                        <p className="text-sm font-medium text-foreground">
+                            {hasActiveFilters ? "No issues match your filters" : "No issues found"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {hasActiveFilters ? "Try adjusting your search criteria" : "Create your first issue to get started"}
+                        </p>
+                        {hasActiveFilters && (
+                            <Button variant="outline" size="sm" onClick={clearFilters} className="gap-1.5">
+                                <RotateCcw className="h-3.5 w-3.5" />
+                                Reset Filters
+                            </Button>
+                        )}
+                    </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div ref={listRef} className="space-y-2">
                         {filteredIssues.map(issue => (
-                            <Card
-                                key={issue.id}
-                                className="hover:shadow-lg transition-all hover:scale-[1.01]"
-                            >
-                                <CardContent className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                                <span className="font-mono text-sm text-muted-foreground font-semibold shrink-0">
-                                                    {issue.key}
-                                                </span>
-                                                {isMobile ? (
-                                                    <h3
-                                                        className="font-semibold hover:underline cursor-pointer text-primary truncate"
-                                                        title={issue.title}
-                                                        onClick={() => setSelectedIssueId(issue.id)}
-                                                    >
-                                                        {issue.title.length > 35 ? issue.title.slice(0, 35) + "…" : issue.title}
-                                                    </h3>
-                                                ) : (
-                                                    <Link
-                                                        to={`/issues/${issue.id}`}
-                                                        className="font-semibold hover:underline text-primary truncate"
-                                                        title={issue.title}
-                                                    >
-                                                        {issue.title}
-                                                    </Link>
-                                                )}
-                                                <button
-                                                    title="Quick preview"
-                                                    className="text-muted-foreground hover:text-primary transition-colors shrink-0 ml-auto"
-                                                    onClick={() => setSelectedIssueId(issue.id)}
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <Badge
-                                                    variant="secondary"
-                                                    className={getStatusBadgeClass(issue.status)}
-                                                >
-                                                    {STATUS_LABELS[issue.status] || issue.status}
-                                                </Badge>
-                                                <Badge variant={getPriorityBadgeVariant(issue.priority)}>
-                                                    {PRIORITY_LABELS[issue.priority] || issue.priority}
-                                                </Badge>
-                                                <span className="text-sm text-muted-foreground">
-                                                    📅 {formatDate(issue.dueDate)}
-                                                </span>
-                                                {issue.assigneeId && (
-                                                    <span className="text-sm text-muted-foreground">
-                                                        👤 {getUserName(issue.assigneeId) || `User #${issue.assigneeId}`}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <div key={issue.id} className="issue-row">
+                                <IssueRow
+                                    issue={issue}
+                                    isMobile={isMobile}
+                                    onPreview={setSelectedIssueId}
+                                    getUserName={getUserName}
+                                />
+                            </div>
                         ))}
                     </div>
                 )}
@@ -745,15 +724,9 @@ export default function Issues() {
                 open={!!selectedIssueId}
                 onOpenChange={() => setSelectedIssueId(null)}
                 issueId={selectedIssueId}
-                onIssueDeleted={() => {
-                    setSelectedIssueId(null);
-                    fetchIssues();
-                }}
-                onIssueUpdated={() => {
-                    fetchIssues();
-                }}
+                onIssueDeleted={() => { setSelectedIssueId(null); fetchIssues(); }}
+                onIssueUpdated={() => fetchIssues()}
             />
-
             <CreateIssueModal
                 open={createModalOpen}
                 onOpenChange={setCreateModalOpen}

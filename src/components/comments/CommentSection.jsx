@@ -11,7 +11,9 @@ import { useUserStore } from "@/store/userStore";
 import { storageService } from "@/services/storageService";
 import { fileService } from "@/services/fileService";
 import { toast } from "sonner";
-import { Trash2, User, Paperclip, X, ImageIcon, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import { Check, User, Paperclip, X, ImageIcon, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import { EditButton } from "@/components/ui/EditButton";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -195,6 +197,8 @@ export function CommentSection({ issueId }) {
     const [pendingFiles, setPendingFiles] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
     const [lightbox, setLightbox] = useState(null); // { fileIds, index }
+    const [editingId, setEditingId] = useState(null);
+    const [editContent, setEditContent] = useState("");
     const fileInputRef = useRef(null);
     const textareaRef = useRef(null);
     const mentionRef = useRef(null);
@@ -206,7 +210,7 @@ export function CommentSection({ issueId }) {
     const user = useAuthStore((state) => state.user);
     const currentUserId = user?.id || null;
 
-    const { comments, fetchCommentsByIssueId, createComment, deleteComment, uploadAttachment, deleteAttachment, loading } = useCommentStore();
+    const { comments, fetchCommentsByIssueId, createComment, deleteComment, editComment, uploadAttachment, deleteAttachment, loading } = useCommentStore();
     const { users, fetchUsers } = useUserStore();
 
     useEffect(() => {
@@ -403,6 +407,31 @@ export function CommentSection({ issueId }) {
         }
     };
 
+    const handleStartEdit = (comment) => {
+        setEditingId(comment.id);
+        setEditContent(comment.content);
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setEditContent("");
+    };
+
+    const handleSaveEdit = async (commentId) => {
+        if (!editContent.trim()) {
+            toast.error("Comment cannot be empty");
+            return;
+        }
+        try {
+            await editComment(commentId, editContent.trim());
+            toast.success("Comment updated!");
+            setEditingId(null);
+            setEditContent("");
+        } catch (error) {
+            toast.error(error.response?.data?.Message || error.message || "Failed to edit comment");
+        }
+    };
+
     const handleDeleteAttachment = async (fileId, commentId) => {
         if (!window.confirm("Delete this attachment?")) return;
         try {
@@ -583,20 +612,36 @@ export function CommentSection({ issueId }) {
                                             </p>
                                         </div>
                                         {currentUserId === comment.authorId && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDeleteComment(comment.id)}
-                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                            <div className="flex gap-1 items-center">
+                                                <EditButton onClick={() => handleStartEdit(comment)} />
+                                                <DeleteButton onClick={() => handleDeleteComment(comment.id)} />
+                                            </div>
                                         )}
                                     </div>
                                     <Separator className="my-2" />
-                                    <p className="text-sm whitespace-pre-wrap break-words">
-                                        {renderContent(comment.content)}
-                                    </p>
+                                    {editingId === comment.id ? (
+                                        <div className="space-y-2">
+                                            <Textarea
+                                                value={editContent}
+                                                onChange={(e) => setEditContent(e.target.value)}
+                                                rows={3}
+                                                className="resize-none text-sm"
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2 justify-end">
+                                                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                                    <X className="h-3.5 w-3.5 mr-1" />Cancel
+                                                </Button>
+                                                <Button size="sm" onClick={() => handleSaveEdit(comment.id)}>
+                                                    <Check className="h-3.5 w-3.5 mr-1" />Save
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm whitespace-pre-wrap break-words">
+                                            {renderContent(comment.content)}
+                                        </p>
+                                    )}
 
                                     {/* Attachments */}
                                     {comment.attachmentIds && comment.attachmentIds.length > 0 && (
