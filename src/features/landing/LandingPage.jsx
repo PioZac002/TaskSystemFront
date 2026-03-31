@@ -595,7 +595,7 @@ export default function LandingPage() {
                                 <span className="text-lg font-bold text-slate-900 dark:text-white">TaskSystem</span>
                             </div>
                             <p className="text-sm text-slate-600 dark:text-slate-400">
-                                Testing CI/CD lol
+                                ok :D
                             </p>
                         </div>
                         <div>
