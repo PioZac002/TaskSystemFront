@@ -8,18 +8,20 @@ import {
     KanbanSquare,
     Users,
     UserCircle,
+    Tag,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ALL_NAV_ITEMS = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Projects", url: "/projects", icon: FolderKanban },
-    { title: "Issues", url: "/issues", icon: CheckSquare },
-    { title: "Board", url: "/board", icon: KanbanSquare },
-    { title: "Teams", url: "/teams", icon: Users },
-    { title: "Users", url: "/users", icon: UserCircle, adminOnly: true },
+    { title: "Projects",  url: "/projects",  icon: FolderKanban  },
+    { title: "Issues",    url: "/issues",    icon: CheckSquare   },
+    { title: "Board",     url: "/board",     icon: KanbanSquare  },
+    { title: "Teams",     url: "/teams",     icon: Users         },
+    { title: "Users",     url: "/users",     icon: UserCircle, adminOnly: true },
+    { title: "Labels",    url: "/labels",    icon: Tag,        adminOnly: true },
 ];
 
 export const Sidebar = () => {
@@ -48,7 +50,10 @@ export const Sidebar = () => {
                             <CheckSquare className="h-5 w-5 text-primary-foreground" />
                         </div>
                         <div className="flex flex-col min-w-0">
-                            <span className="text-lg font-bold text-sidebar-foreground leading-tight">TaskSystem</span>
+                            {/* Logo text with hover color (desktop only via CSS) */}
+                            <div className="logo-text-wrap">
+                                <span className="text-lg font-bold leading-tight logo-text-main">TaskSystem</span>
+                            </div>
                             {versionLabel && (
                                 <span className="text-[10px] font-mono text-sidebar-foreground/40 leading-tight">{versionLabel}</span>
                             )}
@@ -69,7 +74,7 @@ export const Sidebar = () => {
                         to={item.url}
                         className={({ isActive }) =>
                             cn(
-                                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                                "sidebar-nav-item flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                                 "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                                 isActive
                                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -77,7 +82,7 @@ export const Sidebar = () => {
                             )
                         }
                     >
-                        <item.icon className="h-5 w-5 shrink-0" />
+                        <item.icon className="h-5 w-5 sidebar-nav-icon" />
                         {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                 ))}

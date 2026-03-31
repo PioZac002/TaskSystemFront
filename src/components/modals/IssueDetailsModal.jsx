@@ -15,7 +15,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import apiClient from "@/services/apiClient";
 import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
-import { Edit, Save, X, Trash2, Calendar, User as UserIcon, Users, Tag, FolderKanban } from "lucide-react";
+import { Save, X, Calendar, User as UserIcon, Users, Tag, FolderKanban } from "lucide-react";
+import { DeleteButton } from "@/components/ui/DeleteButton";
+import { EditButton } from "@/components/ui/EditButton";
+import { LabelsSelect } from "@/components/ui/LabelsSelect";
+import { useMasterdataStore } from "@/store/masterdataStore";
 import { STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
 export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted, onIssueUpdated }) {
@@ -34,7 +38,11 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
         assigneeId: "",
         teamId: "",
         projectId: "",
+        labelIds: [],
     });
+    const [availableLabels, setAvailableLabels] = useState([]);
+
+    const { fetchByType } = useMasterdataStore();
 
     const { projects, fetchProjects } = useProjectStore();
 
@@ -43,6 +51,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
             loadData();
             setEdit(false);
             fetchProjects();
+            fetchByType('ISSUE_LABEL').then(setAvailableLabels);
         }
     }, [open, issueId]);
 
@@ -60,6 +69,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
             setUsers(usersRes.data);
             setTeams(teamsRes.data);
 
+            const existingLabelIds = (issueData.labels || []).map(l => String(l.id ?? l));
             setForm({
                 title: issueData.title || "",
                 description: issueData.description || "",
@@ -69,6 +79,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                 assigneeId: issueData.assigneeId ? String(issueData.assigneeId) : "unassigned",
                 teamId: issueData.team?.id ? String(issueData.team.id) : "none",
                 projectId: issueData.projectId ? String(issueData.projectId) : "",
+                labelIds: existingLabelIds,
             });
         } catch (error) {
             toast.error("Failed to load issue details");
@@ -98,6 +109,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                 ProjectId: form.projectId ? Number(form.projectId) : (issue.projectId || null),
                 DueDate: form.dueDate || null,
                 AssigneeId: form.assigneeId && form.assigneeId !== "unassigned" ? Number(form.assigneeId) : null,
+                Labels: form.labelIds.map(Number).filter(Boolean),
             });
 
             toast.success("Issue updated successfully!");
@@ -189,16 +201,8 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                 <div className="flex gap-1 md:gap-2 shrink-0 mr-8">
                                     {!edit ? (
                                         <>
-                                            <Button size="sm" variant="outline" onClick={() => setEdit(true)} className="hidden md:flex">
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit
-                                            </Button>
-                                            <Button size="sm" variant="outline" onClick={() => setEdit(true)} className="md:hidden">
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button size="sm" variant="outline" className="text-destructive" onClick={handleDeleteIssue}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                            <EditButton onClick={() => setEdit(true)} disabled={loading} />
+                                            <DeleteButton onClick={handleDeleteIssue} disabled={loading} />
                                         </>
                                     ) : (
                                         <>
@@ -611,6 +615,40 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                         })
                                                         : 'No due date'}
                                                 </p>
+                                            )}
+                                        </div>
+
+                                        <Separator />
+
+                                        {/* Labels */}
+                                        <div>
+                                            <Label className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                                                <Tag className="h-4 w-4" />
+                                                Labels
+                                            </Label>
+                                            {edit ? (
+                                                <LabelsSelect
+                                                    labels={availableLabels}
+                                                    selectedIds={form.labelIds}
+                                                    onChange={(ids) => handleChange("labelIds", ids)}
+                                                    placeholder="No labels"
+                                                />
+                                            ) : (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {(issue.labels || []).length === 0 ? (
+                                                        <p className="text-sm text-muted-foreground">No labels</p>
+                                                    ) : (
+                                                        (issue.labels || []).map(label => (
+                                                            <Badge
+                                                                key={label.id ?? label}
+                                                                style={label.color ? { backgroundColor: label.color, color: "#fff", borderColor: label.color } : {}}
+                                                                className="text-xs"
+                                                            >
+                                                                {label.name ?? label}
+                                                            </Badge>
+                                                        ))
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
 

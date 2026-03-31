@@ -9,6 +9,7 @@ import { useProjectStore } from "@/store/projectStore";
 import { useIssueStore } from "@/store/issueStore";
 import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
+import { AddButton } from "@/components/ui/AddButton";
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import { Plus, Search, X, FolderKanban, Eye } from "lucide-react";
 import { gsap } from "gsap";
@@ -235,10 +236,7 @@ export default function Projects() {
                     </div>
                     {/* Desktop create button */}
                     <div className="hidden md:flex shrink-0 ml-4">
-                        <Button size="sm" onClick={() => setCreateModalOpen(true)} className="gap-1.5">
-                            <Plus className="h-4 w-4" />
-                            New Project
-                        </Button>
+                        <AddButton label="New Project" onClick={() => setCreateModalOpen(true)} />
                     </div>
                 </div>
             </div>

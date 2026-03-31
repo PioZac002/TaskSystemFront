@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Bell, Search, LogOut, Settings, Menu, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, FolderKanban, ListTodo, Trello, UserCircle, Users } from "lucide-react";
+import { LayoutDashboard, FolderKanban, ListTodo, Trello, UserCircle, Users, Tag } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useSearchStore } from "@/store/searchStore";
 import { useProjectStore } from "@/store/projectStore";
@@ -29,8 +29,9 @@ const ALL_NAV_ITEMS = [
     { title: "Projects", url: "/projects", icon: FolderKanban },
     { title: "Issues", url: "/issues", icon: ListTodo },
     { title: "Board", url: "/board", icon: Trello },
-    { title: "Teams", url: "/teams", icon: Users },
-    { title: "Users", url: "/users", icon: UserCircle, adminOnly: true },
+    { title: "Teams",  url: "/teams",  icon: Users      },
+    { title: "Users",  url: "/users",  icon: UserCircle, adminOnly: true },
+    { title: "Labels", url: "/labels", icon: Tag,        adminOnly: true },
 ];
 
 export const TopBar = () => {
@@ -136,20 +137,22 @@ export const TopBar = () => {
                         </Button>
                     </div>
 
-                    {/* Desktop - Full search */}
-                    <div className="hidden md:block relative w-full">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            type="search"
-                            placeholder="Search projects, issues..."
-                            className="pl-10 bg-background"
-                            value={searchTerm}
-                            onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                                setSearchOpen(true);
-                            }}
-                            onFocus={() => setSearchOpen(true)}
-                        />
+                    {/* Desktop - Clean search bar */}
+                    <div className="srch-outer hidden md:flex relative w-full">
+                        <div className="srch-main">
+                            <Search className="srch-search-icon absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 z-10" />
+                            <Input
+                                type="search"
+                                placeholder="Search projects, issues..."
+                                className="srch-input"
+                                value={searchTerm}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setSearchOpen(true);
+                                }}
+                                onFocus={() => setSearchOpen(true)}
+                            />
+                        </div>
                         <SearchResults
                             onIssueSelect={handleIssueSelect}
                             onProjectSelect={handleProjectSelect}

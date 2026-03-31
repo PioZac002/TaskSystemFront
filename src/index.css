@@ -358,3 +358,526 @@ body {
   color: var(--color-foreground);
   font-family: system-ui, -apple-system, sans-serif;
 }
+
+/* ═══════════════════════════════════════════════
+   UI ENHANCEMENTS — desktop-focused animations
+   ═══════════════════════════════════════════════ */
+
+/* ─── Subtle dot grid background (desktop only) ─── */
+@media (min-width: 768px) {
+  .app-bg-pattern {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: radial-gradient(circle, rgba(124, 58, 237, 0.055) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+  .dark .app-bg-pattern {
+    background-image: radial-gradient(circle, rgba(124, 58, 237, 0.1) 1px, transparent 1px);
+  }
+}
+
+/* ─── Delete Button — expanding circle (desktop only) ─── */
+@media (min-width: 768px) {
+  .del-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 45px;
+    height: 45px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: width 0.3s, border-radius 0.3s;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(250deg, rgba(255, 135, 65, 1) 15%, rgba(255, 65, 65, 1) 65%);
+    flex-shrink: 0;
+  }
+  .del-btn-sign {
+    width: 100%;
+    transition: width 0.3s, padding 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .del-btn-sign svg { width: 17px; height: 17px; fill: white; }
+  .del-btn-text {
+    position: absolute;
+    right: 0;
+    width: 0;
+    opacity: 0;
+    color: white;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: opacity 0.3s, width 0.3s;
+    white-space: nowrap;
+  }
+  .del-btn:hover { width: 125px; border-radius: 40px; }
+  .del-btn:hover .del-btn-sign { width: 30%; padding-left: 20px; }
+  .del-btn:hover .del-btn-text { opacity: 1; width: 70%; padding-right: 10px; }
+  .del-btn:active { transform: translate(2px, 2px); }
+}
+
+/* ─── Edit Button — expanding circle (desktop only) ─── */
+@media (min-width: 768px) {
+  .edit-circ-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #1a1a2e;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.16);
+    cursor: pointer;
+    transition: width 0.3s, border-radius 0.3s, background-color 0.3s;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .edit-circ-icon {
+    width: 17px;
+    height: 17px;
+    fill: white;
+    transition: transform 0.3s;
+    flex-shrink: 0;
+  }
+  .edit-circ-btn::before {
+    display: none;
+    content: "Edit";
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .edit-circ-btn:hover {
+    width: 120px;
+    border-radius: 50px;
+    background-color: #7c3aed;
+  }
+  .edit-circ-btn:hover::before { display: block; padding-right: 10px; }
+  .edit-circ-btn:hover .edit-circ-icon { transform: rotate(360deg); }
+}
+
+/* ─── Theme Toggle (moon/sun shadow slider) ─── */
+.theme-switch-label {
+  font-size: 17px;
+  position: relative;
+  display: inline-block;
+  width: 3.5em;
+  height: 2em;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.theme-switch-label input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.theme-slider {
+  --ts-bg: #28096b;
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--ts-bg);
+  transition: background-color 0.5s;
+  border-radius: 30px;
+}
+.theme-slider::before {
+  position: absolute;
+  content: "";
+  height: 1.4em;
+  width: 1.4em;
+  border-radius: 50%;
+  left: 10%;
+  bottom: 15%;
+  box-shadow: inset 8px -4px 0px 0px #fff000;
+  background: var(--ts-bg);
+  transition: transform 0.5s, box-shadow 0.5s, background-color 0.5s;
+}
+.theme-switch-label input:checked + .theme-slider { background-color: #522ba7; --ts-bg: #522ba7; }
+.theme-switch-label input:checked + .theme-slider::before {
+  transform: translateX(100%);
+  box-shadow: inset 15px -4px 0px 15px #fff000;
+}
+
+/* ─── Logo Text Hover Color (desktop only) ─── */
+@media (min-width: 768px) {
+  .logo-text-wrap { cursor: default; }
+  .logo-text-main {
+    display: block;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+    color: var(--color-foreground);
+  }
+  .logo-text-fill { display: none; }
+  .logo-text-wrap:hover .logo-text-main {
+    color: #7c3aed;
+    text-shadow: 0 0 8px rgba(124, 58, 237, 0.4);
+  }
+}
+
+/* ─── Search Bar (desktop only) — clean subtle style ─── */
+@media (min-width: 768px) {
+  .srch-outer {
+    position: relative;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+  .srch-main {
+    position: relative;
+    width: 100%;
+  }
+  .srch-input {
+    background-color: var(--color-muted) !important;
+    border: 1.5px solid var(--color-border) !important;
+    color: var(--color-foreground) !important;
+    border-radius: 8px !important;
+    height: 40px !important;
+    padding-left: 40px !important;
+    width: 100%;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    font-size: 14px !important;
+  }
+  .srch-input:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12) !important;
+    outline: none !important;
+  }
+  .srch-input::placeholder { color: var(--color-muted-foreground) !important; }
+  .srch-search-icon { color: var(--color-muted-foreground) !important; transition: color 0.2s ease; }
+  .srch-outer:focus-within .srch-search-icon { color: var(--color-primary) !important; }
+}
+
+/* ─── Sidebar Nav Icon — subtle scale animation (desktop only) ─── */
+@media (min-width: 768px) {
+  .sidebar-nav-icon {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    flex-shrink: 0;
+  }
+  .sidebar-nav-item:hover .sidebar-nav-icon {
+    transform: scale(1.15) translateX(1px);
+  }
+}
+
+/* ─── Board Card Title Tooltip (desktop only) ─── */
+@media (min-width: 768px) {
+  .board-tip-wrap {
+    position: relative;
+  }
+  .board-tip {
+    pointer-events: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    background: rgba(10, 10, 16, 0.96);
+    color: #f3f4f6;
+    font-size: 11.5px;
+    font-weight: 500;
+    line-height: 1.5;
+    padding: 7px 11px;
+    border-radius: 7px;
+    white-space: normal;
+    max-width: 210px;
+    min-width: 80px;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 60;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.07);
+    text-align: center;
+    word-break: break-word;
+  }
+  .board-tip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(10, 10, 16, 0.96);
+  }
+  .board-tip-wrap:hover .board-tip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ─── Dashboard Flip Cards — dark design (desktop only) ─── */
+@media (min-width: 768px) {
+  .fp-card {
+    overflow: visible;
+    width: 100%;
+    height: 260px;
+  }
+  .fp-content {
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 350ms ease;
+    box-shadow: 0 0 14px 2px rgba(0,0,0,0.7);
+    border-radius: 8px;
+  }
+  .fp-card:hover .fp-content { transform: rotateY(180deg); }
+
+  .fp-front, .fp-back {
+    background-color: #111120;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  /* BACK — default visible, project summary with spinning border */
+  .fp-back {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .fp-back::before {
+    position: absolute;
+    content: '';
+    display: block;
+    width: 170px;
+    height: 170%;
+    background: linear-gradient(90deg, transparent, #7c3aed, #a855f7, #7c3aed, transparent);
+    animation: fp-rotation 5000ms infinite linear;
+  }
+  .fp-back-content {
+    position: absolute;
+    width: 99%;
+    height: 99%;
+    background-color: #111120;
+    border-radius: 7px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    text-align: center;
+  }
+  .fp-back-title {
+    font-size: 14px;
+    font-weight: 700;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fp-back-stats {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    display: flex;
+    gap: 12px;
+  }
+  .fp-back-progress {
+    width: 80%;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .fp-back-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  /* FRONT — hover visible, floating circles + issues */
+  .fp-front { transform: rotateY(180deg); color: white; }
+  .fp-img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+  .fp-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background-color: #7c3aed;
+    position: relative;
+    filter: blur(16px);
+    animation: fp-float 2600ms infinite linear;
+  }
+  .fp-circ-r {
+    background-color: #5b21b6;
+    left: 50px;
+    top: 0;
+    width: 150px;
+    height: 150px;
+    animation-delay: -800ms;
+  }
+  .fp-circ-b {
+    background-color: #a855f7;
+    left: 130px;
+    top: -60px;
+    width: 40px;
+    height: 40px;
+    animation-delay: -1800ms;
+  }
+  .fp-front-content {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .fp-badge {
+    background-color: rgba(0,0,0,0.55);
+    padding: 2px 10px;
+    border-radius: 10px;
+    backdrop-filter: blur(2px);
+    font-size: 11px;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+  }
+  .fp-description {
+    box-shadow: 0 0 10px 5px rgba(0,0,0,0.5);
+    width: 100%;
+    padding: 8px 10px;
+    background-color: rgba(0,0,0,0.65);
+    backdrop-filter: blur(5px);
+    border-radius: 6px;
+  }
+  .fp-title-row {
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 6px;
+    color: rgba(255,255,255,0.95);
+  }
+  .fp-issue-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    overflow: hidden;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px 5px;
+    border-radius: 4px;
+    text-align: left;
+    color: rgba(255,255,255,0.75);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .fp-issue-row:hover {
+    color: white;
+    background: rgba(255,255,255,0.12);
+  }
+  .fp-issue-key {
+    font-family: monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    flex-shrink: 0;
+  }
+  .fp-issue-title {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .fp-card-footer {
+    color: rgba(255,255,255,0.45);
+    margin-top: 5px;
+    font-size: 11px;
+  }
+}
+@keyframes fp-rotation {
+  0% { transform: rotateZ(0deg); }
+  100% { transform: rotateZ(360deg); }
+}
+@keyframes fp-float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(10px); }
+  100% { transform: translateY(0px); }
+}
+/* legacy alias kept for any old references */
+@keyframes flip-glow-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ─── Board Detailed Mode — compact columns (desktop only) ─── */
+@media (min-width: 768px) {
+  .board-detailed-kanban .board-column > div:first-child {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    gap: 6px;
+  }
+  .board-detailed-kanban .board-column > div:first-child h2 {
+    font-size: 11px;
+  }
+}
+
+/* ─── Board Flip Cards (detailed mode, desktop only) ─── */
+@media (min-width: 768px) {
+  .board-flip-outer {
+    perspective: 600px;
+    cursor: grab;
+    height: 82px;
+    width: 100%;
+  }
+  .board-flip-outer:active { cursor: grabbing; }
+
+  .board-flip-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+  }
+  .board-flip-outer:hover .board-flip-inner {
+    transform: rotateY(180deg) scale(1.04);
+  }
+
+  .board-flip-front, .board-flip-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    overflow: hidden;
+  }
+  .board-flip-front {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    gap: 3px;
+  }
+  .board-flip-back {
+    transform: rotateY(180deg);
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 5px;
+  }
+}

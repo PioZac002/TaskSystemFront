@@ -15,10 +15,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import apiClient from "@/services/apiClient";
 import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
-import {
-    Edit, Save, X, Trash2, Calendar, User as UserIcon,
-    Users, Tag, FolderKanban
-} from "lucide-react";
+import { Save, X, Calendar, User as UserIcon, Users, Tag, FolderKanban } from "lucide-react";
+import { EditButton } from "@/components/ui/EditButton";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
@@ -226,16 +225,11 @@ export default function IssueDetailPage() {
                             )}
                         </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex gap-2 shrink-0 items-center">
                         {!edit ? (
                             <>
-                                <Button size="sm" variant="outline" onClick={() => setEdit(true)}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                </Button>
-                                <Button size="sm" variant="outline" className="text-destructive" onClick={handleDelete}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <EditButton onClick={() => setEdit(true)} disabled={loading} />
+                                <DeleteButton onClick={handleDelete} disabled={loading} />
                             </>
                         ) : (
                             <>

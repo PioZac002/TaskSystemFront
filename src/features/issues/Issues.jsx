@@ -15,6 +15,7 @@ import { useUserStore } from "@/store/userStore";
 import { useTeamStore } from "@/store/teamStore";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
+import { AddButton } from "@/components/ui/AddButton";
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import {
     Plus, Search, X, ListTodo, Eye, ChevronDown,
@@ -460,10 +461,7 @@ export default function Issues() {
                     </div>
                     {/* Desktop create button */}
                     <div className="hidden md:flex shrink-0 ml-4">
-                        <Button size="sm" onClick={() => setCreateModalOpen(true)} className="gap-1.5">
-                            <Plus className="h-4 w-4" />
-                            New Issue
-                        </Button>
+                        <AddButton label="New Issue" onClick={() => setCreateModalOpen(true)} />
                     </div>
                 </div>
             </div>

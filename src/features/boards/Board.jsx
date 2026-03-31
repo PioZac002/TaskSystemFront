@@ -15,6 +15,7 @@ import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { PRIORITY_LABELS, getPriorityBadgeVariant } from "@/utils/issueConstants";
+import { AddButton } from "@/components/ui/AddButton";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 import { gsap } from "gsap";
@@ -152,6 +153,9 @@ function ColumnListItem({ col, count, isActive, onClick }) {
     );
 }
 
+// ─── Priority order for sorting ───────────────────────────────────────────────
+const PRIORITY_ORDER = { CRITICAL: 0, HIGH: 1, NORMAL: 2, LOW: 3 };
+
 // ─── Main component ────────────────────────────────────────────────────────────
 export default function Board() {
     const { issues, fetchIssues } = useIssueStore();
@@ -178,8 +182,9 @@ export default function Board() {
     const filteredIssues     = selectedProjectId === "all"
         ? issues
         : issues.filter(i => i.projectId === Number(selectedProjectId));
-    const activeColumn       = activeColumns.find(c => c.id === activeColumnId) ?? activeColumns[0];
-    const activeColumnIssues = filteredIssues.filter(i => activeColumn.statuses.includes(i.status));
+    const activeColumn            = activeColumns.find(c => c.id === activeColumnId) ?? activeColumns[0];
+    const activeColumnIssues      = filteredIssues.filter(i => activeColumn.statuses.includes(i.status));
+    const sortedActiveColIssues   = [...activeColumnIssues].sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 4) - (PRIORITY_ORDER[b.priority] ?? 4));
     const totalIssues        = filteredIssues.length;
 
     // ── Data fetching ─────────────────────────────────────────────────────────
@@ -344,9 +349,11 @@ export default function Board() {
                             </Select>
                         </div>
 
-                        <Button onClick={() => setCreateModalOpen(true)} size="sm" className="gap-2">
+                        <div className="hidden sm:block">
+                            <AddButton label="New Issue" onClick={() => setCreateModalOpen(true)} />
+                        </div>
+                        <Button onClick={() => setCreateModalOpen(true)} size="sm" className="sm:hidden gap-2">
                             <Plus className="h-4 w-4" />
-                            <span className="hidden sm:inline">New Issue</span>
                         </Button>
                     </div>
                 </div>
@@ -413,10 +420,12 @@ export default function Board() {
                         <DragDropContext onDragEnd={handleDragEnd}>
                             <div
                                 ref={kanbanRef}
-                                className="flex-1 overflow-y-hidden hidden md:flex divide-x divide-border overflow-x-hidden"
+                                className={cn("flex-1 overflow-y-hidden hidden md:flex divide-x divide-border overflow-x-hidden", boardMode === "detailed" && "board-detailed-kanban")}
                             >
                                 {activeColumns.map((col) => {
-                                    const colIssues = filteredIssues.filter(i => col.statuses.includes(i.status));
+                                    const colIssues = filteredIssues
+                                        .filter(i => col.statuses.includes(i.status))
+                                        .sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 4) - (PRIORITY_ORDER[b.priority] ?? 4));
                                     return (
                                         <div
                                             key={col.id}
@@ -452,47 +461,79 @@ export default function Board() {
                                                     >
                                                         {colIssues.map((issue, index) => (
                                                             <Draggable key={issue.id} draggableId={String(issue.id)} index={index}>
-                                                                {(provided, snapshot) => (
-                                                                    <div
-                                                                        ref={provided.innerRef}
-                                                                        {...provided.draggableProps}
-                                                                        {...provided.dragHandleProps}
-                                                                        className={cn(
-                                                                            "board-card group flex flex-col gap-2 p-3 rounded-xl bg-card border border-border",
-                                                                            "hover:border-border/80 hover:shadow-sm transition-all duration-150 cursor-grab active:cursor-grabbing",
-                                                                            snapshot.isDragging && "shadow-xl opacity-90 border-primary/30 rotate-1"
-                                                                        )}
-                                                                    >
-                                                                        <div className="flex items-start gap-2">
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <p className="font-mono text-[10px] text-muted-foreground mb-0.5">{issue.key}</p>
-                                                                                <Link
-                                                                                    to={`/issues/${issue.id}`}
-                                                                                    title={issue.title}
-                                                                                    className={cn(
-                                                                                        "text-sm font-semibold hover:underline text-foreground block",
-                                                                                        boardMode === "detailed" ? "truncate" : "line-clamp-2"
-                                                                                    )}
-                                                                                >
-                                                                                    {issue.title}
-                                                                                </Link>
-                                                                            </div>
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); setSelectedIssueId(issue.id); }}
-                                                                                className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary mt-0.5"
-                                                                                title="Quick preview"
+                                                                {(provided, snapshot) => {
+                                                                    if (boardMode === "detailed") {
+                                                                        return (
+                                                                            <div
+                                                                                ref={provided.innerRef}
+                                                                                {...provided.draggableProps}
+                                                                                {...provided.dragHandleProps}
+                                                                                className={cn("board-flip-outer", snapshot.isDragging && "opacity-90")}
                                                                             >
-                                                                                <Eye className="h-3.5 w-3.5" />
-                                                                            </button>
-                                                                        </div>
-                                                                        <Badge
-                                                                            variant={getPriorityBadgeVariant(issue.priority)}
-                                                                            className="text-xs self-start"
+                                                                                <div className="board-flip-inner">
+                                                                                    <div className="board-flip-front">
+                                                                                        <p className="font-mono text-[9px] text-muted-foreground">{issue.key}</p>
+                                                                                        <p className="text-[11px] font-semibold text-foreground truncate">
+                                                                                            {issue.title.length > 18 ? issue.title.slice(0, 18) + '…' : issue.title}
+                                                                                        </p>
+                                                                                        <Badge variant={getPriorityBadgeVariant(issue.priority)} className="text-[9px] self-start mt-auto">
+                                                                                            {PRIORITY_LABELS[issue.priority] || issue.priority}
+                                                                                        </Badge>
+                                                                                    </div>
+                                                                                    <div className="board-flip-back">
+                                                                                        <span className="font-mono text-[9px] text-white/50">{issue.key}</span>
+                                                                                        <p className="text-xs font-semibold text-white text-center leading-tight px-1">
+                                                                                            {issue.title}
+                                                                                        </p>
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); setSelectedIssueId(issue.id); }}
+                                                                                            className="mt-1 text-white/70 hover:text-white text-[10px] flex items-center gap-1 transition-colors"
+                                                                                        >
+                                                                                            <Eye className="h-3 w-3" /> View
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    }
+                                                                    return (
+                                                                        <div
+                                                                            ref={provided.innerRef}
+                                                                            {...provided.draggableProps}
+                                                                            {...provided.dragHandleProps}
+                                                                            className={cn(
+                                                                                "board-card group flex flex-col gap-2 p-3 rounded-xl bg-card border border-border",
+                                                                                "hover:border-border/80 hover:shadow-sm transition-all duration-150 cursor-grab active:cursor-grabbing",
+                                                                                snapshot.isDragging && "shadow-xl opacity-90 border-primary/30 rotate-1"
+                                                                            )}
                                                                         >
-                                                                            {PRIORITY_LABELS[issue.priority] || issue.priority}
-                                                                        </Badge>
-                                                                    </div>
-                                                                )}
+                                                                            <div className="flex items-start gap-2">
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <p className="font-mono text-[10px] text-muted-foreground mb-0.5">{issue.key}</p>
+                                                                                    <Link
+                                                                                        to={`/issues/${issue.id}`}
+                                                                                        className="text-sm font-semibold hover:underline text-foreground block line-clamp-2"
+                                                                                    >
+                                                                                        {issue.title}
+                                                                                    </Link>
+                                                                                </div>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); setSelectedIssueId(issue.id); }}
+                                                                                    className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary mt-0.5"
+                                                                                    title="Quick preview"
+                                                                                >
+                                                                                    <Eye className="h-3.5 w-3.5" />
+                                                                                </button>
+                                                                            </div>
+                                                                            <Badge
+                                                                                variant={getPriorityBadgeVariant(issue.priority)}
+                                                                                className="text-xs self-start"
+                                                                            >
+                                                                                {PRIORITY_LABELS[issue.priority] || issue.priority}
+                                                                            </Badge>
+                                                                        </div>
+                                                                    );
+                                                                }}
                                                             </Draggable>
                                                         ))}
                                                         {provided.placeholder}
@@ -551,7 +592,7 @@ export default function Board() {
                                             <Inbox className="h-8 w-8 mx-auto text-muted-foreground/30" />
                                             <p className="text-sm text-muted-foreground">No issues in this column</p>
                                         </div>
-                                    ) : activeColumnIssues.map((issue) => (
+                                    ) : sortedActiveColIssues.map((issue) => (
                                         <div
                                             key={issue.id}
                                             className="board-card group flex items-start gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:border-border/80 hover:shadow-sm transition-all duration-150"

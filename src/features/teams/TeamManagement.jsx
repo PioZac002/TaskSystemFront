@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/Dialog";
 import { useTeamStore } from "@/store/teamStore";
 import { useUserStore } from "@/store/userStore";
+import { AddButton } from "@/components/ui/AddButton";
 import {
     Plus, Users, UserPlus, UserMinus, Search,
     ArrowLeft, ChevronRight, Sparkles, Inbox
@@ -304,10 +305,11 @@ export default function TeamManagement() {
                         {loading && <p className="text-xs text-muted-foreground animate-pulse ml-2">Syncing…</p>}
                     </div>
 
-                    <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-2 shrink-0">
+                    <div className="hidden sm:block shrink-0">
+                        <AddButton label="New Team" onClick={() => setCreateOpen(true)} />
+                    </div>
+                    <Button onClick={() => setCreateOpen(true)} size="sm" className="sm:hidden gap-2 shrink-0">
                         <Plus className="h-4 w-4" />
-                        <span className="hidden sm:inline">New Team</span>
-                        <span className="sm:hidden">New</span>
                     </Button>
                 </div>
 

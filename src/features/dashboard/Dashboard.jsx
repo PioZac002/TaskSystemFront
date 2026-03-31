@@ -12,6 +12,7 @@ import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
+import { AddButton } from "@/components/ui/AddButton";
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import {
     FolderKanban, CheckSquare, Users, TrendingUp,
@@ -71,7 +72,59 @@ function SectionHeader({ label, count, accentColor, onViewAll, onAdd }) {
     );
 }
 
-// ─── Project card (Board card style with accent top-border) ───────────────────
+// ─── Project card front face content ──────────────────────────────────────────
+function ProjectCardFrontContent({ project, colorIndex, onPreview, isMobile }) {
+    const color = getProjectColor(colorIndex);
+    return (
+        <div className="flex flex-col h-full p-4">
+            <div className="flex items-start gap-2 mb-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={cn("h-2 w-2 rounded-full shrink-0 mt-0.5", color.dot)} />
+                        {isMobile ? (
+                            <span
+                                className={cn("font-mono font-semibold text-sm truncate cursor-pointer hover:underline flex-1 min-w-0", color.text)}
+                                onClick={() => onPreview(project.id)}
+                            >
+                                {project.name}
+                            </span>
+                        ) : (
+                            <Link
+                                to={`/projects/${project.id}`}
+                                className={cn("font-mono font-semibold text-sm truncate hover:underline flex-1 min-w-0", color.text)}
+                            >
+                                {project.name}
+                            </Link>
+                        )}
+                        <button
+                            title="Quick preview"
+                            onClick={() => onPreview(project.id)}
+                            className="shrink-0 text-muted-foreground hover:text-primary transition-opacity opacity-0 group-hover:opacity-100"
+                        >
+                            <Eye className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1 pl-3.5">
+                        {project.description}
+                    </p>
+                </div>
+                <Badge variant="secondary" className="shrink-0 text-[10px] tabular-nums">
+                    {project.issues}
+                </Badge>
+            </div>
+            <div className="mt-auto space-y-1.5">
+                <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Progress</span>
+                    <span className="text-xs font-semibold tabular-nums">{project.progress}%</span>
+                </div>
+                <Progress value={project.progress} className="h-1.5" />
+            </div>
+            <p className="text-[10px] text-muted-foreground/50 text-center mt-3 hidden md:block">Hover to see issues</p>
+        </div>
+    );
+}
+
+// ─── Mobile-only project card (no flip) ───────────────────────────────────────
 function ProjectCard({ project, colorIndex, onPreview, isMobile }) {
     const color = getProjectColor(colorIndex);
     return (
@@ -79,52 +132,67 @@ function ProjectCard({ project, colorIndex, onPreview, isMobile }) {
             className="group flex flex-col rounded-xl bg-card border border-border border-t-2 hover:border-border/80 hover:shadow-sm transition-all duration-150 overflow-hidden"
             style={{ borderTopColor: color.accent }}
         >
-            <div className="flex-1 p-4">
-                {/* Title row */}
-                <div className="flex items-start gap-2 mb-3">
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                            <span className={cn("h-2 w-2 rounded-full shrink-0 mt-0.5", color.dot)} />
-                            {isMobile ? (
-                                <span
-                                    className={cn("font-mono font-semibold text-sm truncate cursor-pointer hover:underline flex-1 min-w-0", color.text)}
-                                    onClick={() => onPreview(project.id)}
-                                >
-                                    {project.name}
-                                </span>
-                            ) : (
-                                <Link
-                                    to={`/projects/${project.id}`}
-                                    className={cn("font-mono font-semibold text-sm truncate hover:underline flex-1 min-w-0", color.text)}
-                                >
-                                    {project.name}
-                                </Link>
-                            )}
-                            <button
-                                title="Quick preview"
-                                onClick={() => onPreview(project.id)}
-                                className="shrink-0 text-muted-foreground hover:text-primary transition-opacity opacity-0 group-hover:opacity-100"
-                            >
-                                <Eye className="h-3.5 w-3.5" />
-                            </button>
+            <ProjectCardFrontContent project={project} colorIndex={colorIndex} onPreview={onPreview} isMobile={isMobile} />
+        </div>
+    );
+}
+
+// ─── Desktop flip card: back (default) = project summary, front (hover) = issues ──
+function FlipProjectCard({ project, colorIndex, allIssues, onProjectPreview, onIssuePreview }) {
+    const color = getProjectColor(colorIndex);
+    const projectIssues = allIssues
+        .filter(i => i.projectId === project.id)
+        .slice(0, 4);
+
+    return (
+        <div className="fp-card">
+            <div className="fp-content">
+
+                {/* ── BACK: default visible — project summary with spinning border ── */}
+                <div className="fp-back">
+                    <div className="fp-back-content">
+                        <FolderKanban style={{ width: 44, height: 44, stroke: 'rgba(255,255,255,0.75)', fill: 'none' }} />
+                        <strong className="fp-back-title">{project.name}</strong>
+                        <div className="fp-back-progress">
+                            <div className="fp-back-progress-fill" style={{ width: `${project.progress}%` }} />
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-1 mt-1 pl-3.5">
-                            {project.description}
-                        </p>
+                        <div className="fp-back-stats">
+                            <span>{project.issues} issues</span>
+                            <span>{project.progress}% done</span>
+                        </div>
                     </div>
-                    <Badge variant="secondary" className="shrink-0 text-[10px] tabular-nums">
-                        {project.issues}
-                    </Badge>
                 </div>
 
-                {/* Progress */}
-                <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Progress</span>
-                        <span className="text-xs font-semibold tabular-nums">{project.progress}%</span>
+                {/* ── FRONT: hover visible — floating circles + issues list ── */}
+                <div className="fp-front">
+                    <div className="fp-img">
+                        <div className="fp-circle" style={{ backgroundColor: color.accent }} />
+                        <div className="fp-circle fp-circ-r" style={{ backgroundColor: color.accent + 'bb' }} />
+                        <div className="fp-circle fp-circ-b" style={{ backgroundColor: color.accent + '88' }} />
                     </div>
-                    <Progress value={project.progress} className="h-1.5" />
+                    <div className="fp-front-content">
+                        <small className="fp-badge">{project.name}</small>
+                        <div className="fp-description">
+                            <div className="fp-title-row">{project.name}</div>
+                            {projectIssues.length === 0 ? (
+                                <p className="fp-card-footer">No issues yet</p>
+                            ) : projectIssues.map((issue) => (
+                                <button
+                                    key={issue.id}
+                                    className="fp-issue-row"
+                                    onClick={() => onIssuePreview(issue.id)}
+                                >
+                                    <span className="fp-issue-key">{issue.key}</span>
+                                    <span className="fp-issue-title">{issue.title}</span>
+                                </button>
+                            ))}
+                            <p className="fp-card-footer">
+                                {project.progress}% complete &nbsp;·&nbsp; {project.issues} issues
+                            </p>
+                        </div>
+                    </div>
                 </div>
+
             </div>
         </div>
     );
@@ -340,24 +408,9 @@ export default function Dashboard() {
                     </div>
 
                     {/* Action buttons — desktop only */}
-                    <div className="hidden md:flex items-center gap-2 ml-4 shrink-0">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCreateProjectOpen(true)}
-                            className="gap-1.5"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Project
-                        </Button>
-                        <Button
-                            size="sm"
-                            onClick={() => setCreateIssueOpen(true)}
-                            className="gap-1.5"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Issue
-                        </Button>
+                    <div className="hidden md:flex items-center gap-3 ml-4 shrink-0">
+                        <AddButton label="Project" onClick={() => setCreateProjectOpen(true)} />
+                        <AddButton label="Issue" onClick={() => setCreateIssueOpen(true)} />
                     </div>
                 </div>
             </div>
@@ -412,10 +465,10 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {/* ── Recent Projects ── */}
+                {/* ── Recent Projects & Issues (flip cards on desktop, regular cards on mobile) ── */}
                 <div className="dash-section">
                     <SectionHeader
-                        label="Recent Projects"
+                        label="Recent Projects & Issues"
                         count={loading ? null : recentProjects.length}
                         accentColor="#10b981"
                         onViewAll={() => navigate("/projects")}
@@ -423,9 +476,9 @@ export default function Dashboard() {
                     />
 
                     {loading ? (
-                        <div className="space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {[1, 2, 3].map(i => (
-                                <div key={i} className="h-24 rounded-xl bg-muted/40 animate-pulse" />
+                                <div key={i} className="h-40 rounded-xl bg-muted/40 animate-pulse" />
                             ))}
                         </div>
                     ) : recentProjects.length === 0 ? (
@@ -440,52 +493,24 @@ export default function Dashboard() {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {recentProjects.map((project, i) => (
-                                <ProjectCard
-                                    key={project.id}
-                                    project={project}
-                                    colorIndex={i + 3}
-                                    onPreview={setSelectedProjectId}
-                                    isMobile={isMobile}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* ── Recent Issues ── */}
-                <div className="dash-section">
-                    <SectionHeader
-                        label="Recent Issues"
-                        count={loading ? null : recentIssues.length}
-                        accentColor="#f97316"
-                        onViewAll={() => navigate("/issues")}
-                    />
-
-                    {loading ? (
-                        <div className="space-y-2">
-                            {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="h-16 rounded-xl bg-muted/40 animate-pulse" />
-                            ))}
-                        </div>
-                    ) : recentIssues.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-border py-12 text-center space-y-3">
-                            <Inbox className="mx-auto h-10 w-10 text-muted-foreground/30" />
-                            <p className="text-sm text-muted-foreground">No issues yet</p>
-                            <Button size="sm" onClick={() => setCreateIssueOpen(true)} className="gap-1.5">
-                                <Plus className="h-4 w-4" />
-                                Create first issue
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            {recentIssues.map((issue) => (
-                                <IssueRow
-                                    key={issue.id}
-                                    issue={issue}
-                                    isMobile={isMobile}
-                                    onPreview={setSelectedIssueId}
-                                    getUserName={getUserName}
-                                />
+                                isMobile ? (
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={project}
+                                        colorIndex={i + 3}
+                                        onPreview={setSelectedProjectId}
+                                        isMobile={true}
+                                    />
+                                ) : (
+                                    <FlipProjectCard
+                                        key={project.id}
+                                        project={project}
+                                        colorIndex={i + 3}
+                                        allIssues={issues}
+                                        onProjectPreview={setSelectedProjectId}
+                                        onIssuePreview={setSelectedIssueId}
+                                    />
+                                )
                             ))}
                         </div>
                     )}

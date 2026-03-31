@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import apiClient from "@/services/apiClient";
 import { useUserStore } from "@/store/userStore";
 import { useTeamStore } from "@/store/teamStore";
+import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
 import { GitBranch, MessageCircle, User, ArrowUpDown, Tag, FileText, Calendar, Users } from "lucide-react";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 
 const PRIORITY_MAP = {
     "0": "LOW", "1": "NORMAL", "2": "HIGH", "3": "CRITICAL",
@@ -86,6 +89,8 @@ export function ActivityLog({ issueId }) {
     const [loading, setLoading] = useState(true);
     const { users, fetchUsers } = useUserStore();
     const { teams, fetchTeams } = useTeamStore();
+    const isAdmin = useAuthStore((state) => state.isAdmin);
+    const isAdminUser = isAdmin();
 
     useEffect(() => {
         fetchUsers();
@@ -95,6 +100,17 @@ export function ActivityLog({ issueId }) {
             .catch(() => {})
             .finally(() => setLoading(false));
     }, [issueId]);
+
+    const handleDeleteActivity = async (activityId) => {
+        if (!window.confirm("Delete this activity entry?")) return;
+        try {
+            await apiClient.delete(`/api/v1/admin/activity/issue/${activityId}`);
+            setActivities(prev => prev.filter(a => a.id !== activityId));
+            toast.success("Activity deleted");
+        } catch (e) {
+            toast.error(e.response?.data?.Message || "Failed to delete activity");
+        }
+    };
 
     if (loading) {
         return <p className="text-sm text-muted-foreground py-4">Loading activity...</p>;
@@ -116,18 +132,25 @@ export function ActivityLog({ issueId }) {
                     : "";
 
                 return (
-                    <div key={i} className="relative pl-6 pb-4">
+                    <div key={i} className="relative pl-6 pb-4 group">
                         {/* Dot */}
                         <span className={`absolute -left-[9px] top-1 h-4 w-4 rounded-full ${color} flex items-center justify-center`}>
                             <Icon className="h-2.5 w-2.5 text-white" />
                         </span>
-                        <div className="flex flex-col gap-0.5">
-                            <p className="text-sm">
-                                <span className="font-medium">{authorName}</span>{" "}
-                                <span className="text-muted-foreground">{text}</span>
-                            </p>
-                            {timestamp && (
-                                <p className="text-xs text-muted-foreground">{timestamp}</p>
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="flex flex-col gap-0.5">
+                                <p className="text-sm">
+                                    <span className="font-medium">{authorName}</span>{" "}
+                                    <span className="text-muted-foreground">{text}</span>
+                                </p>
+                                {timestamp && (
+                                    <p className="text-xs text-muted-foreground">{timestamp}</p>
+                                )}
+                            </div>
+                            {isAdminUser && activity.id && (
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <DeleteButton onClick={() => handleDeleteActivity(activity.id)} />
+                                </div>
                             )}
                         </div>
                     </div>

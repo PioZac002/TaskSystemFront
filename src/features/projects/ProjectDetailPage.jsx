@@ -11,8 +11,9 @@ import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
 import {
     Plus, ExternalLink, ListTodo, CheckCircle2, Clock,
-    AlertCircle, Calendar, FolderKanban, Trash2, Search, X
+    AlertCircle, Calendar, FolderKanban, Search, X
 } from "lucide-react";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { Input } from "@/components/ui/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
@@ -118,15 +119,12 @@ export default function ProjectDetailPage() {
                             <p className="text-muted-foreground mt-1">{project.description}</p>
                         )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                         <Button onClick={() => setCreateIssueOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
                             Add Issue
                         </Button>
-                        <Button variant="outline" className="text-destructive hover:text-destructive" onClick={handleDeleteProject}>
-                            <Trash2 className="h-4 w-4 md:mr-2" />
-                            <span className="hidden md:inline">Delete Project</span>
-                        </Button>
+                        <DeleteButton onClick={handleDeleteProject} />
                     </div>
                 </div>
 

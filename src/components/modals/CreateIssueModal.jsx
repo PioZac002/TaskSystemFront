@@ -10,11 +10,13 @@ import { useProjectStore } from "@/store/projectStore";
 import { useUserStore } from "@/store/userStore";
 import { useTeamStore } from "@/store/teamStore";
 import { useAuthStore } from "@/store/authStore";
+import { useMasterdataStore } from "@/store/masterdataStore";
 import { storageService } from "@/services/storageService";
 import apiClient from "@/services/apiClient";
 import { toast } from "sonner";
 import { CheckSquare, Image, X, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LabelsSelect } from "@/components/ui/LabelsSelect";
 
 /**
  * CreateIssueModal — create a new issue
@@ -29,6 +31,8 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
     const [dueDate,         setDueDate]         = useState("");
     const [loading,         setLoading]         = useState(false);
     const [attachedImages,  setAttachedImages]  = useState([]);
+    const [labelIds,        setLabelIds]        = useState([]);
+    const [availableLabels, setAvailableLabels] = useState([]);
     const fileInputRef = useRef(null);
 
     const { createIssue, fetchIssues } = useIssueStore();
@@ -36,15 +40,18 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
     const { users, fetchUsers }        = useUserStore();
     const { teams, fetchTeams }        = useTeamStore();
     const user = useAuthStore((state) => state.user);
+    const { fetchByType } = useMasterdataStore();
 
     useEffect(() => {
         if (open) {
             fetchProjects();
             fetchUsers();
             fetchTeams();
+            fetchByType('ISSUE_LABEL').then(setAvailableLabels);
             if (preSelectedProjectId) setProjectId(String(preSelectedProjectId));
         } else {
             setAttachedImages([]);
+            setLabelIds([]);
         }
     }, [open, preSelectedProjectId]);
 
@@ -114,6 +121,7 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
                 assigneeId:  null,
                 dueDate:     null,
                 projectId:   Number(projectId),
+                labels:      labelIds.map(Number).filter(Boolean),
             };
             if (assigneeId && assigneeId !== "unassigned") {
                 const n = Number(assigneeId);
@@ -155,7 +163,7 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
             // Reset
             setTitle(""); setDescription(""); setPriority("NORMAL");
             setProjectId(preSelectedProjectId ? String(preSelectedProjectId) : "");
-            setAssigneeId("unassigned"); setTeamId("none"); setDueDate(""); setAttachedImages([]);
+            setAssigneeId("unassigned"); setTeamId("none"); setDueDate(""); setAttachedImages([]); setLabelIds([]);
 
             await fetchIssues();
             if (onIssueCreated) onIssueCreated();
@@ -371,6 +379,22 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
                                 className="h-10 [color-scheme:light] dark:[color-scheme:dark]"
                             />
                         </div>
+
+                        {/* Labels */}
+                        {availableLabels.length > 0 && (
+                            <div className="space-y-1.5">
+                                <Label className="flex items-center justify-between text-sm">
+                                    Labels
+                                    <span className="text-xs text-muted-foreground font-normal">Optional</span>
+                                </Label>
+                                <LabelsSelect
+                                    labels={availableLabels}
+                                    selectedIds={labelIds}
+                                    onChange={setLabelIds}
+                                    placeholder="No labels"
+                                />
+                            </div>
+                        )}
 
                         {/* Actions */}
                         <div className="flex items-center justify-end gap-2 pt-2">

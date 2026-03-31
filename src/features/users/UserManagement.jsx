@@ -89,7 +89,7 @@ function UserRow({ user, onResetPassword, onChangeRole, onDelete, onPreview }) {
                     size="sm" variant="ghost"
                     onClick={() => onResetPassword(user)}
                     title="Reset password"
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                    className="hidden sm:flex h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                 >
                     <KeyRound className="h-3.5 w-3.5" />
                 </Button>
@@ -97,7 +97,7 @@ function UserRow({ user, onResetPassword, onChangeRole, onDelete, onPreview }) {
                     size="sm" variant="ghost"
                     onClick={() => onChangeRole(user)}
                     title="Change role"
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                    className="hidden sm:flex h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                 >
                     <Shield className="h-3.5 w-3.5" />
                 </Button>
