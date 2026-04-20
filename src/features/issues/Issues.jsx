@@ -291,6 +291,17 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
     );
 }
 
+// ─── Filter persistence ───────────────────────────────────────────────────────
+const FILTER_KEY = "issues_filters";
+
+function loadSavedFilters() {
+    try {
+        return JSON.parse(sessionStorage.getItem(FILTER_KEY) || "{}");
+    } catch {
+        return {};
+    }
+}
+
 // ─── Main component ────────────────────────────────────────────────────────────
 export default function Issues() {
     const { isMobile } = useResponsiveNavigation();
@@ -304,15 +315,17 @@ export default function Issues() {
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
-    const [searchTerm,     setSearchTerm]     = useState("");
-    const [statusFilter,   setStatusFilter]   = useState([]);
-    const [priorityFilter, setPriorityFilter] = useState([]);
-    const [projectFilter,  setProjectFilter]  = useState("all");
-    const [teamFilter,     setTeamFilter]     = useState("all");
-    const [assigneeFilter, setAssigneeFilter] = useState("all");
-    const [sortValue,      setSortValue]      = useState("createdAt__desc");
-    const [dateFrom,       setDateFrom]       = useState("");
-    const [dateTo,         setDateTo]         = useState("");
+    const saved = loadSavedFilters();
+
+    const [searchTerm,     setSearchTerm]     = useState(saved.searchTerm     ?? "");
+    const [statusFilter,   setStatusFilter]   = useState(saved.statusFilter   ?? []);
+    const [priorityFilter, setPriorityFilter] = useState(saved.priorityFilter ?? []);
+    const [projectFilter,  setProjectFilter]  = useState(saved.projectFilter  ?? "all");
+    const [teamFilter,     setTeamFilter]     = useState(saved.teamFilter     ?? "all");
+    const [assigneeFilter, setAssigneeFilter] = useState(saved.assigneeFilter ?? "all");
+    const [sortValue,      setSortValue]      = useState(saved.sortValue      ?? "createdAt__desc");
+    const [dateFrom,       setDateFrom]       = useState(saved.dateFrom       ?? "");
+    const [dateTo,         setDateTo]         = useState(saved.dateTo         ?? "");
 
     const headerRef = useRef(null);
     const listRef   = useRef(null);
@@ -323,6 +336,14 @@ export default function Issues() {
         fetchUsers();
         fetchTeams();
     }, []);
+
+    // Persist filters to sessionStorage
+    useEffect(() => {
+        sessionStorage.setItem(FILTER_KEY, JSON.stringify({
+            searchTerm, statusFilter, priorityFilter, projectFilter,
+            teamFilter, assigneeFilter, sortValue, dateFrom, dateTo,
+        }));
+    }, [searchTerm, statusFilter, priorityFilter, projectFilter, teamFilter, assigneeFilter, sortValue, dateFrom, dateTo]);
 
     // Apply URL params on mount (dashboard "view all" links)
     useEffect(() => {
@@ -381,6 +402,7 @@ export default function Issues() {
         setSearchTerm(""); setStatusFilter([]); setPriorityFilter([]);
         setProjectFilter("all"); setTeamFilter("all"); setAssigneeFilter("all");
         setSortValue("createdAt__desc"); setDateFrom(""); setDateTo("");
+        sessionStorage.removeItem(FILTER_KEY);
         toast.success("Filters cleared");
     };
 

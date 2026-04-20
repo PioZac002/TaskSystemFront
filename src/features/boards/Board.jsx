@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
+import { useUserStore } from "@/store/userStore";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
@@ -160,9 +161,11 @@ const PRIORITY_ORDER = { CRITICAL: 0, HIGH: 1, NORMAL: 2, LOW: 3 };
 export default function Board() {
     const { issues, fetchIssues } = useIssueStore();
     const { projects, fetchProjects } = useProjectStore();
+    const { users, fetchUsers } = useUserStore();
 
-    const [selectedProjectId, setSelectedProjectId] = useState("all");
-    const [boardMode, setBoardMode]                 = useState("basic"); // "basic" | "detailed"
+    const [selectedProjectId,  setSelectedProjectId]  = useState("all");
+    const [selectedAssigneeId, setSelectedAssigneeId] = useState("all");
+    const [boardMode, setBoardMode]                   = useState("basic"); // "basic" | "detailed"
     const [createModalOpen, setCreateModalOpen]     = useState(false);
     const [selectedIssueId, setSelectedIssueId]     = useState(null);
     const [activeColumnId, setActiveColumnId]       = useState(BASIC_COLUMNS[0].id);
@@ -178,10 +181,10 @@ export default function Board() {
     const cardsAnimated  = useRef(false);
 
     // ── Derived data ─────────────────────────────────────────────────────────
-    const activeColumns      = boardMode === "basic" ? BASIC_COLUMNS : DETAILED_COLUMNS;
-    const filteredIssues     = selectedProjectId === "all"
-        ? issues
-        : issues.filter(i => i.projectId === Number(selectedProjectId));
+    const activeColumns  = boardMode === "basic" ? BASIC_COLUMNS : DETAILED_COLUMNS;
+    const filteredIssues = issues
+        .filter(i => selectedProjectId  === "all" || i.projectId === Number(selectedProjectId))
+        .filter(i => selectedAssigneeId === "all" || String(i.assigneeId) === selectedAssigneeId);
     const activeColumn            = activeColumns.find(c => c.id === activeColumnId) ?? activeColumns[0];
     const activeColumnIssues      = filteredIssues.filter(i => activeColumn.statuses.includes(i.status));
     const sortedActiveColIssues   = [...activeColumnIssues].sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 4) - (PRIORITY_ORDER[b.priority] ?? 4));
@@ -191,6 +194,7 @@ export default function Board() {
     useEffect(() => {
         fetchIssues();
         fetchProjects();
+        fetchUsers();
     }, []);
 
     // ── Page-mount animation ──────────────────────────────────────────────────
@@ -334,8 +338,8 @@ export default function Board() {
                     </div>
 
                     <div className="ml-auto flex items-center gap-2 shrink-0">
-                        {/* Project filter — desktop only (mobile has it in the column list panel) */}
-                        <div className="hidden md:block">
+                        {/* Project + Assignee filters — desktop only */}
+                        <div className="hidden md:flex items-center gap-2">
                             <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
                                 <SelectTrigger className="w-[150px] h-9 bg-background border-border text-sm">
                                     <SelectValue placeholder="All Projects" />
@@ -344,6 +348,19 @@ export default function Board() {
                                     <SelectItem value="all">All Projects</SelectItem>
                                     {projects.map(p => (
                                         <SelectItem key={p.id} value={String(p.id)}>{p.shortName}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select value={selectedAssigneeId} onValueChange={setSelectedAssigneeId}>
+                                <SelectTrigger className={cn("w-[150px] h-9 bg-background border-border text-sm", selectedAssigneeId !== "all" && "border-primary")}>
+                                    <SelectValue placeholder="All Members" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Members</SelectItem>
+                                    {users.map(u => (
+                                        <SelectItem key={u.id} value={String(u.id)}>
+                                            {`${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email}
+                                        </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -368,8 +385,8 @@ export default function Board() {
                             mobileView === "detail" ? "hidden" : "flex"
                         )}
                     >
-                        {/* Mobile project filter */}
-                        <div className="shrink-0 px-3 py-3 border-b border-border">
+                        {/* Mobile project + assignee filter */}
+                        <div className="shrink-0 px-3 py-3 border-b border-border space-y-2">
                             <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
                                 <SelectTrigger className="w-full h-9 bg-background border-border text-sm">
                                     <SelectValue placeholder="All Projects" />
@@ -378,6 +395,19 @@ export default function Board() {
                                     <SelectItem value="all">All Projects</SelectItem>
                                     {projects.map(p => (
                                         <SelectItem key={p.id} value={String(p.id)}>{p.shortName}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select value={selectedAssigneeId} onValueChange={setSelectedAssigneeId}>
+                                <SelectTrigger className={cn("w-full h-9 bg-background border-border text-sm", selectedAssigneeId !== "all" && "border-primary")}>
+                                    <SelectValue placeholder="All Members" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Members</SelectItem>
+                                    {users.map(u => (
+                                        <SelectItem key={u.id} value={String(u.id)}>
+                                            {`${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email}
+                                        </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>

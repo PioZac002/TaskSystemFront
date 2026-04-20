@@ -107,19 +107,25 @@ export default function IssueDetailPage() {
 
             toast.success("Issue updated successfully!");
 
-            // Optimistically update issue state so UI reflects new values immediately
+            // Build full optimistic update from form — avoids calling loadData() which
+            // overwrites state with potentially null status/priority from the API response
+            const selectedTeam = form.teamId !== "none"
+                ? (teams.find(t => String(t.id) === form.teamId) || issue.team || null)
+                : null;
+
             setIssue(prev => ({
                 ...prev,
-                title: form.title,
+                title:      form.title,
                 description: form.description,
-                status: form.status,
-                priority: form.priority,
+                status:     form.status,
+                priority:   form.priority,
                 assigneeId: form.assigneeId && form.assigneeId !== "unassigned" ? Number(form.assigneeId) : null,
-                projectId: form.projectId ? Number(form.projectId) : prev.projectId,
-                dueDate: form.dueDate || null,
+                projectId:  form.projectId ? Number(form.projectId) : prev.projectId,
+                dueDate:    form.dueDate || null,
+                team:       selectedTeam,
+                updatedAt:  new Date().toISOString(),
             }));
             setEdit(false);
-            await loadData();
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to update issue";
             toast.error(errorMessage);
@@ -300,9 +306,7 @@ export default function IssueDetailPage() {
                                     ) : !isMobile ? (
                                         <Select value={issue.status} onValueChange={handleInlineStatusChange} disabled={inlineSaving}>
                                             <SelectTrigger className="w-full">
-                                                <SelectValue>
-                                                    {STATUS_LABELS[issue.status] || issue.status}
-                                                </SelectValue>
+                                                <span>{STATUS_LABELS[issue.status] || issue.status}</span>
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {ALL_STATUSES.map(s => (
@@ -339,9 +343,7 @@ export default function IssueDetailPage() {
                                     ) : !isMobile ? (
                                         <Select value={issue.priority} onValueChange={handleInlinePriorityChange} disabled={inlineSaving}>
                                             <SelectTrigger className="w-full">
-                                                <SelectValue>
-                                                    {PRIORITY_LABELS[issue.priority] || issue.priority}
-                                                </SelectValue>
+                                                <span>{PRIORITY_LABELS[issue.priority] || issue.priority}</span>
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {ALL_PRIORITIES.map(p => (

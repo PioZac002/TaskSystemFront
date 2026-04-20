@@ -11,7 +11,7 @@ import { Plus, Pencil, Trash2, X, Check, Tag } from "lucide-react";
 
 const LABEL_TYPE = "ISSUE_LABEL";
 
-const DEFAULT_FORM = { name: "", code: "", color: "#7c3aed" };
+const DEFAULT_FORM = { value: "", code: "", color: "#7c3aed" };
 
 export default function LabelsManagement() {
     const { masterdata, loading, fetchAll, saveValue, deleteValue } = useMasterdataStore();
@@ -27,16 +27,19 @@ export default function LabelsManagement() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!form.name.trim() || !form.code.trim()) {
+        if (!form.value.trim() || !form.code.trim()) {
             toast.error("Name and Code are required");
             return;
         }
         try {
             const payload = {
-                ...form,
-                name: form.name.trim(),
+                order: 0,
+                value: form.value.trim(),
                 code: form.code.trim().toUpperCase(),
+                color: form.color,
                 type: LABEL_TYPE,
+                isActive: true,
+                delete: false,
                 ...(editingId ? { id: editingId } : {}),
             };
             await saveValue(payload);
@@ -50,7 +53,7 @@ export default function LabelsManagement() {
     };
 
     const handleEdit = (label) => {
-        setForm({ name: label.name, code: label.code, color: label.color || "#7c3aed" });
+        setForm({ value: label.value, code: label.code, color: label.color || "#7c3aed" });
         setEditingId(label.id);
         setShowForm(true);
     };
@@ -110,8 +113,8 @@ export default function LabelsManagement() {
                                         </Label>
                                         <Input
                                             placeholder="e.g. Bug"
-                                            value={form.name}
-                                            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                                            value={form.value}
+                                            onChange={e => setForm(f => ({ ...f, value: e.target.value }))}
                                             autoFocus
                                         />
                                     </div>
@@ -145,14 +148,14 @@ export default function LabelsManagement() {
                                 </div>
 
                                 {/* Preview */}
-                                {form.name && (
+                                {form.value && (
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-muted-foreground">Preview:</span>
                                         <Badge
                                             style={{ backgroundColor: form.color, color: "#fff", borderColor: form.color }}
                                             className="text-xs"
                                         >
-                                            {form.name}
+                                            {form.value}
                                         </Badge>
                                     </div>
                                 )}
@@ -191,7 +194,7 @@ export default function LabelsManagement() {
                                                 style={label.color ? { backgroundColor: label.color, color: "#fff", borderColor: label.color } : {}}
                                                 className="text-xs"
                                             >
-                                                {label.name}
+                                                {label.value}
                                             </Badge>
                                             <span className="text-xs font-mono text-muted-foreground">{label.code}</span>
                                         </div>
