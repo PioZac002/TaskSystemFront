@@ -13,6 +13,7 @@ import { useIssueStore } from "@/store/issueStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUserStore } from "@/store/userStore";
 import { useTeamStore } from "@/store/teamStore";
+import { useAuthStore } from "@/store/authStore";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { AddButton } from "@/components/ui/AddButton";
@@ -171,11 +172,11 @@ function PillMultiSelect({ label, options, selected, onToggle }) {
 function FilterPanel({ state, handlers, projects, teams, users }) {
     const {
         statusFilter, priorityFilter, projectFilter, teamFilter,
-        assigneeFilter, sortValue, dateFrom, dateTo,
+        assigneeFilter, sortValue, dateFrom, dateTo, hasActiveFilters,
     } = state;
     const {
         toggleStatus, togglePriority, setProjectFilter, setTeamFilter,
-        setAssigneeFilter, setSortValue, setDateFrom, setDateTo,
+        setAssigneeFilter, setSortValue, setDateFrom, setDateTo, clearFilters,
     } = handlers;
 
     const statusOptions   = ALL_STATUSES.map(s => ({ value: s, label: STATUS_LABELS[s] }));
@@ -183,6 +184,21 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
 
     return (
         <div className="space-y-5">
+            <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Filter panel</p>
+                {hasActiveFilters && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearFilters}
+                        className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive"
+                    >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Clear all filters
+                    </Button>
+                )}
+            </div>
+
             <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Status</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -292,11 +308,12 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
 }
 
 // ─── Filter persistence ───────────────────────────────────────────────────────
-const FILTER_KEY = "issues_filters";
+const FILTER_KEY_PREFIX = "issues_filters";
+const getFilterStorageKey = (userId) => `${FILTER_KEY_PREFIX}:${userId || "anonymous"}`;
 
-function loadSavedFilters() {
+function loadSavedFilters(userId) {
     try {
-        return JSON.parse(sessionStorage.getItem(FILTER_KEY) || "{}");
+        return JSON.parse(localStorage.getItem(getFilterStorageKey(userId)) || "{}");
     } catch {
         return {};
     }
@@ -309,13 +326,17 @@ export default function Issues() {
     const { projects, fetchProjects }      = useProjectStore();
     const { users, fetchUsers }            = useUserStore();
     const { teams, fetchTeams }            = useTeamStore();
+    const authUser = useAuthStore((state) => state.user);
+    const getUserIdFromToken = useAuthStore((state) => state.getUserIdFromToken);
     const [searchParams] = useSearchParams();
 
     const [selectedIssueId, setSelectedIssueId] = useState(null);
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
-    const saved = loadSavedFilters();
+    const currentUserId = authUser?.id || getUserIdFromToken();
+    const filterStorageKey = getFilterStorageKey(currentUserId);
+    const saved = loadSavedFilters(currentUserId);
 
     const [searchTerm,     setSearchTerm]     = useState(saved.searchTerm     ?? "");
     const [statusFilter,   setStatusFilter]   = useState(saved.statusFilter   ?? []);
@@ -337,13 +358,27 @@ export default function Issues() {
         fetchTeams();
     }, []);
 
-    // Persist filters to sessionStorage
+    // Persist filters for the current user across reloads
     useEffect(() => {
-        sessionStorage.setItem(FILTER_KEY, JSON.stringify({
+        localStorage.setItem(filterStorageKey, JSON.stringify({
             searchTerm, statusFilter, priorityFilter, projectFilter,
             teamFilter, assigneeFilter, sortValue, dateFrom, dateTo,
         }));
-    }, [searchTerm, statusFilter, priorityFilter, projectFilter, teamFilter, assigneeFilter, sortValue, dateFrom, dateTo]);
+    }, [filterStorageKey, searchTerm, statusFilter, priorityFilter, projectFilter, teamFilter, assigneeFilter, sortValue, dateFrom, dateTo]);
+
+    // Rehydrate when user identity changes (e.g. after token refresh/login)
+    useEffect(() => {
+        const stored = loadSavedFilters(currentUserId);
+        setSearchTerm(stored.searchTerm ?? "");
+        setStatusFilter(stored.statusFilter ?? []);
+        setPriorityFilter(stored.priorityFilter ?? []);
+        setProjectFilter(stored.projectFilter ?? "all");
+        setTeamFilter(stored.teamFilter ?? "all");
+        setAssigneeFilter(stored.assigneeFilter ?? "all");
+        setSortValue(stored.sortValue ?? "createdAt__desc");
+        setDateFrom(stored.dateFrom ?? "");
+        setDateTo(stored.dateTo ?? "");
+    }, [currentUserId]);
 
     // Apply URL params on mount (dashboard "view all" links)
     useEffect(() => {
@@ -402,7 +437,7 @@ export default function Issues() {
         setSearchTerm(""); setStatusFilter([]); setPriorityFilter([]);
         setProjectFilter("all"); setTeamFilter("all"); setAssigneeFilter("all");
         setSortValue("createdAt__desc"); setDateFrom(""); setDateTo("");
-        sessionStorage.removeItem(FILTER_KEY);
+        localStorage.removeItem(filterStorageKey);
         toast.success("Filters cleared");
     };
 
@@ -455,11 +490,46 @@ export default function Issues() {
     const doneIssues   = issues.filter(i => i.status === "DONE").length;
 
     const statItems = [
-        { label: "Total",  value: issues.length,            color: "text-violet-600 dark:text-violet-400"   },
-        { label: "Open",   value: openIssues,               color: "text-blue-600 dark:text-blue-400"       },
-        { label: "Active", value: activeIssues,             color: "text-orange-600 dark:text-orange-400"   },
-        { label: "Done",   value: doneIssues,               color: "text-emerald-600 dark:text-emerald-400" },
-        ...(hasActiveFilters ? [{ label: "Shown", value: filteredIssues.length, color: "text-muted-foreground" }] : []),
+        { label: "Total",  value: issues.length,            color: "text-violet-600 dark:text-violet-400",   tooltip: "All issues available in the current workspace." },
+        { label: "Open",   value: openIssues,               color: "text-blue-600 dark:text-blue-400",       tooltip: "Issues that are not done or canceled." },
+        { label: "Active", value: activeIssues,             color: "text-orange-600 dark:text-orange-400",   tooltip: "Issues currently in progress." },
+        { label: "Done",   value: doneIssues,               color: "text-emerald-600 dark:text-emerald-400", tooltip: "Issues completed successfully." },
+        ...(hasActiveFilters ? [{ label: "Shown", value: filteredIssues.length, color: "text-muted-foreground", tooltip: "Number of issues visible after applying filters." }] : []),
+    ];
+
+    const activeFilterBadges = [
+        ...(searchTerm ? [{
+            key: "search-term",
+            text: `Search: ${searchTerm}`,
+            onRemove: () => setSearchTerm(""),
+        }] : []),
+        ...statusFilter.map(s => ({ key: `status-${s}`, text: `Status: ${STATUS_LABELS[s]}`, onRemove: () => toggleStatus(s) })),
+        ...priorityFilter.map(p => ({ key: `priority-${p}`, text: `Priority: ${PRIORITY_LABELS[p]}`, onRemove: () => togglePriority(p) })),
+        ...(assigneeFilter !== "all" ? [{
+            key: `assignee-${assigneeFilter}`,
+            text: `Assignee: ${getUserName(assigneeFilter) || `User #${assigneeFilter}`}`,
+            onRemove: () => setAssigneeFilter("all"),
+        }] : []),
+        ...(projectFilter !== "all" ? [{
+            key: `project-${projectFilter}`,
+            text: `Project: ${projects.find(p => String(p.id) === projectFilter)?.shortName || projectFilter}`,
+            onRemove: () => setProjectFilter("all"),
+        }] : []),
+        ...(teamFilter !== "all" ? [{
+            key: `team-${teamFilter}`,
+            text: `Team: ${teams.find(t => String(t.id) === teamFilter)?.name || teamFilter}`,
+            onRemove: () => setTeamFilter("all"),
+        }] : []),
+        ...((dateFrom || dateTo) ? [{
+            key: "date-range",
+            text: `Date: ${dateFrom && dateTo ? `${dateFrom} – ${dateTo}` : dateFrom || dateTo}`,
+            onRemove: () => { setDateFrom(""); setDateTo(""); },
+        }] : []),
+        ...(sortValue !== "createdAt__desc" ? [{
+            key: "sort-value",
+            text: `Sort: ${SORT_OPTIONS.find(opt => opt.value === sortValue)?.label || sortValue}`,
+            onRemove: () => setSortValue("createdAt__desc"),
+        }] : []),
     ];
 
     // ── Render ────────────────────────────────────────────────────────────────
@@ -470,7 +540,12 @@ export default function Issues() {
                 <div className="flex items-center gap-2 px-4 md:px-6 py-4">
                     <div className="flex items-center justify-between md:justify-start md:gap-6 flex-1">
                         {statItems.map((s, i) => (
-                            <div key={s.label} className="flex items-center gap-2 md:gap-5 shrink-0">
+                            <div
+                                key={s.label}
+                                className="flex items-center gap-2 md:gap-5 shrink-0 cursor-help"
+                                title={s.tooltip}
+                                aria-label={`${s.label}: ${s.tooltip}`}
+                            >
                                 {i > 0 && <div className="hidden md:block w-px h-6 bg-border shrink-0" />}
                                 <div>
                                     <p className={cn("text-[10px] uppercase tracking-wider font-medium", s.color)}>
@@ -661,45 +736,27 @@ export default function Issues() {
                     </div>
                 )}
 
-                {/* ── Active filter chips (mobile) ── */}
-                {isMobile && hasActiveFilters && (
-                    <div className="flex flex-wrap gap-1.5">
-                        {statusFilter.map(s => (
-                            <Badge key={s} variant="secondary" className="gap-1 pr-1 text-xs">
-                                {STATUS_LABELS[s]}
-                                <button onClick={() => toggleStatus(s)} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
-                            </Badge>
-                        ))}
-                        {priorityFilter.map(p => (
-                            <Badge key={p} variant="secondary" className="gap-1 pr-1 text-xs">
-                                {PRIORITY_LABELS[p]}
-                                <button onClick={() => togglePriority(p)} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
-                            </Badge>
-                        ))}
-                        {assigneeFilter !== "all" && (
-                            <Badge variant="secondary" className="gap-1 pr-1 text-xs">
-                                {getUserName(assigneeFilter) || `User #${assigneeFilter}`}
-                                <button onClick={() => setAssigneeFilter("all")} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
-                            </Badge>
-                        )}
-                        {projectFilter !== "all" && (
-                            <Badge variant="secondary" className="gap-1 pr-1 text-xs">
-                                {projects.find(p => String(p.id) === projectFilter)?.shortName || projectFilter}
-                                <button onClick={() => setProjectFilter("all")} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
-                            </Badge>
-                        )}
-                        {teamFilter !== "all" && (
-                            <Badge variant="secondary" className="gap-1 pr-1 text-xs">
-                                {teams.find(t => String(t.id) === teamFilter)?.name || teamFilter}
-                                <button onClick={() => setTeamFilter("all")} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
-                            </Badge>
-                        )}
-                        {(dateFrom || dateTo) && (
-                            <Badge variant="secondary" className="gap-1 pr-1 text-xs">
-                                {dateFrom && dateTo ? `${dateFrom} – ${dateTo}` : dateFrom || dateTo}
-                                <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
-                            </Badge>
-                        )}
+                {/* ── Active filter pills ── */}
+                {hasActiveFilters && (
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-2.5">
+                        <div className="flex flex-wrap gap-2">
+                            {activeFilterBadges.map((filter) => (
+                                <Badge
+                                    key={filter.key}
+                                    variant="outline"
+                                    className="h-7 gap-1 rounded-full border-primary/30 bg-background/85 px-2 text-xs text-primary"
+                                >
+                                    <span>{filter.text}</span>
+                                    <button
+                                        onClick={filter.onRemove}
+                                        className="ml-0.5 rounded-full p-0.5 hover:bg-primary/10 hover:text-destructive"
+                                        aria-label={`Remove ${filter.text}`}
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
+                            ))}
+                        </div>
                     </div>
                 )}
 

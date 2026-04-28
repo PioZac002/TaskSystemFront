@@ -11,8 +11,11 @@ import {
     Tag,
     ChevronLeft,
     ChevronRight,
+    Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
 
 const ALL_NAV_ITEMS = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -55,7 +58,36 @@ export const Sidebar = () => {
                                 <span className="text-lg font-bold leading-tight logo-text-main">TaskSystem</span>
                             </div>
                             {versionLabel && (
-                                <span className="text-[10px] font-mono text-sidebar-foreground/40 leading-tight">{versionLabel}</span>
+                                <div className="flex items-center gap-1">
+                                    <span className="text-[10px] font-mono text-sidebar-foreground/40 leading-tight">{versionLabel}</span>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-4 w-4 rounded-full text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                                                aria-label="Release notes"
+                                            >
+                                                <Info className="h-3 w-3" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent align="start" className="w-[360px]">
+                                            <div className="space-y-2">
+                                                <p className="text-sm font-semibold">What&apos;s new in this release</p>
+                                                <ul className="space-y-1 text-xs text-muted-foreground">
+                                                    <li>Dashboard now supports three desktop modes: Default, Custom and Jira-like.</li>
+                                                    <li>Custom dashboard widgets can be enabled/disabled, reordered and resized (half/full width) in a responsive layout.</li>
+                                                    <li>New analytics widgets were added: issue status, issue priority, issue trend and project progress charts.</li>
+                                                    <li>Charts now support project scoping and chart-type switching (Pie/Bar/Line where applicable).</li>
+                                                    <li>Jira-like mode now uses the full issue details experience in the right-side panel.</li>
+                                                    <li>Dashboard preferences are persisted per user after reload (mode, widgets, layout and chart preferences).</li>
+                                                    <li>Projects page received a visual refresh with spotlight, sorting and grid/compact views.</li>
+                                                    <li>Issues filtering UX was improved with clearer active pills, KPI explanations and stronger filter persistence.</li>
+                                                </ul>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                             )}
                         </div>
                     </div>

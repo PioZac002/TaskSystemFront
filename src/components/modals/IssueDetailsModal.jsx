@@ -22,7 +22,7 @@ import { LabelsSelect } from "@/components/ui/LabelsSelect";
 import { useMasterdataStore } from "@/store/masterdataStore";
 import { STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
-export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted, onIssueUpdated }) {
+export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted, onIssueUpdated, contentClassName = "" }) {
     const { isMobile } = useResponsiveNavigation();
     const [issue, setIssue] = useState(null);
     const [users, setUsers] = useState([]);
@@ -215,7 +215,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[95vw] w-full md:max-w-[1400px] h-[95vh] overflow-hidden p-0 flex flex-col">
+            <DialogContent className={`max-w-[95vw] w-full md:max-w-[1400px] h-[95vh] overflow-hidden p-0 flex flex-col ${contentClassName}`}>
                 {loading && !issue ? (
                     <div className="py-12 text-center text-muted-foreground">
                         Loading...

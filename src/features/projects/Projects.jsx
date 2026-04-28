@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useProjectStore } from "@/store/projectStore";
 import { useIssueStore } from "@/store/issueStore";
 import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
 import { AddButton } from "@/components/ui/AddButton";
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
-import { Plus, Search, X, FolderKanban, Eye } from "lucide-react";
+import { Plus, Search, X, FolderKanban, Eye, Sparkles, LayoutGrid, Rows3 } from "lucide-react";
 import { gsap } from "gsap";
 import { cn } from "@/lib/utils";
 
@@ -26,17 +28,20 @@ const PROJECT_PALETTE = [
 ];
 
 // ─── Project card ─────────────────────────────────────────────────────────────
-function ProjectCard({ project, colorIndex, isMobile, onPreview }) {
+function ProjectCard({ project, colorIndex, isMobile, onPreview, compact = false }) {
     const color = PROJECT_PALETTE[colorIndex % PROJECT_PALETTE.length];
 
     return (
         <div
-            className="group flex flex-col rounded-xl bg-card border border-border border-t-2 hover:border-border/80 hover:shadow-sm transition-all duration-150 overflow-hidden"
+            className={cn(
+                "group flex flex-col rounded-xl bg-card border border-border border-t-2 hover:border-border/80 hover:shadow-sm transition-all duration-150 overflow-hidden",
+                compact && "md:flex-row md:items-stretch"
+            )}
             style={{ borderTopColor: color.accent }}
         >
-            <div className="p-4 flex flex-col gap-3">
+            <div className={cn("p-4 flex flex-col gap-3", compact && "md:flex-row md:gap-4 md:w-full")}>
                 {/* Header row: name + eye + issue count */}
-                <div className="flex items-start gap-2">
+                <div className={cn("flex items-start gap-2", compact && "md:w-[40%]")}>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 min-w-0">
                             <span className={cn("h-2 w-2 rounded-full shrink-0 mt-0.5", color.dot)} />
@@ -73,7 +78,7 @@ function ProjectCard({ project, colorIndex, isMobile, onPreview }) {
                 </div>
 
                 {/* Progress */}
-                <div className="space-y-1">
+                <div className={cn("space-y-1", compact && "md:w-[30%] md:self-center")}>
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">Progress</span>
                         <span className="text-xs font-semibold tabular-nums">{project.progress}%</span>
@@ -85,7 +90,7 @@ function ProjectCard({ project, colorIndex, isMobile, onPreview }) {
                 </div>
 
                 {/* Mini stats row */}
-                <div className="grid grid-cols-3 gap-1 pt-2 border-t border-border/60">
+                <div className={cn("grid grid-cols-3 gap-1 pt-2 border-t border-border/60", compact && "md:w-[30%] md:pt-0 md:border-t-0 md:border-l md:pl-3 md:self-center")}>
                     <div className="text-center">
                         <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Done</p>
                         <p className="text-sm font-bold tabular-nums mt-0.5">{project.doneIssues}</p>
@@ -101,7 +106,7 @@ function ProjectCard({ project, colorIndex, isMobile, onPreview }) {
                 </div>
 
                 {/* Priority badges */}
-                {project.totalIssues > 0 && (project.highPriority > 0 || project.normalPriority > 0 || project.lowPriority > 0) && (
+                {!compact && project.totalIssues > 0 && (project.highPriority > 0 || project.normalPriority > 0 || project.lowPriority > 0) && (
                     <div className="pt-2 border-t border-border/60 flex gap-1.5 flex-wrap">
                         {project.highPriority > 0 && (
                             <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
@@ -133,6 +138,8 @@ export default function Projects() {
     const [selectedProjectId, setSelectedProjectId] = useState(null);
     const [createModalOpen, setCreateModalOpen]     = useState(false);
     const [searchTerm, setSearchTerm]               = useState("");
+    const [sortBy, setSortBy]                       = useState("recent");
+    const [viewMode, setViewMode]                   = useState("grid");
 
     const headerRef = useRef(null);
     const gridRef   = useRef(null);
@@ -193,10 +200,26 @@ export default function Projects() {
         };
     });
 
-    const filteredProjects = projectsWithProgress.filter(p =>
-        (p.shortName?.toLowerCase()   || "").includes(searchTerm.toLowerCase()) ||
-        (p.description?.toLowerCase() || "").includes(searchTerm.toLowerCase())
-    );
+    const filteredProjects = projectsWithProgress
+        .filter(p =>
+            (p.shortName?.toLowerCase()   || "").includes(searchTerm.toLowerCase()) ||
+            (p.description?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => {
+            switch (sortBy) {
+                case "progress":
+                    return b.progress - a.progress;
+                case "issues":
+                    return b.totalIssues - a.totalIssues;
+                case "name":
+                    return (a.shortName || "").localeCompare(b.shortName || "");
+                case "recent":
+                default:
+                    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+            }
+        });
+
+    const featuredProject = filteredProjects[0] || null;
 
     const clearSearch = () => setSearchTerm("");
 
@@ -243,7 +266,7 @@ export default function Projects() {
 
             <div className="space-y-5">
                 {/* ── Search toolbar ── */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -259,6 +282,35 @@ export default function Projects() {
                             <span className="hidden sm:inline">Clear</span>
                         </Button>
                     )}
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="h-9 w-[150px]">
+                            <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="recent">Newest</SelectItem>
+                            <SelectItem value="progress">Progress</SelectItem>
+                            <SelectItem value="issues">Issue count</SelectItem>
+                            <SelectItem value="name">Name A-Z</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <div className="hidden md:inline-flex items-center rounded-md border border-border p-0.5">
+                        <button
+                            type="button"
+                            onClick={() => setViewMode("grid")}
+                            className={cn("px-2 py-1 rounded-sm text-xs", viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
+                            title="Grid view"
+                        >
+                            <LayoutGrid className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewMode("compact")}
+                            className={cn("px-2 py-1 rounded-sm text-xs", viewMode === "compact" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
+                            title="Compact row view"
+                        >
+                            <Rows3 className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
                     {/* Mobile create button */}
                     <Button
                         size="sm"
@@ -269,9 +321,45 @@ export default function Projects() {
                     </Button>
                 </div>
 
+                {featuredProject && !searchTerm && (
+                    <Card className="overflow-hidden border-primary/20 bg-gradient-to-r from-primary/10 via-background to-cyan-500/10">
+                        <CardContent className="p-4 md:p-5">
+                            <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                <div className="flex-1 min-w-0 space-y-1">
+                                    <p className="text-xs uppercase tracking-wide text-primary flex items-center gap-1">
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                        Project spotlight
+                                    </p>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <Link to={`/projects/${featuredProject.id}`} className="font-mono text-lg font-bold truncate hover:underline">
+                                            {featuredProject.shortName}
+                                        </Link>
+                                        <Badge variant="secondary" className="text-[10px]">{featuredProject.totalIssues} issues</Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground line-clamp-2">{featuredProject.description || "No description"}</p>
+                                </div>
+                                <div className="md:w-[260px] space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground">Delivery progress</span>
+                                        <span className="font-semibold">{featuredProject.progress}%</span>
+                                    </div>
+                                    <Progress value={featuredProject.progress} className="h-2" />
+                                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                        <span>Done {featuredProject.doneIssues}</span>
+                                        <span>•</span>
+                                        <span>Active {featuredProject.inProgressIssues}</span>
+                                        <span>•</span>
+                                        <span>Todo {featuredProject.todoIssues}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* ── Project grid ── */}
                 {loading ? (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className={cn("grid gap-4", viewMode === "compact" ? "grid-cols-1" : "sm:grid-cols-2 lg:grid-cols-3")}>
                         {[1, 2, 3, 4, 5, 6].map(i => (
                             <div key={i} className="h-52 rounded-xl bg-muted/40 animate-pulse" />
                         ))}
@@ -297,7 +385,7 @@ export default function Projects() {
                         )}
                     </div>
                 ) : (
-                    <div ref={gridRef} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div ref={gridRef} className={cn("grid gap-4", viewMode === "compact" ? "grid-cols-1" : "sm:grid-cols-2 lg:grid-cols-3")}>
                         {filteredProjects.map((project, i) => (
                             <div key={project.id} className="project-card">
                                 <ProjectCard
@@ -305,6 +393,7 @@ export default function Projects() {
                                     colorIndex={i}
                                     isMobile={isMobile}
                                     onPreview={setSelectedProjectId}
+                                    compact={viewMode === "compact"}
                                 />
                             </div>
                         ))}
