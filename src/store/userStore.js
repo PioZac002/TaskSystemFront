@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import apiClient from "@/services/apiClient";
 
+const normalizeUserSlackId = (user) => {
+    const slackId = user?.userSlackId ?? user?.slackUserId ?? null;
+    return { ...user, userSlackId: slackId, slackUserId: slackId };
+};
+
 export const useUserStore = create((set, get) => ({
     users: [],
     loading: false,
@@ -10,7 +15,7 @@ export const useUserStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await apiClient.get('/api/v1/user/all');
-            set({ users: response.data, loading: false });
+            set({ users: response.data.map(normalizeUserSlackId), loading: false });
         } catch (e) {
             console.error('Error fetching users:', e);
             set({ error: e.message || "Failed to fetch users", loading: false });
@@ -22,7 +27,7 @@ export const useUserStore = create((set, get) => ({
         try {
             const response = await apiClient.get(`/api/v1/user/${id}`);
             set({ loading: false });
-            return response.data;
+            return normalizeUserSlackId(response.data);
         } catch (e) {
             console.error('Error fetching user:', e);
             set({ error: e.message || "Failed to fetch user", loading: false });
@@ -33,13 +38,20 @@ export const useUserStore = create((set, get) => ({
     updateUser: async (id, data) => {
         set({ loading: true, error: null });
         try {
-            const response = await apiClient.put(`/api/v1/user/${id}`, data);
+            const normalizedSlackId = data?.userSlackId ?? data?.slackUserId ?? null;
+            const payload = {
+                ...data,
+                userSlackId: normalizedSlackId,
+                slackUserId: normalizedSlackId,
+            };
+            const response = await apiClient.put(`/api/v1/user/${id}`, payload);
+            const normalizedUser = normalizeUserSlackId(response.data);
             // Update the cached user in the users list if present
             set({
-                users: get().users.map(u => u.id === id ? response.data : u),
+                users: get().users.map(u => u.id === id ? normalizedUser : u),
                 loading: false
             });
-            return response.data;
+            return normalizedUser;
         } catch (e) {
             console.error('Error updating user:', e);
             set({ error: e.message || "Failed to update user", loading: false });
