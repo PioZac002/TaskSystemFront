@@ -1,14 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { gsap } from "gsap";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Layers, Mail, Lock, User, UserCheck, Hash } from "lucide-react";
+import { Mail, Lock, User, UserCheck, Hash } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/services/authService";
+import { AuthCard, AuthSubmitButton, LabelInputContainer } from "./AuthFormShell";
 
 export default function RegisterForm() {
     const navigate = useNavigate();
@@ -24,7 +23,6 @@ export default function RegisterForm() {
     const [slackUserId, setSlackUserId] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // Animate card in on mount — direction depends on where we came from
     useEffect(() => {
         const fromLogin = location.state?.from === "login";
         gsap.fromTo(
@@ -85,173 +83,147 @@ export default function RegisterForm() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
-            {/* Background decorations */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-                <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-            </div>
-
-            <Card ref={cardRef} className="w-full max-w-md relative z-10 shadow-2xl border-slate-200 dark:border-slate-800">
-                <CardHeader className="space-y-4 text-center pb-8">
-                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
-                        <Layers className="w-8 h-8 text-primary-foreground" />
-                    </div>
-                    <div>
-                        <CardTitle className="text-3xl font-bold">Create Account</CardTitle>
-                        <CardDescription className="text-base mt-2">
-                            Start managing your tasks efficiently
-                        </CardDescription>
-                    </div>
-                </CardHeader>
-
-                <CardContent>
-                    <form onSubmit={handleRegister} className="space-y-5">
-                        {/* First Name */}
-                        <div className="space-y-2">
-                            <Label htmlFor="firstName" className="text-sm font-medium">
-                                First Name <span className="text-destructive">*</span>
-                            </Label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input
-                                    id="firstName"
-                                    type="text"
-                                    value={firstName}
-                                    onChange={(e) => setFirstName(e.target.value)}
-                                    placeholder="John"
-                                    className="pl-10 h-11"
-                                    disabled={loading}
-                                    required
-                                />
-                            </div>
+        <AuthCard
+            ref={cardRef}
+            title="Create Account"
+            description="Start managing your work with the same TaskSystem account flow."
+            wide
+        >
+            <form onSubmit={handleRegister} className="space-y-5">
+                <div className="grid gap-4 md:grid-cols-2">
+                    <LabelInputContainer>
+                        <Label htmlFor="firstName">
+                            First Name <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                            <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                id="firstName"
+                                type="text"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                                placeholder="John"
+                                className="h-11 pl-10 shadow-input"
+                                disabled={loading}
+                                required
+                            />
                         </div>
+                    </LabelInputContainer>
 
-                        {/* Last Name */}
-                        <div className="space-y-2">
-                            <Label htmlFor="lastName" className="text-sm font-medium">
-                                Last Name <span className="text-destructive">*</span>
-                            </Label>
-                            <div className="relative">
-                                <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input
-                                    id="lastName"
-                                    type="text"
-                                    value={lastName}
-                                    onChange={(e) => setLastName(e.target.value)}
-                                    placeholder="Doe"
-                                    className="pl-10 h-11"
-                                    disabled={loading}
-                                    required
-                                />
-                            </div>
+                    <LabelInputContainer>
+                        <Label htmlFor="lastName">
+                            Last Name <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                            <UserCheck className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                id="lastName"
+                                type="text"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                placeholder="Doe"
+                                className="h-11 pl-10 shadow-input"
+                                disabled={loading}
+                                required
+                            />
                         </div>
+                    </LabelInputContainer>
+                </div>
 
-                        {/* Email */}
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="text-sm font-medium">
-                                Email Address <span className="text-destructive">*</span>
-                            </Label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="you@example.com"
-                                    className="pl-10 h-11"
-                                    disabled={loading}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        {/* Slack User ID */}
-                        <div className="space-y-2">
-                            <Label htmlFor="slackUserId" className="text-sm font-medium">
-                                Slack User ID{" "}
-                                <span className="text-muted-foreground text-xs">(optional)</span>
-                            </Label>
-                            <div className="relative">
-                                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input
-                                    id="slackUserId"
-                                    type="text"
-                                    value={slackUserId}
-                                    onChange={(e) => setSlackUserId(e.target.value)}
-                                    placeholder="U123456 (auto-generated if empty)"
-                                    className="pl-10 h-11"
-                                    disabled={loading}
-                                />
-                            </div>
-                            <p className="text-xs text-muted-foreground">Leave empty to auto-generate</p>
-                        </div>
-
-                        {/* Password */}
-                        <div className="space-y-2">
-                            <Label htmlFor="password" className="text-sm font-medium">
-                                Password <span className="text-destructive">*</span>
-                            </Label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="pl-10 h-11"
-                                    disabled={loading}
-                                    required
-                                />
-                            </div>
-                            <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
-                        </div>
-
-                        {/* Confirm Password */}
-                        <div className="space-y-2">
-                            <Label htmlFor="confirmPassword" className="text-sm font-medium">
-                                Confirm Password <span className="text-destructive">*</span>
-                            </Label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input
-                                    id="confirmPassword"
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="pl-10 h-11"
-                                    disabled={loading}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        {/* Submit */}
-                        <Button
-                            type="submit"
-                            className="w-full h-11 text-base font-semibold"
+                <LabelInputContainer>
+                    <Label htmlFor="email">
+                        Email Address <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="you@example.com"
+                            className="h-11 pl-10 shadow-input"
                             disabled={loading}
-                        >
-                            {loading ? "Creating account..." : "Create Account"}
-                        </Button>
+                            required
+                        />
+                    </div>
+                </LabelInputContainer>
 
-                        {/* Login link */}
-                        <div className="text-center text-sm pt-2">
-                            <span className="text-muted-foreground">Already have an account? </span>
-                            <button
-                                type="button"
-                                onClick={handleGoToLogin}
-                                className="font-semibold text-primary hover:underline"
-                            >
-                                Sign in
-                            </button>
+                <LabelInputContainer>
+                    <Label htmlFor="slackUserId">
+                        Slack User ID <span className="text-xs text-muted-foreground">(optional)</span>
+                    </Label>
+                    <div className="relative">
+                        <Hash className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="slackUserId"
+                            type="text"
+                            value={slackUserId}
+                            onChange={(e) => setSlackUserId(e.target.value)}
+                            placeholder="U123456"
+                            className="h-11 pl-10 shadow-input"
+                            disabled={loading}
+                        />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Leave empty to auto-generate</p>
+                </LabelInputContainer>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                    <LabelInputContainer>
+                        <Label htmlFor="password">
+                            Password <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Password"
+                                className="h-11 pl-10 shadow-input"
+                                disabled={loading}
+                                required
+                            />
                         </div>
-                    </form>
-                </CardContent>
-            </Card>
-        </div>
+                        <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+                    </LabelInputContainer>
+
+                    <LabelInputContainer>
+                        <Label htmlFor="confirmPassword">
+                            Confirm Password <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                id="confirmPassword"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                placeholder="Password"
+                                className="h-11 pl-10 shadow-input"
+                                disabled={loading}
+                                required
+                            />
+                        </div>
+                    </LabelInputContainer>
+                </div>
+
+                <AuthSubmitButton disabled={loading}>
+                    {loading ? "Creating account..." : "Create Account"}
+                </AuthSubmitButton>
+
+                <div className="pt-2 text-center text-sm">
+                    <span className="text-muted-foreground">Already have an account? </span>
+                    <button
+                        type="button"
+                        onClick={handleGoToLogin}
+                        className="font-semibold text-primary hover:underline"
+                    >
+                        Sign in
+                    </button>
+                </div>
+            </form>
+        </AuthCard>
     );
 }

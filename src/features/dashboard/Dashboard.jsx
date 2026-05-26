@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ProjectFlipCard } from "@/components/ui/ProjectFlipCard";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
@@ -199,55 +200,14 @@ function IssueItem({ issue, getUserName, jiraLike, onOpenPanel }) {
     );
 }
 
-function ProjectCard({ project, accent, onPreview, isMobile }) {
+function ProjectCard({ project, issues, onPreview, onIssuePreview }) {
     return (
-        <div className="rounded-lg border border-border/70 bg-background p-3">
-            <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                    {isMobile ? (
-                        <button className="font-mono text-sm font-semibold truncate hover:underline text-left" onClick={() => onPreview(project.id)}>
-                            {project.name}
-                        </button>
-                    ) : (
-                        <Link to={`/projects/${project.id}`} title="Open full page" className="font-mono text-sm font-semibold truncate hover:underline">
-                            {project.name}
-                        </Link>
-                    )}
-                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{project.description}</p>
-                </div>
-                <Badge variant="secondary" className="text-[10px]">{project.totalIssues}</Badge>
-            </div>
-
-            <div className="mt-3 space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-semibold tabular-nums">{project.progress}%</span>
-                </div>
-                <Progress value={project.progress} className="h-1.5" />
-            </div>
-
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px]">
-                <div className="rounded-md border border-border/60 py-1.5">
-                    <p className="text-emerald-600 dark:text-emerald-400 font-semibold">{project.doneIssues}</p>
-                    <p className="text-muted-foreground">Done</p>
-                </div>
-                <div className="rounded-md border border-border/60 py-1.5">
-                    <p className="text-blue-600 dark:text-blue-400 font-semibold">{project.inProgressIssues}</p>
-                    <p className="text-muted-foreground">Active</p>
-                </div>
-                <div className="rounded-md border border-border/60 py-1.5">
-                    <p className="font-semibold">{project.todoIssues}</p>
-                    <p className="text-muted-foreground">Todo</p>
-                </div>
-            </div>
-
-            <div className="mt-3 flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: accent }} />
-                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => onPreview(project.id)}>
-                    Quick preview
-                </Button>
-            </div>
-        </div>
+        <ProjectFlipCard
+            project={project}
+            issues={issues}
+            onPreview={onPreview}
+            onIssuePreview={onIssuePreview}
+        />
     );
 }
 
@@ -740,45 +700,16 @@ export default function Dashboard() {
             ) : recentProjects.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No projects yet.</p>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    {recentProjects.map((project, index) => {
-                        const scopedIssues = (issuesByProject.get(project.id) || []).slice(0, 3);
-                        return (
-                            <div key={project.id} className="rounded-lg border border-border/70 p-3 space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Link to={`/projects/${project.id}`} title="Open full page" className="font-mono text-sm font-semibold hover:underline truncate">
-                                        {project.name}
-                                    </Link>
-                                    <Badge variant="secondary" className="text-[10px]">{project.totalIssues}</Badge>
-                                </div>
-                                <div className="flex items-center justify-between text-xs">
-                                    <span className="text-muted-foreground">Progress</span>
-                                    <span className="font-semibold tabular-nums">{project.progress}%</span>
-                                </div>
-                                <Progress value={project.progress} className="h-1.5" />
-                                <div className="space-y-1 pt-1">
-                                    {scopedIssues.length === 0 ? (
-                                        <p className="text-xs text-muted-foreground">No issues in this project.</p>
-                                    ) : scopedIssues.map((issue) => (
-                                        <button
-                                            key={issue.id}
-                                            className="w-full rounded-md border border-border/60 px-2 py-1 text-left text-xs hover:bg-muted/50"
-                                            onClick={() => setSelectedIssueId(issue.id)}
-                                        >
-                                            <span className="font-mono text-[10px] text-muted-foreground mr-1.5">{issue.key}</span>
-                                            <span className="truncate">{issue.title}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="flex items-center gap-1.5 pt-1">
-                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: PROJECT_ACCENTS[index % PROJECT_ACCENTS.length] }} />
-                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setSelectedProjectId(project.id)}>
-                                        Quick preview
-                                    </Button>
-                                </div>
-                            </div>
-                        );
-                    })}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {recentProjects.map((project) => (
+                        <ProjectCard
+                            key={project.id}
+                            project={project}
+                            issues={issuesByProject.get(project.id) || []}
+                            onPreview={setSelectedProjectId}
+                            onIssuePreview={setSelectedIssueId}
+                        />
+                    ))}
                 </div>
             )}
         </WidgetShell>
@@ -794,13 +725,13 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground">No owned projects yet.</p>
             ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                    {yourProjects.map((project, index) => (
+                    {yourProjects.map((project) => (
                         <ProjectCard
                             key={project.id}
                             project={project}
-                            accent={PROJECT_ACCENTS[index % PROJECT_ACCENTS.length]}
+                            issues={issuesByProject.get(project.id) || []}
                             onPreview={setSelectedProjectId}
-                            isMobile={isMobile}
+                            onIssuePreview={setSelectedIssueId}
                         />
                     ))}
                 </div>
@@ -960,8 +891,14 @@ export default function Dashboard() {
                                 </PopoverContent>
                             </Popover>
                         )}
-                        <AddButton label="Project" onClick={() => setCreateProjectOpen(true)} />
-                        <AddButton label="Issue" onClick={() => setCreateIssueOpen(true)} />
+                        <div className="relative">
+                            <AddButton label="Project" onClick={() => setCreateProjectOpen(true)} />
+                            <span className="sr-only">+P</span>
+                        </div>
+                        <div className="relative">
+                            <AddButton label="Issue" onClick={() => setCreateIssueOpen(true)} />
+                            <span className="sr-only">+I</span>
+                        </div>
                     </div>
                 </div>
             </div>

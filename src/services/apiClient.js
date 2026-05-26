@@ -5,7 +5,7 @@ import { tokenDebugger } from '@/utils/tokenDebugger';
 
 
 
-const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || 'http://komuna.site:6901');
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://komuna.site:6901';
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
@@ -133,8 +133,7 @@ apiClient.interceptors.response.use(
 
             try {
                 // Use raw axios to avoid the request interceptor (which would add the expired access token)
-                // Use relative URL in dev (proxy) or full URL in production
-                const refreshBaseURL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || '');
+                const refreshBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://komuna.site:6901';
                 const response = await axios.post(
                     `${refreshBaseURL}/api/v1/auth/regenerate-tokens`,
                     {

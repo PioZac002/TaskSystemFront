@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { StatefulButton } from "@/components/ui/StatefulButton";
 import { Textarea } from "@/components/ui/Textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 import { Separator } from "@/components/ui/Separator";
@@ -329,10 +330,10 @@ export function CommentSection({ issueId }) {
     const handleAddComment = async () => {
         if (!newComment.trim()) {
             toast.error("Comment cannot be empty");
-            return;
+            return false;
         }
         
-        if (isSubmitting) return;
+        if (isSubmitting) return false;
 
         // Spróbuj pobrać userId z różnych źródeł
         let authorId = currentUserId;
@@ -358,7 +359,7 @@ export function CommentSection({ issueId }) {
 
         if (!authorId) {
             toast.error("Unable to identify user. Please try logging in again.");
-            return;
+            return false;
         }
 
         setIsSubmitting(true);
@@ -386,9 +387,11 @@ export function CommentSection({ issueId }) {
 
             toast.success("Comment added successfully!");
             setNewComment("");
+            return true;
         } catch (error) {
             const errorMessage = error.response?.data?.Message || error.message || "Failed to add comment";
             toast.error(errorMessage);
+            return false;
         } finally {
             setIsSubmitting(false);
             setIsUploading(false);
@@ -556,12 +559,14 @@ export function CommentSection({ issueId }) {
                                     Attach Image
                                 </Button>
                             </div>
-                            <Button
+                            <StatefulButton
                                 onClick={handleAddComment}
                                 disabled={loading || isSubmitting || isUploading || !newComment.trim()}
+                                loadingText={isUploading ? "Uploading..." : "Adding..."}
+                                successText="Added"
                             >
-                                {isUploading ? "Uploading..." : isSubmitting ? "Adding..." : "Add Comment"}
-                            </Button>
+                                Add Comment
+                            </StatefulButton>
                         </div>
                     </div>
                 </CardContent>

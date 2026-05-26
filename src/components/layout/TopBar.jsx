@@ -10,7 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { GooeyInput } from "@/components/ui/GooeyInput";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -111,7 +111,7 @@ export const TopBar = () => {
 
     return (
         <>
-            <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6 shadow-sm">
+            <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/90 px-4 shadow-sm backdrop-blur-xl md:px-6">
                 <Button
                     variant="ghost"
                     size="icon"
@@ -124,7 +124,7 @@ export const TopBar = () => {
                 </Button>
 
                 {/* Search */}
-                <div className="flex flex-1 items-center gap-4 max-w-md relative">
+                <div className="relative flex max-w-xl flex-1 items-center gap-4">
                     {/* Mobile - Icon that opens overlay */}
                     <div className="md:hidden">
                         <Button
@@ -137,22 +137,18 @@ export const TopBar = () => {
                         </Button>
                     </div>
 
-                    {/* Desktop - Clean search bar */}
-                    <div className="srch-outer hidden md:flex relative w-full">
-                        <div className="srch-main">
-                            <Search className="srch-search-icon absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 z-10" />
-                            <Input
-                                type="search"
-                                placeholder="Search projects, issues..."
-                                className="srch-input"
-                                value={searchTerm}
-                                onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    setSearchOpen(true);
-                                }}
-                                onFocus={() => setSearchOpen(true)}
-                            />
-                        </div>
+                    {/* Desktop - Full search */}
+                    <div className="relative hidden w-full md:block">
+                        <GooeyInput
+                            type="search"
+                            placeholder="Search projects, issues..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setSearchOpen(true);
+                            }}
+                            onFocus={() => setSearchOpen(true)}
+                        />
                         <SearchResults
                             onIssueSelect={handleIssueSelect}
                             onProjectSelect={handleProjectSelect}
@@ -166,7 +162,7 @@ export const TopBar = () => {
                     <ThemeToggle />
 
                     {/* Notifications */}
-                    <Button variant="ghost" size="icon" className="relative">
+                    <Button variant="ghost" size="icon" className="relative rounded-full">
                         <Bell className="h-5 w-5" />
                         <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive"></span>
                     </Button>
@@ -221,7 +217,7 @@ export const TopBar = () => {
             {/* Mobile Navigation Menu - Dropdown from top */}
             <nav
                 className={cn(
-                    "md:hidden fixed top-16 left-0 right-0 z-40 bg-card border-b border-border shadow-lg transition-all duration-300 ease-in-out",
+                    "fixed left-0 right-0 top-16 z-40 border-b border-border bg-background/95 shadow-lg backdrop-blur-xl transition-all duration-300 ease-in-out md:hidden",
                     mobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full pointer-events-none"
                 )}
                 aria-hidden={!mobileMenuOpen}
@@ -249,14 +245,13 @@ export const TopBar = () => {
 
             {/* Mobile Search Overlay */}
             {isSearchOpen && (
-                <div className="md:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-                    <div className="fixed top-16 left-0 right-0 p-4 bg-background border-b shadow-lg">
+                <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm md:hidden">
+                    <div className="fixed left-0 right-0 top-16 border-b bg-background p-4 shadow-lg">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
+                            <GooeyInput
                                 type="search"
                                 placeholder="Search projects, issues..."
-                                className="pl-10 bg-background"
+                                className="pr-12"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 autoFocus
