@@ -1,28 +1,15 @@
 /**
  * Token Debugger — enabled via VITE_TOKEN_DEBUG=true environment variable.
- * All logs are prefixed with 🔐 [TOKEN-DEBUG] for easy filtering in DevTools.
- * When VITE_TOKEN_DEBUG is not set or false, all functions are no-ops.
+ * Debug output is intentionally disabled in the client bundle.
  */
 
 const isEnabled = import.meta.env.VITE_TOKEN_DEBUG === 'true';
 
-function log(...args) {
-    if (isEnabled) {
-        console.log('🔐 [TOKEN-DEBUG]', ...args);
-    }
-}
+function log() {}
 
-function warn(...args) {
-    if (isEnabled) {
-        console.warn('🔐 [TOKEN-DEBUG]', ...args);
-    }
-}
+function warn() {}
 
-function error(...args) {
-    if (isEnabled) {
-        console.error('🔐 [TOKEN-DEBUG]', ...args);
-    }
-}
+function error() {}
 
 /**
  * Parse a JWT and log its claims and expiration info.
@@ -135,10 +122,10 @@ function checkStorageConsistency(storageServiceIsLocal) {
     });
 
     if (localHas && !storageServiceIsLocal) {
-        warn('⚠️ [TOKEN-DEBUG] Storage mismatch detected! Tokens found in localStorage but storageService is using sessionStorage.');
+        warn('Storage mismatch detected. Tokens found in localStorage but storageService is using sessionStorage.');
     }
     if (sessionHas && storageServiceIsLocal) {
-        warn('⚠️ [TOKEN-DEBUG] Storage mismatch detected! Tokens found in sessionStorage but storageService is using localStorage.');
+        warn('Storage mismatch detected. Tokens found in sessionStorage but storageService is using localStorage.');
     }
 }
 

@@ -19,30 +19,24 @@ export function useAuth() {
 
     const login = async (email, password, rememberMe = false) => {
         try {
-            console.log('🔐 [useAuth] Logging in...  Remember:', rememberMe);
-
             const result = await authService. login(email, password);
 
             // Przekaż rememberMe do setAuth
             await setAuth(result.user, result.accessToken, result.refreshToken, rememberMe);
 
-            console.log('✅ [useAuth] Login successful');
-
             return result;
         } catch (error) {
-            console.error('❌ [useAuth] Login failed:', error);
+            console.error('[useAuth] Login failed:', error);
             throw error;
         }
     };
 
     const logout = async () => {
-        console.log('👋 [useAuth] Logging out...');
         logoutStore();
         navigate('/login');
     };
 
     const refreshUser = async () => {
-        console.log('🔄 [useAuth] Refreshing user data...');
         await loadUserData();
     };
 

@@ -2,13 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { gsap } from "gsap";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Checkbox } from "@/components/ui/Checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { toast } from "sonner";
-import { Layers, Mail, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
+import { AuthCard, AuthSubmitButton, LabelInputContainer } from "./AuthFormShell";
 
 export default function LoginForm() {
     const [email, setEmail] = useState("");
@@ -21,7 +20,6 @@ export default function LoginForm() {
     const location = useLocation();
     const cardRef = useRef(null);
 
-    // Animate card in on mount — direction depends on where we came from
     useEffect(() => {
         const fromRegister = location.state?.from === "register";
         gsap.fromTo(
@@ -62,105 +60,75 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
-            {/* Background decorations */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-                <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-            </div>
-
-            <Card ref={cardRef} className="w-full max-w-md relative z-10 shadow-2xl border-slate-200 dark:border-slate-800">
-                <CardHeader className="space-y-4 text-center pb-8">
-                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
-                        <Layers className="w-8 h-8 text-primary-foreground" />
-                    </div>
-                    <div>
-                        <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
-                        <CardDescription className="text-base mt-2">
-                            Sign in to your account to continue
-                        </CardDescription>
-                    </div>
-                </CardHeader>
-
-                <CardContent>
-                    <form onSubmit={handleLogin} className="space-y-5">
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="text-sm font-medium">
-                                Email Address
-                            </Label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="you@example.com"
-                                    className="pl-10 h-11"
-                                    disabled={loading}
-                                    required
-                                    autoComplete="email"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="password" className="text-sm font-medium">
-                                Password
-                            </Label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="pl-10 h-11"
-                                    disabled={loading}
-                                    required
-                                    autoComplete="current-password"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="remember"
-                                checked={rememberMe}
-                                onCheckedChange={setRememberMe}
-                                disabled={loading}
-                            />
-                            <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
-                                Remember me
-                            </Label>
-                        </div>
-
-                        <Button
-                            type="submit"
-                            className="w-full h-11 text-base font-semibold"
+        <AuthCard
+            ref={cardRef}
+            title="Welcome Back"
+            description="Sign in to your account to continue managing projects, issues and boards."
+        >
+            <form onSubmit={handleLogin} className="space-y-5">
+                <LabelInputContainer>
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="you@example.com"
+                            className="h-11 pl-10 shadow-input"
                             disabled={loading}
-                        >
-                            {loading ? (
-                                <><span className="animate-spin mr-2">⏳</span>Signing in...</>
-                            ) : (
-                                "Sign In"
-                            )}
-                        </Button>
-                    </form>
-
-                    <div className="mt-6 text-center text-sm">
-                        <span className="text-muted-foreground">Don't have an account? </span>
-                        <button
-                            type="button"
-                            onClick={handleGoToRegister}
-                            className="text-primary font-semibold hover:underline"
-                        >
-                            Sign up
-                        </button>
+                            required
+                            autoComplete="email"
+                        />
                     </div>
-                </CardContent>
-            </Card>
-        </div>
+                </LabelInputContainer>
+
+                <LabelInputContainer>
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Password"
+                            className="h-11 pl-10 shadow-input"
+                            disabled={loading}
+                            required
+                            autoComplete="current-password"
+                        />
+                    </div>
+                </LabelInputContainer>
+
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id="remember"
+                        checked={rememberMe}
+                        onCheckedChange={setRememberMe}
+                        disabled={loading}
+                    />
+                    <Label htmlFor="remember" className="cursor-pointer text-sm font-normal">
+                        Remember me
+                    </Label>
+                </div>
+
+                <AuthSubmitButton disabled={loading}>
+                    {loading ? "Signing in..." : "Sign In"}
+                </AuthSubmitButton>
+            </form>
+
+            <div className="mt-6 text-center text-sm">
+                <span className="text-muted-foreground">Don&apos;t have an account? </span>
+                <button
+                    type="button"
+                    onClick={handleGoToRegister}
+                    className="font-semibold text-primary hover:underline"
+                >
+                    Sign up
+                </button>
+            </div>
+        </AuthCard>
     );
 }

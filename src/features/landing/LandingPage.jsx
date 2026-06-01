@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Card, CardContent } from "@/components/ui/Card";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 import {
     Zap,
     Shield,
@@ -220,16 +221,16 @@ export default function LandingPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-white dark:bg-slate-950">
+        <div className="min-h-screen bg-white text-slate-950 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-50">
 
             {/* Navigation */}
             <nav
-                className="fixed top-0 w-full z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 animate-nav-in"
+                className="fixed top-0 w-full z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 animate-nav-in transition-colors duration-300"
             >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-center items-center h-16 gap-12">
+                    <div className="flex items-center justify-between h-16 gap-4">
                         {/* Logo */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
                             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 dark:bg-white">
                                 <Layers className="h-5 w-5 text-white dark:text-slate-900" />
                             </div>
@@ -256,6 +257,10 @@ export default function LandingPage() {
                             >
                                 Technology
                             </button>
+                        </div>
+
+                        <div className="flex shrink-0 items-center">
+                            <ThemeToggle />
                         </div>
                     </div>
                 </div>

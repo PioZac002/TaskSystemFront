@@ -41,7 +41,7 @@ export default function Profile() {
     const [firstName, setFirstName] = useState(user?.firstName || "");
     const [lastName, setLastName] = useState(user?.lastName || "");
     const [email, setEmail] = useState(user?.email || "");
-    const [userSlackId, setSlackUserId] = useState(user?.userSlackId || "");
+    const [userSlackId, setSlackUserId] = useState(user?.userSlackId ?? user?.slackUserId ?? "");
 
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -58,7 +58,7 @@ export default function Profile() {
             setFirstName(user.firstName || "");
             setLastName(user.lastName || "");
             setEmail(user.email || "");
-            setSlackUserId(user.userSlackId || "");
+            setSlackUserId(user.userSlackId ?? user.slackUserId ?? "");
         }
     }, [user]);
 
@@ -80,12 +80,15 @@ export default function Profile() {
         e.preventDefault();
         if (!user?.id) { toast.error("User not found. Please log in again."); return; }
         try {
+            const normalizedSlackId = userSlackId.trim() || null;
             const updated = await updateUser(user.id, {
                 firstName, lastName, email,
-                userSlackId: userSlackId.trim() || null,
+                userSlackId: normalizedSlackId,
+                slackUserId: normalizedSlackId,
                 disabled: user.disabled ?? false,
             });
             updateCachedUser(updated);
+            setSlackUserId(updated.userSlackId ?? updated.slackUserId ?? "");
             toast.success("Profile updated successfully!");
         } catch (error) {
             toast.error(error.response?.data?.Message || error.message || "Failed to update profile");
@@ -155,7 +158,7 @@ export default function Profile() {
                                     <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" />
                                     Active Member
                                 </span>
-                                {user?.userSlackId && (
+                                {(user?.userSlackId ?? user?.slackUserId) && (
                                     <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-white/20 text-white">
                                         <Hash className="h-3 w-3" />
                                         Slack connected
@@ -174,7 +177,7 @@ export default function Profile() {
                     {[
                         { label: "First Name", value: user?.firstName || "—", icon: User,  color: "#7c3aed" },
                         { label: "Last Name",  value: user?.lastName  || "—", icon: User,  color: "#4f46e5" },
-                        { label: "Slack ID",   value: user?.userSlackId || "Not set", icon: Hash, color: "#10b981" },
+                        { label: "Slack ID",   value: (user?.userSlackId ?? user?.slackUserId) || "Not set", icon: Hash, color: "#10b981" },
                     ].map(({ label, value, icon: Icon, color }) => (
                         <div
                             key={label}

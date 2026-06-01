@@ -19,16 +19,19 @@ import { Save, X, Calendar, User as UserIcon, Users, Tag, FolderKanban } from "l
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { EditButton } from "@/components/ui/EditButton";
 import { LabelsSelect } from "@/components/ui/LabelsSelect";
+import { IssueLabelChips } from "@/components/ui/IssueLabelChips";
 import { useMasterdataStore } from "@/store/masterdataStore";
+import { labelIdsToMasterdataValues } from "@/utils/labelUtils";
 import { STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
-export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted, onIssueUpdated }) {
+export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted, onIssueUpdated, contentClassName = "" }) {
     const { isMobile } = useResponsiveNavigation();
     const [issue, setIssue] = useState(null);
     const [users, setUsers] = useState([]);
     const [teams, setTeams] = useState([]);
     const [edit, setEdit] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [inlineSaving, setInlineSaving] = useState(false);
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -93,11 +96,57 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
         setForm((prev) => ({ ...prev, [key]: value }));
     };
 
+    const buildUpdatePayload = (overrides = {}) => ({
+        IssueId: Number(issue.id),
+        Title: issue.title || null,
+        Description: issue.description?.trim() || null,
+        Status: issue.status || null,
+        Priority: issue.priority || null,
+        TeamId: issue.team?.id || null,
+        ProjectId: issue.projectId || null,
+        DueDate: issue.dueDate ? issue.dueDate.slice(0, 10) : null,
+        AssigneeId: issue.assigneeId || null,
+        ...overrides,
+    });
+
+    const handleInlineStatusChange = async (newStatus) => {
+        if (newStatus === issue.status) return;
+        setInlineSaving(true);
+        try {
+            await apiClient.put("/api/v1/issue/update", buildUpdatePayload({ Status: newStatus }));
+            setIssue(prev => ({ ...prev, status: newStatus }));
+            setForm(prev => ({ ...prev, status: newStatus }));
+            toast.success("Status updated");
+            if (onIssueUpdated) onIssueUpdated();
+        } catch {
+            toast.error("Failed to update status");
+        } finally {
+            setInlineSaving(false);
+        }
+    };
+
+    const handleInlinePriorityChange = async (newPriority) => {
+        if (newPriority === issue.priority) return;
+        setInlineSaving(true);
+        try {
+            await apiClient.put("/api/v1/issue/update", buildUpdatePayload({ Priority: newPriority }));
+            setIssue(prev => ({ ...prev, priority: newPriority }));
+            setForm(prev => ({ ...prev, priority: newPriority }));
+            toast.success("Priority updated");
+            if (onIssueUpdated) onIssueUpdated();
+        } catch {
+            toast.error("Failed to update priority");
+        } finally {
+            setInlineSaving(false);
+        }
+    };
+
     const handleSave = async () => {
         try {
             if (!issue) return;
 
             setLoading(true);
+            const masterDataValues = labelIdsToMasterdataValues(availableLabels, form.labelIds);
 
             await apiClient.put("/api/v1/issue/update", {
                 IssueId: Number(issue.id),
@@ -109,24 +158,29 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                 ProjectId: form.projectId ? Number(form.projectId) : (issue.projectId || null),
                 DueDate: form.dueDate || null,
                 AssigneeId: form.assigneeId && form.assigneeId !== "unassigned" ? Number(form.assigneeId) : null,
-                Labels: form.labelIds.map(Number).filter(Boolean),
+                masterDataValues,
             });
 
             toast.success("Issue updated successfully!");
 
-            // Optimistically update issue state so UI reflects new values immediately
+            const selectedTeam = form.teamId !== "none"
+                ? (teams.find(t => String(t.id) === form.teamId) || issue.team || null)
+                : null;
+
             setIssue(prev => ({
                 ...prev,
-                title: form.title,
+                title:      form.title,
                 description: form.description,
-                status: form.status,
-                priority: form.priority,
+                status:     form.status,
+                priority:   form.priority,
                 assigneeId: form.assigneeId && form.assigneeId !== "unassigned" ? Number(form.assigneeId) : null,
-                projectId: form.projectId ? Number(form.projectId) : prev.projectId,
-                dueDate: form.dueDate || null,
+                projectId:  form.projectId ? Number(form.projectId) : prev.projectId,
+                dueDate:    form.dueDate || null,
+                team:       selectedTeam,
+                labels:     masterDataValues,
+                updatedAt:  new Date().toISOString(),
             }));
             setEdit(false);
-            await loadData();
 
             if (onIssueUpdated) {
                 onIssueUpdated();
@@ -165,7 +219,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[95vw] w-full md:max-w-[1400px] h-[95vh] overflow-hidden p-0 flex flex-col">
+            <DialogContent className={`max-w-[95vw] w-full md:max-w-[1400px] h-[95vh] overflow-hidden p-0 flex flex-col ${contentClassName}`}>
                 {loading && !issue ? (
                     <div className="py-12 text-center text-muted-foreground">
                         Loading...
@@ -236,13 +290,8 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                             Status
                                                         </Label>
                                                         {edit ? (
-                                                            <Select
-                                                                value={form.status}
-                                                                onValueChange={(v) => handleChange("status", v)}
-                                                            >
-                                                                <SelectTrigger className="h-9">
-                                                                    <SelectValue />
-                                                                </SelectTrigger>
+                                                            <Select value={form.status} onValueChange={(v) => handleChange("status", v)}>
+                                                                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                                                                 <SelectContent>
                                                                     {ALL_STATUSES.map(s => (
                                                                         <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
@@ -250,9 +299,16 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                                 </SelectContent>
                                                             </Select>
                                                         ) : (
-                                                            <Badge variant="secondary" className={`text-xs ${getStatusBadgeClass(issue.status)}`}>
-                                                                {STATUS_LABELS[issue.status] || issue.status}
-                                                            </Badge>
+                                                            <Select value={issue.status} onValueChange={handleInlineStatusChange} disabled={inlineSaving}>
+                                                                <SelectTrigger className="h-9">
+                                                                    <span className="text-xs">{STATUS_LABELS[issue.status] || issue.status}</span>
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {ALL_STATUSES.map(s => (
+                                                                        <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
                                                         )}
                                                     </div>
 
@@ -262,13 +318,8 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                             Priority
                                                         </Label>
                                                         {edit ? (
-                                                            <Select
-                                                                value={form.priority}
-                                                                onValueChange={(v) => handleChange("priority", v)}
-                                                            >
-                                                                <SelectTrigger className="h-9">
-                                                                    <SelectValue />
-                                                                </SelectTrigger>
+                                                            <Select value={form.priority} onValueChange={(v) => handleChange("priority", v)}>
+                                                                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                                                                 <SelectContent>
                                                                     {ALL_PRIORITIES.map(p => (
                                                                         <SelectItem key={p} value={p}>{PRIORITY_LABELS[p]}</SelectItem>
@@ -276,9 +327,16 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                                 </SelectContent>
                                                             </Select>
                                                         ) : (
-                                                            <Badge variant={getPriorityBadgeVariant(issue.priority)} className="text-xs">
-                                                                {PRIORITY_LABELS[issue.priority] || issue.priority}
-                                                            </Badge>
+                                                            <Select value={issue.priority} onValueChange={handleInlinePriorityChange} disabled={inlineSaving}>
+                                                                <SelectTrigger className="h-9">
+                                                                    <span className="text-xs">{PRIORITY_LABELS[issue.priority] || issue.priority}</span>
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {ALL_PRIORITIES.map(p => (
+                                                                        <SelectItem key={p} value={p}>{PRIORITY_LABELS[p]}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
                                                         )}
                                                     </div>
                                                 </div>
@@ -401,6 +459,26 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                         </p>
                                                     )}
                                                 </div>
+
+                                                <Separator className="my-4" />
+
+                                                {/* Labels */}
+                                                <div>
+                                                    <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                                                        <Tag className="h-3 w-3" />
+                                                        Labels
+                                                    </Label>
+                                                    {edit ? (
+                                                        <LabelsSelect
+                                                            labels={availableLabels}
+                                                            selectedIds={form.labelIds}
+                                                            onChange={(ids) => handleChange("labelIds", ids)}
+                                                            placeholder="No labels"
+                                                        />
+                                                    ) : (
+                                                        <IssueLabelChips labels={issue.labels || []} emptyText="No labels" />
+                                                    )}
+                                                </div>
                                             </CardContent>
                                         </Card>
                                     </div>
@@ -444,13 +522,8 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                 Status
                                             </Label>
                                             {edit ? (
-                                                <Select
-                                                    value={form.status}
-                                                    onValueChange={(v) => handleChange("status", v)}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
+                                                <Select value={form.status} onValueChange={(v) => handleChange("status", v)}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         {ALL_STATUSES.map(s => (
                                                             <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
@@ -458,9 +531,16 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                     </SelectContent>
                                                 </Select>
                                             ) : (
-                                                <Badge variant="secondary" className={`text-sm ${getStatusBadgeClass(issue.status)}`}>
-                                                    {STATUS_LABELS[issue.status] || issue.status}
-                                                </Badge>
+                                                <Select value={issue.status} onValueChange={handleInlineStatusChange} disabled={inlineSaving}>
+                                                    <SelectTrigger>
+                                                        <span>{STATUS_LABELS[issue.status] || issue.status}</span>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {ALL_STATUSES.map(s => (
+                                                            <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             )}
                                         </div>
 
@@ -473,13 +553,8 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                 Priority
                                             </Label>
                                             {edit ? (
-                                                <Select
-                                                    value={form.priority}
-                                                    onValueChange={(v) => handleChange("priority", v)}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
+                                                <Select value={form.priority} onValueChange={(v) => handleChange("priority", v)}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         {ALL_PRIORITIES.map(p => (
                                                             <SelectItem key={p} value={p}>{PRIORITY_LABELS[p]}</SelectItem>
@@ -487,9 +562,16 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                     </SelectContent>
                                                 </Select>
                                             ) : (
-                                                <Badge variant={getPriorityBadgeVariant(issue.priority)}>
-                                                    {PRIORITY_LABELS[issue.priority] || issue.priority}
-                                                </Badge>
+                                                <Select value={issue.priority} onValueChange={handleInlinePriorityChange} disabled={inlineSaving}>
+                                                    <SelectTrigger>
+                                                        <span>{PRIORITY_LABELS[issue.priority] || issue.priority}</span>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {ALL_PRIORITIES.map(p => (
+                                                            <SelectItem key={p} value={p}>{PRIORITY_LABELS[p]}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             )}
                                         </div>
 
@@ -634,21 +716,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                     placeholder="No labels"
                                                 />
                                             ) : (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {(issue.labels || []).length === 0 ? (
-                                                        <p className="text-sm text-muted-foreground">No labels</p>
-                                                    ) : (
-                                                        (issue.labels || []).map(label => (
-                                                            <Badge
-                                                                key={label.id ?? label}
-                                                                style={label.color ? { backgroundColor: label.color, color: "#fff", borderColor: label.color } : {}}
-                                                                className="text-xs"
-                                                            >
-                                                                {label.name ?? label}
-                                                            </Badge>
-                                                        ))
-                                                    )}
-                                                </div>
+                                                <IssueLabelChips labels={issue.labels || []} emptyText="No labels" />
                                             )}
                                         </div>
 

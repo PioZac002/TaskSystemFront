@@ -11,7 +11,20 @@ import { Plus, Pencil, Trash2, X, Check, Tag } from "lucide-react";
 
 const LABEL_TYPE = "ISSUE_LABEL";
 
-const DEFAULT_FORM = { name: "", code: "", color: "#7c3aed" };
+const DEFAULT_FORM = { value: "", code: "", type: LABEL_TYPE };
+
+function normalizeType(type) {
+    return String(type || "").trim().replace(/[\s-]+/g, "_").toUpperCase();
+}
+
+function isLabelItem(item) {
+    const type = normalizeType(item.type ?? item.masterdataType ?? item.masterDataType ?? item.category ?? item.kind);
+    return type === LABEL_TYPE || type.includes("LABEL") || (!type && Boolean(item.color));
+}
+
+function getLabelName(label) {
+    return label.name ?? label.value ?? label.label ?? label.title ?? label.code ?? `Label #${label.id}`;
+}
 
 export default function LabelsManagement() {
     const { masterdata, loading, fetchAll, saveValue, deleteValue } = useMasterdataStore();
@@ -19,7 +32,10 @@ export default function LabelsManagement() {
     const [editingId, setEditingId] = useState(null);
     const [showForm, setShowForm] = useState(false);
 
-    const labels = masterdata.filter(m => m.type === LABEL_TYPE);
+    const labels = masterdata
+        .filter(isLabelItem)
+        .filter(label => label.isActive !== false && label.delete !== true && label.deleted !== true);
+    const editingLabel = labels.find(label => String(label.id) === String(editingId));
 
     useEffect(() => {
         fetchAll();
@@ -27,17 +43,18 @@ export default function LabelsManagement() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!form.name.trim() || !form.code.trim()) {
+        if (!form.value.trim() || !form.code.trim()) {
             toast.error("Name and Code are required");
             return;
         }
         try {
             const payload = {
-                ...form,
-                name: form.name.trim(),
-                code: form.code.trim().toUpperCase(),
-                type: LABEL_TYPE,
-                ...(editingId ? { id: editingId } : {}),
+                order: editingLabel?.order ?? 0,
+                value: form.value.trim(),
+                code: (editingLabel?.code || form.code).trim().toUpperCase(),
+                type: form.type || LABEL_TYPE,
+                isActive: true,
+                delete: false,
             };
             await saveValue(payload);
             toast.success(editingId ? "Label updated!" : "Label created!");
@@ -50,15 +67,15 @@ export default function LabelsManagement() {
     };
 
     const handleEdit = (label) => {
-        setForm({ name: label.name, code: label.code, color: label.color || "#7c3aed" });
+        setForm({ value: getLabelName(label), code: label.code || "", type: label.type || LABEL_TYPE });
         setEditingId(label.id);
         setShowForm(true);
     };
 
     const handleDelete = async (label) => {
-        if (!window.confirm(`Delete label "${label.name}"?`)) return;
+        if (!window.confirm(`Delete label "${getLabelName(label)}"?`)) return;
         try {
-            await deleteValue(label.id);
+            await deleteValue(label);
             toast.success("Label deleted");
         } catch (e) {
             toast.error(e.response?.data?.Message || e.message || "Failed to delete label");
@@ -106,12 +123,12 @@ export default function LabelsManagement() {
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div className="space-y-1.5">
                                         <Label className="text-sm">
-                                            Name <span className="text-destructive">*</span>
+                                            Value <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
                                             placeholder="e.g. Bug"
-                                            value={form.name}
-                                            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                                            value={form.value}
+                                            onChange={e => setForm(f => ({ ...f, value: e.target.value }))}
                                             autoFocus
                                         />
                                     </div>
@@ -123,36 +140,23 @@ export default function LabelsManagement() {
                                             placeholder="e.g. BUG"
                                             value={form.code}
                                             onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
+                                            disabled={Boolean(editingLabel)}
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-sm">Color</Label>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="color"
-                                                value={form.color}
-                                                onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-                                                className="h-9 w-12 cursor-pointer rounded border border-input bg-transparent p-1"
-                                            />
-                                            <Input
-                                                value={form.color}
-                                                onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-                                                className="font-mono text-sm"
-                                                placeholder="#7c3aed"
-                                            />
-                                        </div>
+                                        <Label className="text-sm">Type</Label>
+                                        <Input value={form.type} disabled className="font-mono text-sm" />
                                     </div>
                                 </div>
 
                                 {/* Preview */}
-                                {form.name && (
+                                {form.value && (
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-muted-foreground">Preview:</span>
                                         <Badge
-                                            style={{ backgroundColor: form.color, color: "#fff", borderColor: form.color }}
                                             className="text-xs"
                                         >
-                                            {form.name}
+                                            {form.value}
                                         </Badge>
                                     </div>
                                 )}
@@ -184,18 +188,26 @@ export default function LabelsManagement() {
                         ) : (
                             <div className="divide-y divide-border">
                                 {labels.map(label => (
-                                    <div key={label.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: label.color || "#7c3aed" }} />
-                                            <Badge
-                                                style={label.color ? { backgroundColor: label.color, color: "#fff", borderColor: label.color } : {}}
-                                                className="text-xs"
-                                            >
-                                                {label.name}
-                                            </Badge>
-                                            <span className="text-xs font-mono text-muted-foreground">{label.code}</span>
+                                    <div key={label.id ?? `${label.type}-${label.code}-${label.value}`} className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-3">
+                                                <div>
+                                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Value</p>
+                                                    <Badge
+                                                        className="mt-1 max-w-full truncate text-xs"
+                                                    >
+                                                        {label.value ?? getLabelName(label)}
+                                                    </Badge>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Code</p>
+                                                    <p className="mt-1 truncate font-mono text-sm text-foreground">{label.code}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Type</p>
+                                                    <p className="mt-1 truncate font-mono text-sm text-foreground">{label.type}</p>
+                                                </div>
                                         </div>
-                                        <div className="flex gap-1">
+                                        <div className="flex shrink-0 gap-1 self-end sm:self-center">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"

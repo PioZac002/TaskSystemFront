@@ -1,6 +1,6 @@
 import apiClient from './apiClient';
 
-const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || 'http://komuna.site:6901');
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://komuna.site:6901';
 
 export const fileService = {
     async uploadFile(file, commentId) {
