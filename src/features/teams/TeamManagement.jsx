@@ -285,14 +285,14 @@ export default function TeamManagement() {
     // ── Render ──────────────────────────────────────────────────────────────────
     return (
         <AppLayout>
-            <div className="-m-6 md:-m-8 flex flex-col" style={{ height: "calc(100vh - 64px)" }}>
+            <div className="-m-4 flex min-w-0 flex-col overflow-hidden md:-m-8" style={{ height: "calc(100vh - 64px)" }}>
 
                 {/* ── Stats Bar ── */}
                 <div
                     ref={statsBarRef}
-                    className="shrink-0 flex items-center justify-between gap-4 px-5 md:px-8 py-4 border-b border-border bg-card"
+                    className="shrink-0 flex min-w-0 items-center justify-between gap-4 px-4 md:px-8 py-4 border-b border-border bg-card"
                 >
-                    <div className="flex items-center gap-6">
+                    <div className="flex min-w-0 items-center gap-4 md:gap-6">
                         <div>
                             <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Teams</p>
                             <p className="text-2xl font-bold leading-none mt-0.5">{teams.length}</p>
@@ -314,7 +314,7 @@ export default function TeamManagement() {
                 </div>
 
                 {/* ── Split area ── */}
-                <div className="flex flex-1 overflow-hidden">
+                <div className="flex min-w-0 flex-1 overflow-hidden">
 
                     {/* ── LEFT: list ── */}
                     <div
@@ -373,7 +373,7 @@ export default function TeamManagement() {
                     <div
                         ref={rightPanelRef}
                         className={cn(
-                            "flex-1 flex flex-col overflow-hidden",
+                            "min-w-0 flex-1 flex flex-col overflow-hidden",
                             mobileView === "list" ? "hidden md:flex" : "flex"
                         )}
                     >
@@ -429,7 +429,7 @@ export default function TeamManagement() {
 
                                     {/* Scrollable body */}
                                     <div ref={detailBodyRef} className="flex-1 overflow-y-auto">
-                                        <div className="px-5 md:px-8 py-6 space-y-6 max-w-2xl">
+                                        <div className="max-w-2xl space-y-6 px-4 py-6 md:px-8">
 
                                             {/* Members */}
                                             <div>
@@ -494,7 +494,7 @@ export default function TeamManagement() {
                                                         All users are already in this team.
                                                     </p>
                                                 ) : (
-                                                    <div className="flex gap-2">
+                                                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
                                                         <Select value={addMemberId} onValueChange={setAddMemberId}>
                                                             <SelectTrigger className="flex-1 bg-background">
                                                                 <SelectValue placeholder="Select a person…" />

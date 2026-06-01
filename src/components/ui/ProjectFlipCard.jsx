@@ -4,6 +4,7 @@ import { ArrowUpRight, Eye, FolderKanban, ListChecks } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Progress } from "@/components/ui/Progress";
+import { IssueLabelChips } from "@/components/ui/IssueLabelChips";
 import { STATUS_LABELS, getStatusBadgeClass } from "@/utils/issueConstants";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +58,13 @@ export function ProjectFlipCard({ project, issues = [], className, onPreview, on
 
                         <div className="mt-5 min-w-0">
                             <h3 className="truncate font-mono text-xl font-semibold text-primary">
-                                {projectName}
+                                <Link
+                                    to={`/projects/${project.id}`}
+                                    title="Open full page"
+                                    className="block truncate hover:underline"
+                                >
+                                    {projectName}
+                                </Link>
                             </h3>
                             <p className="mt-2 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-muted-foreground">
                                 {projectDescription}
@@ -74,23 +81,23 @@ export function ProjectFlipCard({ project, issues = [], className, onPreview, on
                     </div>
                 </div>
 
-                <div className="project-flip-card__face project-flip-card__back border border-border bg-foreground text-background shadow-lg">
+                <div className="project-flip-card__face project-flip-card__back border border-border bg-card text-card-foreground shadow-sm">
                     <div className="flex h-full flex-col p-5">
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                                <ListChecks className="h-5 w-5 text-emerald-300" />
-                                <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-background/70">
+                                <ListChecks className="h-5 w-5 text-primary" />
+                                <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                                     Issues
                                 </h3>
                             </div>
-                            <span className="text-xs text-background/60">
+                            <span className="text-xs text-muted-foreground">
                                 {issueCount} total
                             </span>
                         </div>
 
                         <div className="mt-5 flex-1 space-y-2 overflow-hidden">
                             {visibleIssues.length === 0 ? (
-                                <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-background/70">
+                                <div className="rounded-lg border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
                                     No issues in this project yet.
                                 </div>
                             ) : (
@@ -98,32 +105,38 @@ export function ProjectFlipCard({ project, issues = [], className, onPreview, on
                                     <button
                                         key={issue.id}
                                         type="button"
-                                        className="w-full rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-left transition-colors hover:bg-white/[0.12]"
+                                        className="w-full rounded-lg border border-border bg-background/80 px-3 py-2 text-left transition-colors hover:bg-muted"
                                         onClick={() => onIssuePreview?.(issue.id)}
                                     >
                                         <div className="flex items-center gap-2">
-                                            <span className="shrink-0 font-mono text-xs text-background/55">
+                                            <span className="shrink-0 font-mono text-xs text-muted-foreground">
                                                 {issue.key || `#${issue.id}`}
                                             </span>
-                                            <span className="truncate text-sm font-medium text-background">
+                                            <span className="truncate text-sm font-medium text-foreground">
                                                 {issue.title || "Untitled issue"}
                                             </span>
                                         </div>
                                         <Badge
                                             variant="secondary"
                                             className={cn(
-                                                "mt-2 border-white/10 bg-white/10 text-[11px] text-background hover:bg-white/10",
+                                                "mt-2 text-[11px]",
                                                 getStatusBadgeClass(issue.status)
                                             )}
                                         >
                                             {STATUS_LABELS[issue.status] || issue.status || "New"}
                                         </Badge>
+                                        <IssueLabelChips
+                                            labels={issue.labels || []}
+                                            max={2}
+                                            className="mt-2"
+                                            badgeClassName="text-[11px]"
+                                        />
                                     </button>
                                 ))
                             )}
                         </div>
 
-                        <Button asChild size="sm" className="mt-5 w-full bg-background text-foreground hover:bg-background/90">
+                        <Button asChild size="sm" className="mt-5 w-full bg-foreground text-background hover:bg-foreground/90 dark:bg-white dark:text-slate-950 dark:hover:bg-white/90">
                             <Link to={`/projects/${project.id}`}>
                                 Go to project
                                 <ArrowUpRight className="h-4 w-4" />

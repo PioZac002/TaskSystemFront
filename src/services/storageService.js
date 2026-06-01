@@ -8,12 +8,10 @@ class StorageService {
     constructor() {
         // Sprawdź czy mamy persistent session przy starcie
         this.useLocalStorage = this.isPersistentSession();
-        console.log(`🔐 [Storage] Initialized - using ${this.useLocalStorage ? 'localStorage' : 'sessionStorage'}`);
     }
 
     setStorageType(rememberMe) {
         this.useLocalStorage = rememberMe;
-        console.log(`🔐 [Storage] Switched to ${rememberMe ? 'localStorage (persistent)' : 'sessionStorage (session only)'}`);
     }
 
     getStorage() {
@@ -24,12 +22,9 @@ class StorageService {
         const storage = this.getStorage();
         storage.setItem(key, value);
 
-        console.log(`💾 [Storage] Saved ${key} to ${this.useLocalStorage ? 'localStorage' : 'sessionStorage'}`);
-
         // Jeśli używamy sessionStorage, usuń z localStorage (cleanup)
         if (!this.useLocalStorage && localStorage.getItem(key)) {
             localStorage.removeItem(key);
-            console.log(`🧹 [Storage] Cleaned ${key} from localStorage`);
         }
     }
 
@@ -40,24 +35,16 @@ class StorageService {
 
         const value = sessionValue || localValue;
 
-        if (value) {
-            const source = sessionValue ?  'sessionStorage' : 'localStorage';
-            console.log(`📦 [Storage] Retrieved ${key} from ${source}`);
-        }
-
         return value;
     }
 
     removeItem(key) {
         sessionStorage.removeItem(key);
         localStorage.removeItem(key);
-        console.log(`🗑️ [Storage] Removed ${key} from both storages`);
     }
 
     clear() {
         const keysToRemove = ['accessToken', 'refreshToken', 'userId', 'user'];
-
-        console.log('🧹 [Storage] Clearing all auth data.. .');
 
         keysToRemove.forEach(key => {
             sessionStorage.removeItem(key);

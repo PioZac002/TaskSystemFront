@@ -19,7 +19,9 @@ import { Save, X, Calendar, User as UserIcon, Users, Tag, FolderKanban } from "l
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { EditButton } from "@/components/ui/EditButton";
 import { LabelsSelect } from "@/components/ui/LabelsSelect";
+import { IssueLabelChips } from "@/components/ui/IssueLabelChips";
 import { useMasterdataStore } from "@/store/masterdataStore";
+import { labelIdsToMasterdataValues } from "@/utils/labelUtils";
 import { STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES, getStatusBadgeClass, getPriorityBadgeVariant } from "@/utils/issueConstants";
 
 export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted, onIssueUpdated, contentClassName = "" }) {
@@ -144,6 +146,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
             if (!issue) return;
 
             setLoading(true);
+            const masterDataValues = labelIdsToMasterdataValues(availableLabels, form.labelIds);
 
             await apiClient.put("/api/v1/issue/update", {
                 IssueId: Number(issue.id),
@@ -155,7 +158,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                 ProjectId: form.projectId ? Number(form.projectId) : (issue.projectId || null),
                 DueDate: form.dueDate || null,
                 AssigneeId: form.assigneeId && form.assigneeId !== "unassigned" ? Number(form.assigneeId) : null,
-                Labels: form.labelIds.map(Number).filter(Boolean),
+                masterDataValues,
             });
 
             toast.success("Issue updated successfully!");
@@ -174,6 +177,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                 projectId:  form.projectId ? Number(form.projectId) : prev.projectId,
                 dueDate:    form.dueDate || null,
                 team:       selectedTeam,
+                labels:     masterDataValues,
                 updatedAt:  new Date().toISOString(),
             }));
             setEdit(false);
@@ -455,6 +459,26 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                         </p>
                                                     )}
                                                 </div>
+
+                                                <Separator className="my-4" />
+
+                                                {/* Labels */}
+                                                <div>
+                                                    <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                                                        <Tag className="h-3 w-3" />
+                                                        Labels
+                                                    </Label>
+                                                    {edit ? (
+                                                        <LabelsSelect
+                                                            labels={availableLabels}
+                                                            selectedIds={form.labelIds}
+                                                            onChange={(ids) => handleChange("labelIds", ids)}
+                                                            placeholder="No labels"
+                                                        />
+                                                    ) : (
+                                                        <IssueLabelChips labels={issue.labels || []} emptyText="No labels" />
+                                                    )}
+                                                </div>
                                             </CardContent>
                                         </Card>
                                     </div>
@@ -692,21 +716,7 @@ export function IssueDetailsModal({ open, onOpenChange, issueId, onIssueDeleted,
                                                     placeholder="No labels"
                                                 />
                                             ) : (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {(issue.labels || []).length === 0 ? (
-                                                        <p className="text-sm text-muted-foreground">No labels</p>
-                                                    ) : (
-                                                        (issue.labels || []).map(label => (
-                                                            <Badge
-                                                                key={label.id ?? label}
-                                                                style={label.color ? { backgroundColor: label.color, color: "#fff", borderColor: label.color } : {}}
-                                                                className="text-xs"
-                                                            >
-                                                                {label.name ?? label}
-                                                            </Badge>
-                                                        ))
-                                                    )}
-                                                </div>
+                                                <IssueLabelChips labels={issue.labels || []} emptyText="No labels" />
                                             )}
                                         </div>
 

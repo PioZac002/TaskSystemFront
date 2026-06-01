@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ProjectFlipCard } from "@/components/ui/ProjectFlipCard";
+import { IssueLabelChips } from "@/components/ui/IssueLabelChips";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
@@ -185,6 +186,7 @@ function IssueItem({ issue, getUserName, jiraLike, onOpenPanel }) {
                             </span>
                         )}
                     </div>
+                    <IssueLabelChips labels={issue.labels || []} max={3} className="mt-2" />
                 </div>
                 <Button
                     variant="ghost"

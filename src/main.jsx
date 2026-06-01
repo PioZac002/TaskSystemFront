@@ -28,7 +28,6 @@ function App() {
 
     React.useEffect(() => {
         if (!initialized) {
-            console.log('🚀 [App] Initializing authentication...');
             initialize();
         }
     }, [initialized, initialize]);

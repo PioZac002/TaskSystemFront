@@ -14,9 +14,11 @@ import { useProjectStore } from "@/store/projectStore";
 import { useUserStore } from "@/store/userStore";
 import { useTeamStore } from "@/store/teamStore";
 import { useAuthStore } from "@/store/authStore";
+import { useMasterdataStore } from "@/store/masterdataStore";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { CreateIssueModal } from "@/components/modals/CreateIssueModal";
 import { AddButton } from "@/components/ui/AddButton";
+import { IssueLabelChips } from "@/components/ui/IssueLabelChips";
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
 import {
     Plus, Search, X, ListTodo, Eye, ChevronDown,
@@ -28,6 +30,14 @@ import {
     STATUS_LABELS, PRIORITY_LABELS, ALL_STATUSES, ALL_PRIORITIES,
     getStatusBadgeClass, getPriorityBadgeVariant,
 } from "@/utils/issueConstants";
+import {
+    LABEL_TYPE,
+    getLabelName,
+    getLabelOptionValue,
+    getLabelTokens,
+    issueHasLabel,
+    normalizeLabelToken,
+} from "@/utils/labelUtils";
 import { gsap } from "gsap";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +76,7 @@ function IssueRow({ issue, isMobile, onPreview, getUserName }) {
                     ) : (
                         <Link
                             to={`/issues/${issue.id}`}
+                            title="Open full page"
                             className="text-sm font-semibold text-foreground hover:underline line-clamp-1 flex-1 min-w-0"
                         >
                             {issue.title}
@@ -93,6 +104,7 @@ function IssueRow({ issue, isMobile, onPreview, getUserName }) {
                         </span>
                     )}
                 </div>
+                <IssueLabelChips labels={issue.labels || []} max={4} className="mt-2" />
             </div>
             <button
                 title="Quick preview"
@@ -169,18 +181,19 @@ function PillMultiSelect({ label, options, selected, onToggle }) {
 }
 
 // ─── Filter panel (shared desktop + mobile sheet) ────────────────────────────
-function FilterPanel({ state, handlers, projects, teams, users }) {
+function FilterPanel({ state, handlers, projects, teams, users, labels = [] }) {
     const {
         statusFilter, priorityFilter, projectFilter, teamFilter,
-        assigneeFilter, sortValue, dateFrom, dateTo, hasActiveFilters,
+        assigneeFilter, labelFilter, sortValue, dateFrom, dateTo, hasActiveFilters,
     } = state;
     const {
         toggleStatus, togglePriority, setProjectFilter, setTeamFilter,
-        setAssigneeFilter, setSortValue, setDateFrom, setDateTo, clearFilters,
+        setAssigneeFilter, toggleLabel, setSortValue, setDateFrom, setDateTo, clearFilters,
     } = handlers;
 
     const statusOptions   = ALL_STATUSES.map(s => ({ value: s, label: STATUS_LABELS[s] }));
     const priorityOptions = ALL_PRIORITIES.map(p => ({ value: p, label: PRIORITY_LABELS[p] }));
+    const labelOptions    = labels.map(label => ({ value: getLabelOptionValue(label), label: getLabelName(label) }));
 
     return (
         <div className="space-y-5">
@@ -238,6 +251,28 @@ function FilterPanel({ state, handlers, projects, teams, users }) {
                     ))}
                 </div>
             </div>
+
+            {labelOptions.length > 0 && (
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Labels</p>
+                    <div className="flex flex-wrap gap-1.5">
+                        {labelOptions.map(opt => (
+                            <button
+                                key={opt.value}
+                                onClick={() => toggleLabel(opt.value)}
+                                className={cn(
+                                    "text-xs px-2.5 py-1 rounded-full border font-medium transition-all",
+                                    labelFilter.includes(opt.value)
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : "border-border hover:border-primary/50 hover:bg-accent"
+                                )}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <Separator />
 
@@ -326,6 +361,7 @@ export default function Issues() {
     const { projects, fetchProjects }      = useProjectStore();
     const { users, fetchUsers }            = useUserStore();
     const { teams, fetchTeams }            = useTeamStore();
+    const { fetchByType }                  = useMasterdataStore();
     const authUser = useAuthStore((state) => state.user);
     const getUserIdFromToken = useAuthStore((state) => state.getUserIdFromToken);
     const [searchParams] = useSearchParams();
@@ -333,6 +369,7 @@ export default function Issues() {
     const [selectedIssueId, setSelectedIssueId] = useState(null);
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+    const [availableLabels, setAvailableLabels] = useState([]);
 
     const currentUserId = authUser?.id || getUserIdFromToken();
     const filterStorageKey = getFilterStorageKey(currentUserId);
@@ -344,6 +381,7 @@ export default function Issues() {
     const [projectFilter,  setProjectFilter]  = useState(saved.projectFilter  ?? "all");
     const [teamFilter,     setTeamFilter]     = useState(saved.teamFilter     ?? "all");
     const [assigneeFilter, setAssigneeFilter] = useState(saved.assigneeFilter ?? "all");
+    const [labelFilter,    setLabelFilter]    = useState(saved.labelFilter    ?? []);
     const [sortValue,      setSortValue]      = useState(saved.sortValue      ?? "createdAt__desc");
     const [dateFrom,       setDateFrom]       = useState(saved.dateFrom       ?? "");
     const [dateTo,         setDateTo]         = useState(saved.dateTo         ?? "");
@@ -356,15 +394,16 @@ export default function Issues() {
         fetchProjects();
         fetchUsers();
         fetchTeams();
+        fetchByType(LABEL_TYPE).then(setAvailableLabels);
     }, []);
 
     // Persist filters for the current user across reloads
     useEffect(() => {
         localStorage.setItem(filterStorageKey, JSON.stringify({
             searchTerm, statusFilter, priorityFilter, projectFilter,
-            teamFilter, assigneeFilter, sortValue, dateFrom, dateTo,
+            teamFilter, assigneeFilter, labelFilter, sortValue, dateFrom, dateTo,
         }));
-    }, [filterStorageKey, searchTerm, statusFilter, priorityFilter, projectFilter, teamFilter, assigneeFilter, sortValue, dateFrom, dateTo]);
+    }, [filterStorageKey, searchTerm, statusFilter, priorityFilter, projectFilter, teamFilter, assigneeFilter, labelFilter, sortValue, dateFrom, dateTo]);
 
     // Rehydrate when user identity changes (e.g. after token refresh/login)
     useEffect(() => {
@@ -375,6 +414,7 @@ export default function Issues() {
         setProjectFilter(stored.projectFilter ?? "all");
         setTeamFilter(stored.teamFilter ?? "all");
         setAssigneeFilter(stored.assigneeFilter ?? "all");
+        setLabelFilter(stored.labelFilter ?? []);
         setSortValue(stored.sortValue ?? "createdAt__desc");
         setDateFrom(stored.dateFrom ?? "");
         setDateTo(stored.dateTo ?? "");
@@ -387,6 +427,7 @@ export default function Issues() {
         const priority  = searchParams.get("priority");
         const project   = searchParams.get("project");
         const team      = searchParams.get("team");
+        const label     = searchParams.get("label");
         const sort      = searchParams.get("sort");
 
         if (assignee) setAssigneeFilter(assignee);
@@ -394,6 +435,7 @@ export default function Issues() {
         if (priority) setPriorityFilter(priority.split(",").filter(Boolean));
         if (project)  setProjectFilter(project);
         if (team)     setTeamFilter(team);
+        if (label)    setLabelFilter(label.split(",").filter(Boolean));
         if (sort && SORT_OPTIONS.find(o => o.value === sort)) setSortValue(sort);
     }, []);
 
@@ -432,10 +474,20 @@ export default function Issues() {
 
     const toggleStatus   = (s) => setStatusFilter(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
     const togglePriority = (p) => setPriorityFilter(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
+    const toggleLabel    = (label) => setLabelFilter(prev => prev.includes(label) ? prev.filter(x => x !== label) : [...prev, label]);
+
+    const getLabelForFilter = (value) => {
+        const normalized = normalizeLabelToken(value);
+        return availableLabels.find(label =>
+            getLabelOptionValue(label) === String(value) ||
+            getLabelTokens(label).includes(normalized)
+        );
+    };
 
     const clearFilters = () => {
         setSearchTerm(""); setStatusFilter([]); setPriorityFilter([]);
         setProjectFilter("all"); setTeamFilter("all"); setAssigneeFilter("all");
+        setLabelFilter([]);
         setSortValue("createdAt__desc"); setDateFrom(""); setDateTo("");
         localStorage.removeItem(filterStorageKey);
         toast.success("Filters cleared");
@@ -448,6 +500,7 @@ export default function Issues() {
         projectFilter !== "all",
         teamFilter !== "all",
         assigneeFilter !== "all",
+        labelFilter.length > 0,
         dateFrom !== "",
         dateTo !== "",
         sortValue !== "createdAt__desc",
@@ -467,12 +520,13 @@ export default function Issues() {
             const matchesProject  = projectFilter === "all" || String(issue.projectId) === projectFilter;
             const matchesTeam     = teamFilter === "all" || String(issue.team?.id) === teamFilter;
             const matchesAssignee = assigneeFilter === "all" || String(issue.assigneeId) === assigneeFilter;
+            const matchesLabel    = labelFilter.length === 0 || labelFilter.some(value => issueHasLabel(issue, getLabelForFilter(value) || value));
             const issueDate       = issue.createdAt ? new Date(issue.createdAt) : null;
             const matchesDateFrom = !dateFrom || !issueDate || issueDate >= new Date(dateFrom);
             const matchesDateTo   = !dateTo   || !issueDate || issueDate <= new Date(dateTo + "T23:59:59");
             return matchesSearch && matchesStatus && matchesPriority &&
                 matchesProject && matchesTeam && matchesAssignee &&
-                matchesDateFrom && matchesDateTo;
+                matchesLabel && matchesDateFrom && matchesDateTo;
         })
         .sort((a, b) => {
             const dir  = sortDir === "desc" ? -1 : 1;
@@ -481,8 +535,8 @@ export default function Issues() {
             return (valA - valB) * dir;
         });
 
-    const filterPanelState    = { statusFilter, priorityFilter, projectFilter, teamFilter, assigneeFilter, sortValue, dateFrom, dateTo, hasActiveFilters };
-    const filterPanelHandlers = { toggleStatus, togglePriority, setProjectFilter, setTeamFilter, setAssigneeFilter, setSortValue, setDateFrom, setDateTo, clearFilters };
+    const filterPanelState    = { statusFilter, priorityFilter, projectFilter, teamFilter, assigneeFilter, labelFilter, sortValue, dateFrom, dateTo, hasActiveFilters };
+    const filterPanelHandlers = { toggleStatus, togglePriority, setProjectFilter, setTeamFilter, setAssigneeFilter, toggleLabel, setSortValue, setDateFrom, setDateTo, clearFilters };
 
     // Stats
     const openIssues   = issues.filter(i => i.status !== "DONE" && i.status !== "CANCELED").length;
@@ -520,6 +574,14 @@ export default function Issues() {
             text: `Team: ${teams.find(t => String(t.id) === teamFilter)?.name || teamFilter}`,
             onRemove: () => setTeamFilter("all"),
         }] : []),
+        ...labelFilter.map(value => {
+            const label = getLabelForFilter(value);
+            return {
+                key: `label-${value}`,
+                text: `Label: ${label ? getLabelName(label) : value}`,
+                onRemove: () => toggleLabel(value),
+            };
+        }),
         ...((dateFrom || dateTo) ? [{
             key: "date-range",
             text: `Date: ${dateFrom && dateTo ? `${dateFrom} – ${dateTo}` : dateFrom || dateTo}`,
@@ -536,9 +598,9 @@ export default function Issues() {
     return (
         <AppLayout>
             {/* ── Full-bleed Stats Bar ── */}
-            <div ref={headerRef} className="-mx-6 md:-mx-8 -mt-6 md:-mt-8 mb-6 border-b border-border bg-card">
+            <div ref={headerRef} className="-mx-4 -mt-4 mb-6 border-b border-border bg-card md:-mx-8 md:-mt-8">
                 <div className="flex items-center gap-2 px-4 md:px-6 py-4">
-                    <div className="flex items-center justify-between md:justify-start md:gap-6 flex-1">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-3 md:flex-nowrap md:justify-start md:gap-6">
                         {statItems.map((s, i) => (
                             <div
                                 key={s.label}
@@ -565,8 +627,8 @@ export default function Issues() {
 
             <div className="space-y-4">
                 {/* ── Search + mobile controls ── */}
-                <div className="flex gap-2">
-                    <div className="relative flex-1">
+                <div className="flex min-w-0 gap-2">
+                    <div className="relative min-w-0 flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search by title, key, or description…"
@@ -613,6 +675,7 @@ export default function Issues() {
                                     projects={projects}
                                     teams={teams}
                                     users={users}
+                                    labels={availableLabels}
                                 />
                             </SheetContent>
                         </Sheet>
@@ -652,6 +715,17 @@ export default function Issues() {
                             selected={priorityFilter}
                             onToggle={togglePriority}
                         />
+                        {availableLabels.length > 0 && (
+                            <PillMultiSelect
+                                label="Labels"
+                                options={availableLabels.map(label => ({
+                                    value: getLabelOptionValue(label),
+                                    label: getLabelName(label),
+                                }))}
+                                selected={labelFilter}
+                                onToggle={toggleLabel}
+                            />
+                        )}
 
                         <Select value={projectFilter} onValueChange={setProjectFilter}>
                             <SelectTrigger className={cn("h-9 text-sm w-auto min-w-[110px]", projectFilter !== "all" && "border-primary")}>

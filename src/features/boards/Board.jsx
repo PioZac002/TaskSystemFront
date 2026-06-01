@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Badge } from "@/components/ui/Badge";
+import { IssueLabelChips } from "@/components/ui/IssueLabelChips";
 import { Button } from "@/components/ui/Button";
 import {
     Plus, Eye, ArrowLeft, ChevronRight, Inbox,
@@ -296,12 +297,12 @@ export default function Board() {
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <AppLayout>
-            <div className="-m-6 md:-m-8 flex flex-col" style={{ height: "calc(100vh - 64px)" }}>
+            <div className="-m-4 flex min-w-0 flex-col overflow-hidden md:-m-8" style={{ height: "calc(100vh - 64px)" }}>
 
                 {/* ── Stats Bar — no scrolling, all controls on one line ── */}
                 <div
                     ref={statsBarRef}
-                    className="shrink-0 flex items-center gap-3 px-4 md:px-6 py-3 border-b border-border bg-card"
+                    className="shrink-0 flex min-w-0 items-center gap-3 px-4 md:px-6 py-3 border-b border-border bg-card"
                 >
                     {/* Total */}
                     <div className="shrink-0">
@@ -376,7 +377,7 @@ export default function Board() {
                 </div>
 
                 {/* ── Main area ── */}
-                <div className="flex flex-1 overflow-hidden">
+                <div className="flex min-w-0 flex-1 overflow-hidden">
 
                     {/* ── Mobile only: column navigator (hidden on md+) ── */}
                     <div
@@ -509,6 +510,7 @@ export default function Board() {
                                                                                         <Badge variant={getPriorityBadgeVariant(issue.priority)} className="text-[9px] self-start mt-auto">
                                                                                             {PRIORITY_LABELS[issue.priority] || issue.priority}
                                                                                         </Badge>
+                                                                                        <IssueLabelChips labels={issue.labels || []} max={1} badgeClassName="text-[9px] px-1.5 py-0" />
                                                                                     </div>
                                                                                     <div className="board-flip-back">
                                                                                         <span className="font-mono text-[9px] text-white/50">{issue.key}</span>
@@ -561,6 +563,7 @@ export default function Board() {
                                                                             >
                                                                                 {PRIORITY_LABELS[issue.priority] || issue.priority}
                                                                             </Badge>
+                                                                            <IssueLabelChips labels={issue.labels || []} max={2} />
                                                                         </div>
                                                                     );
                                                                 }}
@@ -641,6 +644,7 @@ export default function Board() {
                                                 >
                                                     {PRIORITY_LABELS[issue.priority] || issue.priority}
                                                 </Badge>
+                                                <IssueLabelChips labels={issue.labels || []} max={2} className="mt-1.5" />
                                             </div>
                                             <Button
                                                 variant="ghost"

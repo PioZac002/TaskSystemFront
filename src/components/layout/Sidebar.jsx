@@ -48,7 +48,7 @@ export const Sidebar = () => {
                 }
             }}
             className={cn(
-                "sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-border bg-card/95 shadow-[12px_0_40px_rgba(15,23,42,0.04)] backdrop-blur-xl transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex",
+                "relative top-0 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-border bg-card/95 shadow-[12px_0_40px_rgba(15,23,42,0.04)] backdrop-blur-xl transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex",
                 open ? "w-72" : "w-[4.75rem]"
             )}
         >

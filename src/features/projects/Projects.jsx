@@ -242,9 +242,9 @@ export default function Projects() {
     return (
         <AppLayout>
             {/* ── Full-bleed Stats Bar ── */}
-            <div ref={headerRef} className="-mx-6 md:-mx-8 -mt-6 md:-mt-8 mb-6 border-b border-border bg-card">
+            <div ref={headerRef} className="-mx-4 -mt-4 mb-6 border-b border-border bg-card md:-mx-8 md:-mt-8">
                 <div className="flex items-center gap-2 px-4 md:px-6 py-4">
-                    <div className="flex items-center justify-between md:justify-start md:gap-6 flex-1">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-3 md:flex-nowrap md:justify-start md:gap-6">
                         {statItems.map((s, i) => (
                             <div key={s.label} className="flex items-center gap-2 md:gap-5 shrink-0">
                                 {i > 0 && <div className="hidden md:block w-px h-6 bg-border shrink-0" />}
@@ -267,7 +267,7 @@ export default function Projects() {
             <div className="space-y-5">
                 {/* ── Search toolbar ── */}
                 <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative flex-1">
+                    <div className="relative min-w-0 flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search projects by name or description…"
@@ -283,7 +283,7 @@ export default function Projects() {
                         </Button>
                     )}
                     <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="h-9 w-[150px]">
+                        <SelectTrigger className="h-9 w-[136px] sm:w-[150px]">
                             <SelectValue placeholder="Sort by" />
                         </SelectTrigger>
                         <SelectContent>

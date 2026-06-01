@@ -3,20 +3,27 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Check, ChevronDown } from "lucide-react";
+import {
+    getLabelName,
+    getLabelOptionValue,
+    getSelectedLabels,
+    labelIsSelected,
+    removeLabelSelection,
+} from "@/utils/labelUtils";
 
 export function LabelsSelect({ labels = [], selectedIds = [], onChange, placeholder = "Select labels" }) {
     const [open, setOpen] = useState(false);
 
-    const toggle = (id) => {
-        const sid = String(id);
-        if (selectedIds.map(String).includes(sid)) {
-            onChange(selectedIds.filter(x => String(x) !== sid));
+    const toggle = (label) => {
+        const value = getLabelOptionValue(label);
+        if (labelIsSelected(label, selectedIds)) {
+            onChange(removeLabelSelection(selectedIds, label));
         } else {
-            onChange([...selectedIds, sid]);
+            onChange([...selectedIds, value]);
         }
     };
 
-    const selectedLabels = labels.filter(l => selectedIds.map(String).includes(String(l.id)));
+    const selectedLabels = getSelectedLabels(labels, selectedIds);
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -30,11 +37,11 @@ export function LabelsSelect({ labels = [], selectedIds = [], onChange, placehol
                         <div className="flex flex-wrap gap-1">
                             {selectedLabels.map(label => (
                                 <Badge
-                                    key={label.id}
+                                    key={getLabelOptionValue(label)}
                                     style={label.color ? { backgroundColor: label.color, color: "#fff", borderColor: label.color } : {}}
                                     className="text-xs"
                                 >
-                                    {label.name}
+                                    {getLabelName(label)}
                                 </Badge>
                             ))}
                         </div>
@@ -49,13 +56,13 @@ export function LabelsSelect({ labels = [], selectedIds = [], onChange, placehol
                     <p className="text-sm text-muted-foreground px-2 py-4 text-center">No labels defined</p>
                 ) : (
                     labels.map(label => {
-                        const selected = selectedIds.map(String).includes(String(label.id));
+                        const selected = labelIsSelected(label, selectedIds);
                         return (
                             <button
-                                key={label.id}
+                                key={getLabelOptionValue(label)}
                                 type="button"
                                 className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-accent text-left"
-                                onClick={() => toggle(label.id)}
+                                onClick={() => toggle(label)}
                             >
                                 <div
                                     className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
@@ -69,7 +76,7 @@ export function LabelsSelect({ labels = [], selectedIds = [], onChange, placehol
                                 {label.color && (
                                     <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: label.color }} />
                                 )}
-                                <span>{label.name}</span>
+                                <span>{getLabelName(label)}</span>
                                 <span className="text-muted-foreground text-xs ml-auto">{label.code}</span>
                             </button>
                         );

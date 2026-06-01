@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, Search, LogOut, Settings, Menu, X } from "lucide-react";
+import { Search, LogOut, Settings, Menu, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LayoutDashboard, FolderKanban, ListTodo, Trello, UserCircle, Users, Tag } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
@@ -23,6 +23,7 @@ import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { SearchResults } from "./SearchResults";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
+import { NotificationBell } from "@/components/notifications/NotificationCenter";
 
 const ALL_NAV_ITEMS = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -54,7 +55,7 @@ export const TopBar = () => {
         fetchIssues();
     }, [fetchProjects, fetchIssues]);
 
-    // ✅ Pobierz user i loading z authStore
+    // Pobierz user i loading z authStore
     const user = useAuthStore((state) => state.user);
     const loading = useAuthStore((state) => state.loading);
     const logout = useAuthStore((state) => state.logout);
@@ -80,7 +81,7 @@ export const TopBar = () => {
         }
     };
 
-    // ✅ Oblicz display name i inicjały z firstName/lastName
+    // Oblicz display name i inicjały z firstName/lastName
     const getDisplayName = () => {
         if (loading) return "Loading...";
         if (!user) return "Guest";
@@ -111,11 +112,11 @@ export const TopBar = () => {
 
     return (
         <>
-            <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/90 px-4 shadow-sm backdrop-blur-xl md:px-6">
+            <header className="sticky top-0 z-50 flex h-16 min-w-0 items-center justify-between border-b border-border bg-background/90 px-3 shadow-sm backdrop-blur-xl md:px-6">
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="md:hidden"
+                    className="shrink-0 md:hidden"
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     aria-label="Toggle menu"
                     aria-expanded={mobileMenuOpen}
@@ -124,9 +125,9 @@ export const TopBar = () => {
                 </Button>
 
                 {/* Search */}
-                <div className="relative flex max-w-xl flex-1 items-center gap-4">
+                <div className="relative flex min-w-0 flex-1 items-center gap-2 md:max-w-xl md:gap-4">
                     {/* Mobile - Icon that opens overlay */}
-                    <div className="md:hidden">
+                    <div className="shrink-0 md:hidden">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -157,22 +158,19 @@ export const TopBar = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
                     {/* Theme Toggle */}
                     <ThemeToggle />
 
                     {/* Notifications */}
-                    <Button variant="ghost" size="icon" className="relative rounded-full">
-                        <Bell className="h-5 w-5" />
-                        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive"></span>
-                    </Button>
+                    <NotificationBell />
 
                     {/* User Menu */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="ghost"
-                                className="relative h-10 w-10 rounded-full"
+                                className="relative h-10 w-10 shrink-0 rounded-full"
                                 disabled={loading}
                             >
                                 <Avatar className="h-10 w-10">
@@ -217,7 +215,7 @@ export const TopBar = () => {
             {/* Mobile Navigation Menu - Dropdown from top */}
             <nav
                 className={cn(
-                    "fixed left-0 right-0 top-16 z-40 border-b border-border bg-background/95 shadow-lg backdrop-blur-xl transition-all duration-300 ease-in-out md:hidden",
+                    "fixed left-0 right-0 top-16 z-40 max-w-full overflow-x-hidden border-b border-border bg-background/95 shadow-lg backdrop-blur-xl transition-all duration-300 ease-in-out md:hidden",
                     mobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full pointer-events-none"
                 )}
                 aria-hidden={!mobileMenuOpen}
@@ -245,9 +243,9 @@ export const TopBar = () => {
 
             {/* Mobile Search Overlay */}
             {isSearchOpen && (
-                <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm md:hidden">
+                <div className="fixed inset-0 z-50 overflow-x-hidden bg-background/80 backdrop-blur-sm md:hidden">
                     <div className="fixed left-0 right-0 top-16 border-b bg-background p-4 shadow-lg">
-                        <div className="relative">
+                        <div className="relative min-w-0">
                             <GooeyInput
                                 type="search"
                                 placeholder="Search projects, issues..."

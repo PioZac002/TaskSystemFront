@@ -16,12 +16,10 @@ function ProtectedRoute({ children, requireAdmin = false }) {
     }
 
     if (!isAuthenticated) {
-        console.log('❌ [ProtectedRoute] Not authenticated, redirecting to login');
         return <Navigate to="/login" replace />;
     }
 
     if (requireAdmin && !isAdmin()) {
-        console.log('❌ [ProtectedRoute] Admin required, redirecting to dashboard');
         return <Navigate to="/dashboard" replace />;
     }
 

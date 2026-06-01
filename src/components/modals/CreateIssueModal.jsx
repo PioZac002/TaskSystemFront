@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { CheckSquare, Image, X, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LabelsSelect } from "@/components/ui/LabelsSelect";
+import { labelIdsToMasterdataValues } from "@/utils/labelUtils";
 
 /**
  * CreateIssueModal — create a new issue
@@ -113,6 +114,7 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
 
         setLoading(true);
         try {
+            const masterDataValues = labelIdsToMasterdataValues(availableLabels, labelIds);
             const payload = {
                 title:       title.trim(),
                 description: description.trim() || null,
@@ -121,7 +123,6 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
                 assigneeId:  null,
                 dueDate:     null,
                 projectId:   Number(projectId),
-                labels:      labelIds.map(Number).filter(Boolean),
             };
             if (assigneeId && assigneeId !== "unassigned") {
                 const n = Number(assigneeId);
@@ -131,14 +132,37 @@ export function CreateIssueModal({ open, onOpenChange, preSelectedProjectId = nu
 
             const createdIssue = await createIssue(payload);
 
+            let resolvedTeamId = Number(createdIssue?.teamId) > 0 ? Number(createdIssue.teamId) : null;
             if (teamId && teamId !== "none") {
                 const n = Number(teamId);
                 if (!isNaN(n) && n > 0) {
                     try {
                         await apiClient.put("/api/v1/issue/assign-team", { issueId: createdIssue.id, teamId: n });
+                        resolvedTeamId = n;
                     } catch {
                         toast.warning("Issue created, but failed to assign team");
                     }
+                }
+            }
+
+            if (masterDataValues.length > 0 && createdIssue?.id) {
+                try {
+                    await apiClient.put("/api/v1/issue/update", {
+                        issueId: Number(createdIssue.id),
+                        title: createdIssue.title ?? payload.title ?? null,
+                        description: createdIssue.description ?? payload.description ?? null,
+                        status: createdIssue.status ?? "NEW",
+                        priority: createdIssue.priority ?? payload.priority ?? null,
+                        teamId: resolvedTeamId,
+                        projectId: createdIssue.projectId ?? payload.projectId ?? null,
+                        dueDate: createdIssue.dueDate ? createdIssue.dueDate.slice(0, 10) : (payload.dueDate ?? null),
+                        assigneeId: Number(createdIssue.assigneeId) > 0
+                            ? Number(createdIssue.assigneeId)
+                            : (payload.assigneeId ?? null),
+                        masterDataValues,
+                    });
+                } catch {
+                    toast.warning("Issue created, but failed to assign labels");
                 }
             }
 
