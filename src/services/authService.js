@@ -2,20 +2,12 @@ import apiClient from "./apiClient";
 import { storageService } from "./storageService";
 
 class AuthService {
-    constructor() {
-        console.log('🔧 [AuthService] Initializing...');
-    }
-
     async login(email, password) {
-        console.log('🔐 [AuthService] Attempting login:', { email });
-
         try {
             const response = await apiClient.post('/api/v1/login', {
                 email,
                 password
             });
-
-            console.log('✅ [AuthService] Login successful');
 
             const accessToken = response.data.accessToken?.token || response.data.accessToken;
             const refreshToken = response.data.refreshToken?.token || response.data.refreshToken;
@@ -34,7 +26,7 @@ class AuthService {
 
             return { accessToken, refreshToken, userId: null, user: null };
         } catch (error) {
-            console.error('❌ [AuthService] Login failed:', {
+            console.error('[AuthService] Login failed:', {
                 status: error.response?.status,
                 message: error.response?.data?.Message || error.message
             });
@@ -43,13 +35,6 @@ class AuthService {
     }
 
     async register(userData) {
-        console.log('📝 [AuthService] Attempting registration with data:', {
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            email: userData.email,
-            slackUserId: userData.slackUserId
-        });
-
         try {
             await apiClient.post('/api/v1/register', {
                 firstName: userData.firstName,
@@ -59,12 +44,10 @@ class AuthService {
                 slackUserId: userData.slackUserId
             });
 
-            console.log('✅ [AuthService] Registration successful');
-
             // Po udanej rejestracji, automatycznie zaloguj użytkownika
             return await this.login(userData.email, userData.password);
         } catch (error) {
-            console.error('❌ [AuthService] Registration failed:', {
+            console.error('[AuthService] Registration failed:', {
                 status: error.response?.status,
                 message: error.response?.data?.Message || error.message
             });
@@ -77,7 +60,7 @@ class AuthService {
             const payload = JSON.parse(atob(token.split('.')[1]));
             return payload.sub || payload.userId || payload.nameid || payload.id;
         } catch {
-            console.error('❌ [AuthService] Failed to extract userId from token');
+            console.error('[AuthService] Failed to extract userId from token.');
             return null;
         }
     }
@@ -103,7 +86,6 @@ class AuthService {
     }
 
     logout() {
-        console.log('🚪 [AuthService] Logging out');
         storageService.removeItem('accessToken');
         storageService.removeItem('refreshToken');
         storageService.removeItem('user');

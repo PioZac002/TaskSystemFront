@@ -20,6 +20,7 @@ import TeamManagement from "@/features/teams/TeamManagement";
 import ProjectDetailPage from "@/features/projects/ProjectDetailPage";
 import IssueDetailPage from "@/features/issues/IssueDetailPage";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
+import LabelsManagement from "@/features/labels/LabelsManagement";
 
 // Komponent App z inicjalizacją auth
 function App() {
@@ -27,7 +28,6 @@ function App() {
 
     React.useEffect(() => {
         if (!initialized) {
-            console.log('🚀 [App] Initializing authentication...');
             initialize();
         }
     }, [initialized, initialize]);
@@ -58,7 +58,8 @@ function App() {
                 <Route path="/issues" element={<ProtectedRoute><Issues /></ProtectedRoute>} />
                 <Route path="/issues/:id" element={<ProtectedRoute><IssueDetailPage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+                <Route path="/users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
+                <Route path="/labels" element={<ProtectedRoute requireAdmin><LabelsManagement /></ProtectedRoute>} />
                 <Route path="/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1,46 +1,191 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useProjectStore } from "@/store/projectStore";
 import { useIssueStore } from "@/store/issueStore";
 import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
+import { AddButton } from "@/components/ui/AddButton";
 import { useResponsiveNavigation } from "@/hooks/useResponsiveNavigation";
-import { Plus, Search, X, FolderKanban, CheckCircle2, Clock, AlertTriangle, Eye } from "lucide-react";
+import { Plus, Search, X, FolderKanban, Eye, Sparkles, LayoutGrid, Rows3 } from "lucide-react";
+import { gsap } from "gsap";
+import { cn } from "@/lib/utils";
 
+// ─── Color palette (same as Dashboard) ───────────────────────────────────────
+const PROJECT_PALETTE = [
+    { accent: "#7c3aed", dot: "bg-violet-500",  text: "text-violet-600 dark:text-violet-400"  },
+    { accent: "#3b82f6", dot: "bg-blue-500",    text: "text-blue-600 dark:text-blue-400"      },
+    { accent: "#10b981", dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
+    { accent: "#f97316", dot: "bg-orange-500",  text: "text-orange-600 dark:text-orange-400"  },
+    { accent: "#a855f7", dot: "bg-purple-500",  text: "text-purple-600 dark:text-purple-400"  },
+    { accent: "#06b6d4", dot: "bg-cyan-500",    text: "text-cyan-600 dark:text-cyan-400"      },
+];
+
+// ─── Project card ─────────────────────────────────────────────────────────────
+function ProjectCard({ project, colorIndex, isMobile, onPreview, compact = false }) {
+    const color = PROJECT_PALETTE[colorIndex % PROJECT_PALETTE.length];
+
+    return (
+        <div
+            className={cn(
+                "group flex flex-col rounded-xl bg-card border border-border border-t-2 hover:border-border/80 hover:shadow-sm transition-all duration-150 overflow-hidden",
+                compact && "md:flex-row md:items-stretch"
+            )}
+            style={{ borderTopColor: color.accent }}
+        >
+            <div className={cn("p-4 flex flex-col gap-3", compact && "md:flex-row md:gap-4 md:w-full")}>
+                {/* Header row: name + eye + issue count */}
+                <div className={cn("flex items-start gap-2", compact && "md:w-[40%]")}>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <span className={cn("h-2 w-2 rounded-full shrink-0 mt-0.5", color.dot)} />
+                            {isMobile ? (
+                                <span
+                                    className={cn("font-mono font-semibold text-sm truncate cursor-pointer hover:underline flex-1 min-w-0", color.text)}
+                                    onClick={() => onPreview(project.id)}
+                                >
+                                    {project.shortName}
+                                </span>
+                            ) : (
+                                <Link
+                                    to={`/projects/${project.id}`}
+                                    className={cn("font-mono font-semibold text-sm truncate hover:underline flex-1 min-w-0", color.text)}
+                                >
+                                    {project.shortName}
+                                </Link>
+                            )}
+                            <button
+                                title="Quick preview"
+                                onClick={() => onPreview(project.id)}
+                                className="shrink-0 text-muted-foreground hover:text-primary transition-opacity opacity-0 group-hover:opacity-100"
+                            >
+                                <Eye className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1 pl-3.5">
+                            {project.description || "No description"}
+                        </p>
+                    </div>
+                    <Badge variant="secondary" className="shrink-0 text-[10px] tabular-nums">
+                        {project.totalIssues}
+                    </Badge>
+                </div>
+
+                {/* Progress */}
+                <div className={cn("space-y-1", compact && "md:w-[30%] md:self-center")}>
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Progress</span>
+                        <span className="text-xs font-semibold tabular-nums">{project.progress}%</span>
+                    </div>
+                    <Progress value={project.progress} className="h-1.5" />
+                    <p className="text-[10px] text-muted-foreground">
+                        {project.doneIssues} of {project.totalIssues} issues completed
+                    </p>
+                </div>
+
+                {/* Mini stats row */}
+                <div className={cn("grid grid-cols-3 gap-1 pt-2 border-t border-border/60", compact && "md:w-[30%] md:pt-0 md:border-t-0 md:border-l md:pl-3 md:self-center")}>
+                    <div className="text-center">
+                        <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Done</p>
+                        <p className="text-sm font-bold tabular-nums mt-0.5">{project.doneIssues}</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-[10px] font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">Active</p>
+                        <p className="text-sm font-bold tabular-nums mt-0.5">{project.inProgressIssues}</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">To Do</p>
+                        <p className="text-sm font-bold tabular-nums mt-0.5">{project.todoIssues}</p>
+                    </div>
+                </div>
+
+                {/* Priority badges */}
+                {!compact && project.totalIssues > 0 && (project.highPriority > 0 || project.normalPriority > 0 || project.lowPriority > 0) && (
+                    <div className="pt-2 border-t border-border/60 flex gap-1.5 flex-wrap">
+                        {project.highPriority > 0 && (
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                                {project.highPriority} High
+                            </Badge>
+                        )}
+                        {project.normalPriority > 0 && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                {project.normalPriority} Normal
+                            </Badge>
+                        )}
+                        {project.lowPriority > 0 && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                {project.lowPriority} Low
+                            </Badge>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
 export default function Projects() {
     const { isMobile } = useResponsiveNavigation();
     const { projects, fetchProjects, loading } = useProjectStore();
-    const { issues, fetchIssues } = useIssueStore();
+    const { issues, fetchIssues }              = useIssueStore();
     const [selectedProjectId, setSelectedProjectId] = useState(null);
-    const [createModalOpen, setCreateModalOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
+    const [createModalOpen, setCreateModalOpen]     = useState(false);
+    const [searchTerm, setSearchTerm]               = useState("");
+    const [sortBy, setSortBy]                       = useState("recent");
+    const [viewMode, setViewMode]                   = useState("grid");
+
+    const headerRef = useRef(null);
+    const gridRef   = useRef(null);
 
     useEffect(() => {
         fetchProjects();
         fetchIssues();
     }, []);
 
-    // Oblicz progress dla każdego projektu
+    // Header slide-in on mount
+    useEffect(() => {
+        const ctx = gsap.context(() => {
+            if (headerRef.current) {
+                gsap.fromTo(headerRef.current,
+                    { y: -28, opacity: 0 },
+                    { y: 0, opacity: 1, duration: 0.5, ease: "power3.out", clearProps: "y,transform" }
+                );
+            }
+        });
+        return () => ctx.revert();
+    }, []);
+
+    // Cards stagger when data arrives
+    useEffect(() => {
+        if (!loading && gridRef.current) {
+            const cards = gridRef.current.querySelectorAll(".project-card");
+            if (cards.length > 0) {
+                gsap.fromTo(cards,
+                    { opacity: 0, y: 14 },
+                    { opacity: 1, y: 0, duration: 0.35, stagger: 0.06, ease: "power2.out", clearProps: "transform,opacity" }
+                );
+            }
+        }
+    }, [loading]);
+
+    // ── Derived data ──────────────────────────────────────────────────────────
     const projectsWithProgress = projects.map(project => {
-        const projectIssues = issues.filter(i => i.projectId === project.id);
-        const doneIssues = projectIssues.filter(i => i.status === 'DONE');
-        const inProgressIssues = projectIssues.filter(i => i.status === 'IN_PROGRESS');
-        const todoIssues = projectIssues.filter(i => i.status === 'NEW');
-        
-        // Priority breakdown
-        const highPriority = projectIssues.filter(i => i.priority === 'HIGH').length;
-        const normalPriority = projectIssues.filter(i => i.priority === 'NORMAL').length;
-        const lowPriority = projectIssues.filter(i => i.priority === 'LOW').length;
-        
-        const progress = projectIssues.length > 0
-            ? Math.round((doneIssues.length / projectIssues.length) * 100)
-            : 0;
+        const projectIssues    = issues.filter(i => i.projectId === project.id);
+        const doneIssues       = projectIssues.filter(i => i.status === "DONE");
+        const inProgressIssues = projectIssues.filter(i => i.status === "IN_PROGRESS");
+        const todoIssues       = projectIssues.filter(i => i.status === "NEW");
+        const highPriority     = projectIssues.filter(i => i.priority === "HIGH").length;
+        const normalPriority   = projectIssues.filter(i => i.priority === "NORMAL").length;
+        const lowPriority      = projectIssues.filter(i => i.priority === "LOW").length;
+        const progress         = projectIssues.length > 0
+            ? Math.round((doneIssues.length / projectIssues.length) * 100) : 0;
 
         return {
             ...project,
@@ -51,215 +196,213 @@ export default function Projects() {
             highPriority,
             normalPriority,
             lowPriority,
-            progress
+            progress,
         };
     });
 
-    // Filtrowanie
-    const filteredProjects = projectsWithProgress.filter(project =>
-        (project.shortName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (project.description?.toLowerCase() || "").includes(searchTerm.toLowerCase())
-    );
+    const filteredProjects = projectsWithProgress
+        .filter(p =>
+            (p.shortName?.toLowerCase()   || "").includes(searchTerm.toLowerCase()) ||
+            (p.description?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => {
+            switch (sortBy) {
+                case "progress":
+                    return b.progress - a.progress;
+                case "issues":
+                    return b.totalIssues - a.totalIssues;
+                case "name":
+                    return (a.shortName || "").localeCompare(b.shortName || "");
+                case "recent":
+                default:
+                    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+            }
+        });
+
+    const featuredProject = filteredProjects[0] || null;
 
     const clearSearch = () => setSearchTerm("");
 
+    // Global issue stats
+    const totalIssues    = issues.length;
+    const activeIssues   = issues.filter(i => i.status === "IN_PROGRESS").length;
+    const doneTotal      = issues.filter(i => i.status === "DONE").length;
+    const completionRate = totalIssues > 0 ? Math.round((doneTotal / totalIssues) * 100) : 0;
+
+    const statItems = [
+        { label: "Projects", value: projects.length,        color: "text-violet-600 dark:text-violet-400"  },
+        { label: "Issues",   value: totalIssues,            color: "text-blue-600 dark:text-blue-400"      },
+        { label: "Active",   value: activeIssues,           color: "text-orange-600 dark:text-orange-400"  },
+        { label: "Done",     value: doneTotal,              color: "text-emerald-600 dark:text-emerald-400" },
+        { label: "Rate",     value: `${completionRate}%`,   color: "text-cyan-600 dark:text-cyan-400"      },
+        ...(searchTerm ? [{ label: "Found", value: filteredProjects.length, color: "text-muted-foreground" }] : []),
+    ];
+
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <AppLayout>
-            <div className="space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold">Projects</h1>
-                        <p className="text-muted-foreground">
-                            Manage your project portfolio • {filteredProjects.length} of {projects.length} projects
-                        </p>
+            {/* ── Full-bleed Stats Bar ── */}
+            <div ref={headerRef} className="-mx-4 -mt-4 mb-6 border-b border-border bg-card md:-mx-8 md:-mt-8">
+                <div className="flex items-center gap-2 px-4 md:px-6 py-4">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-3 md:flex-nowrap md:justify-start md:gap-6">
+                        {statItems.map((s, i) => (
+                            <div key={s.label} className="flex items-center gap-2 md:gap-5 shrink-0">
+                                {i > 0 && <div className="hidden md:block w-px h-6 bg-border shrink-0" />}
+                                <div>
+                                    <p className={cn("text-[10px] uppercase tracking-wider font-medium", s.color)}>
+                                        {s.label}
+                                    </p>
+                                    <p className="text-xl font-bold leading-none mt-0.5 tabular-nums">{s.value}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    <Button onClick={() => setCreateModalOpen(true)} className="shrink-0">
-                        <Plus className="h-4 w-4 sm:mr-2" />
-                        <span className="hidden sm:inline">Create Project</span>
-                        <span className="sm:hidden">P</span>
+                    {/* Desktop create button */}
+                    <div className="hidden md:flex shrink-0 ml-4">
+                        <AddButton label="New Project" onClick={() => setCreateModalOpen(true)} />
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-5">
+                {/* ── Search toolbar ── */}
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative min-w-0 flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search projects by name or description…"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                    {searchTerm && (
+                        <Button variant="outline" size="sm" onClick={clearSearch} className="gap-1.5 shrink-0">
+                            <X className="h-4 w-4" />
+                            <span className="hidden sm:inline">Clear</span>
+                        </Button>
+                    )}
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="h-9 w-[136px] sm:w-[150px]">
+                            <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="recent">Newest</SelectItem>
+                            <SelectItem value="progress">Progress</SelectItem>
+                            <SelectItem value="issues">Issue count</SelectItem>
+                            <SelectItem value="name">Name A-Z</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <div className="hidden md:inline-flex items-center rounded-md border border-border p-0.5">
+                        <button
+                            type="button"
+                            onClick={() => setViewMode("grid")}
+                            className={cn("px-2 py-1 rounded-sm text-xs", viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
+                            title="Grid view"
+                        >
+                            <LayoutGrid className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewMode("compact")}
+                            className={cn("px-2 py-1 rounded-sm text-xs", viewMode === "compact" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
+                            title="Compact row view"
+                        >
+                            <Rows3 className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                    {/* Mobile create button */}
+                    <Button
+                        size="sm"
+                        onClick={() => setCreateModalOpen(true)}
+                        className="md:hidden gap-1.5 shrink-0"
+                    >
+                        <Plus className="h-4 w-4" />
                     </Button>
                 </div>
 
-                {/* Search */}
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex gap-3">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search projects by name or description..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10"
-                                />
+                {featuredProject && !searchTerm && (
+                    <Card className="overflow-hidden border-primary/20 bg-gradient-to-r from-primary/10 via-background to-cyan-500/10">
+                        <CardContent className="p-4 md:p-5">
+                            <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                <div className="flex-1 min-w-0 space-y-1">
+                                    <p className="text-xs uppercase tracking-wide text-primary flex items-center gap-1">
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                        Project spotlight
+                                    </p>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <Link to={`/projects/${featuredProject.id}`} className="font-mono text-lg font-bold truncate hover:underline">
+                                            {featuredProject.shortName}
+                                        </Link>
+                                        <Badge variant="secondary" className="text-[10px]">{featuredProject.totalIssues} issues</Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground line-clamp-2">{featuredProject.description || "No description"}</p>
+                                </div>
+                                <div className="md:w-[260px] space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground">Delivery progress</span>
+                                        <span className="font-semibold">{featuredProject.progress}%</span>
+                                    </div>
+                                    <Progress value={featuredProject.progress} className="h-2" />
+                                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                        <span>Done {featuredProject.doneIssues}</span>
+                                        <span>•</span>
+                                        <span>Active {featuredProject.inProgressIssues}</span>
+                                        <span>•</span>
+                                        <span>Todo {featuredProject.todoIssues}</span>
+                                    </div>
+                                </div>
                             </div>
-                            {searchTerm && (
-                                <Button variant="outline" onClick={clearSearch}>
-                                    <X className="mr-2 h-4 w-4" />
-                                    Clear
-                                </Button>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Projects Grid */}
-                {loading ? (
-                    <div className="text-center py-12">
-                        <p className="text-muted-foreground">Loading projects... </p>
-                    </div>
-                ) : filteredProjects.length === 0 ? (
-                    <Card>
-                        <CardContent className="py-12 text-center">
-                            <FolderKanban className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                            <p className="text-lg font-medium mb-2">
-                                {searchTerm ? "No projects match your search" : "No projects yet"}
-                            </p>
-                            <p className="text-sm text-muted-foreground mb-4">
-                                {searchTerm
-                                    ? "Try a different search term"
-                                    : "Create your first project to get started"}
-                            </p>
-                            {searchTerm ?  (
-                                <Button variant="outline" onClick={clearSearch}>
-                                    Clear Search
-                                </Button>
-                            ) : (
-                                <Button onClick={() => setCreateModalOpen(true)}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Create Project
-                                </Button>
-                            )}
                         </CardContent>
                     </Card>
+                )}
+
+                {/* ── Project grid ── */}
+                {loading ? (
+                    <div className={cn("grid gap-4", viewMode === "compact" ? "grid-cols-1" : "sm:grid-cols-2 lg:grid-cols-3")}>
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="h-52 rounded-xl bg-muted/40 animate-pulse" />
+                        ))}
+                    </div>
+                ) : filteredProjects.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-border py-14 text-center space-y-3">
+                        <FolderKanban className="mx-auto h-10 w-10 text-muted-foreground/30" />
+                        <p className="text-sm font-medium text-foreground">
+                            {searchTerm ? "No projects match your search" : "No projects yet"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {searchTerm
+                                ? "Try a different search term"
+                                : "Create your first project to get started"}
+                        </p>
+                        {searchTerm ? (
+                            <Button variant="outline" size="sm" onClick={clearSearch}>Clear Search</Button>
+                        ) : (
+                            <Button size="sm" onClick={() => setCreateModalOpen(true)} className="gap-1.5">
+                                <Plus className="h-4 w-4" />
+                                Create Project
+                            </Button>
+                        )}
+                    </div>
                 ) : (
-                    <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredProjects.map(project => (
-                            <Card
-                                key={project.id}
-                                className="hover:shadow-xl transition-all hover:scale-105 hover:border-primary/50"
-                            >
-                                <CardHeader>
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <CardTitle className="text-xl font-mono truncate text-primary">
-                                                    {isMobile ? (
-                                                        <span
-                                                            className="hover:underline cursor-pointer"
-                                                            title="Open full page"
-                                                            onClick={() => setSelectedProjectId(project.id)}
-                                                        >
-                                                            {project.shortName}
-                                                        </span>
-                                                    ) : (
-                                                        <Link
-                                                            to={`/projects/${project.id}`}
-                                                            className="hover:underline"
-                                                            title="Open full page"
-                                                        >
-                                                            {project.shortName}
-                                                        </Link>
-                                                    )}
-                                                </CardTitle>
-                                                <button
-                                                    title="Quick preview"
-                                                    className="text-muted-foreground hover:text-primary transition-colors shrink-0"
-                                                    onClick={() => setSelectedProjectId(project.id)}
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                            <CardDescription className="line-clamp-2 mt-1">
-                                                {project.description || "No description provided"}
-                                            </CardDescription>
-                                        </div>
-                                        <Badge
-                                            variant={project. progress === 100 ? "default" : "secondary"}
-                                            className={project.progress === 100 ? "bg-green-500" : ""}
-                                        >
-                                            {project.totalIssues} {project.totalIssues === 1 ? "issue" : "issues"}
-                                        </Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {/* Progress Bar */}
-                                    <div>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-sm font-medium text-muted-foreground">
-                                                Progress
-                                            </span>
-                                            <span className="text-sm font-bold">
-                                                {project.progress}%
-                                            </span>
-                                        </div>
-                                        <Progress
-                                            value={project. progress}
-                                            className="h-2"
-                                        />
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            {project. doneIssues} of {project.totalIssues} issues completed
-                                        </p>
-                                    </div>
-
-                                    {/* Stats */}
-                                    <div className="grid grid-cols-3 gap-2 pt-2 border-t">
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">Done</p>
-                                                <p className="text-sm font-semibold">{project.doneIssues}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Clock className="h-4 w-4 text-blue-500" />
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">Active</p>
-                                                <p className="text-sm font-semibold">{project.inProgressIssues}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <AlertTriangle className="h-4 w-4 text-gray-500" />
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">To Do</p>
-                                                <p className="text-sm font-semibold">{project.todoIssues}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Priority Breakdown */}
-                                    {project.totalIssues > 0 && (
-                                        <div className="pt-2 border-t">
-                                            <p className="text-xs text-muted-foreground mb-2">Priority</p>
-                                            <div className="flex gap-2 flex-wrap">
-                                                {project.highPriority > 0 && (
-                                                    <Badge variant="destructive" className="text-xs">
-                                                        {project.highPriority} HIGH
-                                                    </Badge>
-                                                )}
-                                                {project.normalPriority > 0 && (
-                                                    <Badge variant="secondary" className="text-xs">
-                                                        {project.normalPriority} NORMAL
-                                                    </Badge>
-                                                )}
-                                                {project.lowPriority > 0 && (
-                                                    <Badge variant="outline" className="text-xs">
-                                                        {project.lowPriority} LOW
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
+                    <div ref={gridRef} className={cn("grid gap-4", viewMode === "compact" ? "grid-cols-1" : "sm:grid-cols-2 lg:grid-cols-3")}>
+                        {filteredProjects.map((project, i) => (
+                            <div key={project.id} className="project-card">
+                                <ProjectCard
+                                    project={project}
+                                    colorIndex={i}
+                                    isMobile={isMobile}
+                                    onPreview={setSelectedProjectId}
+                                    compact={viewMode === "compact"}
+                                />
+                            </div>
                         ))}
                     </div>
                 )}
             </div>
 
             <ProjectDetailsModal
-                open={!! selectedProjectId}
+                open={!!selectedProjectId}
                 onOpenChange={() => setSelectedProjectId(null)}
                 projectId={selectedProjectId}
                 onProjectUpdate={() => {
@@ -267,7 +410,6 @@ export default function Projects() {
                     fetchProjects();
                 }}
             />
-
             <CreateProjectModal
                 open={createModalOpen}
                 onOpenChange={setCreateModalOpen}

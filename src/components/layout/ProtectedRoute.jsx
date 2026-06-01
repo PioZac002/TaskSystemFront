@@ -1,10 +1,10 @@
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 
-function ProtectedRoute({ children }) {
-    const { isAuthenticated, loading, initialized } = useAuthStore();
+function ProtectedRoute({ children, requireAdmin = false }) {
+    const { isAuthenticated, loading, initialized, isAdmin } = useAuthStore();
 
-    if (! initialized || loading) {
+    if (!initialized || loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
@@ -15,9 +15,12 @@ function ProtectedRoute({ children }) {
         );
     }
 
-    if (! isAuthenticated) {
-        console.log('❌ [ProtectedRoute] Not authenticated, redirecting to login');
+    if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
+    }
+
+    if (requireAdmin && !isAdmin()) {
+        return <Navigate to="/dashboard" replace />;
     }
 
     return children;

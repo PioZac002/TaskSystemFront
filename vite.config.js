@@ -71,7 +71,7 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       proxy: {
         '/api': {
-          target: env.VITE_API_BASE_URL || 'http://vfedora1.tail7fa028.ts.net:6901',
+          target: env.VITE_API_BASE_URL || 'http://komuna.site:6901',
           changeOrigin: true,
           secure: mode === 'production',
         }

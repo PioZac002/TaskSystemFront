@@ -67,6 +67,31 @@ export const useCommentStore = create((set, get) => ({
         }
     },
 
+    editComment: async (id, content) => {
+        try {
+            const res = await apiClient.put('/api/v1/comment/edit', { id, content });
+            set({
+                comments: get().comments.map(c =>
+                    c.id === id ? { ...c, content, ...(res.data || {}) } : c
+                )
+            });
+            return res.data;
+        } catch (e) {
+            console.error('Error editing comment:', e);
+            throw e;
+        }
+    },
+
+    deleteAllByIssueId: async (issueId) => {
+        try {
+            await apiClient.delete(`/api/v1/comment/issue/${issueId}`);
+            set({ comments: [] });
+        } catch (e) {
+            console.error('Error deleting all comments:', e);
+            throw e;
+        }
+    },
+
     deleteAttachment: async (fileId, commentId) => {
         try {
             await fileService.deleteFile(fileId);

@@ -5,7 +5,7 @@ import { tokenDebugger } from '@/utils/tokenDebugger';
 
 
 
-const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || 'http://komuna.site:6901');
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://komuna.site:6901';
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
@@ -13,8 +13,6 @@ const apiClient = axios.create({
         'Content-Type': 'application/json',
     },
 });
-
-console.log('🔧 [API Client] Initialized with baseURL:', API_BASE_URL);
 
 // Request interceptor - dodaj access token
 apiClient.interceptors.request.use(
@@ -24,27 +22,15 @@ apiClient.interceptors.request.use(
             delete config.headers['Content-Type'];
         }
 
-        // ✅ Używaj storageService zamiast localStorage
         const token = storageService.getItem('accessToken');
 
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log('🔑 [API Request]', {
-                url: config.url,
-                method: config.method,
-                hasToken: true
-            });
-        } else {
-            console.log('📝 [API Request]', {
-                url: config. url,
-                method: config. method,
-                hasToken: false
-            });
         }
         return config;
     },
     (error) => {
-        console.error('❌ [API Request] Error:', error. message);
+        console.error('[API Request] Error:', error.message);
         return Promise.reject(error);
     }
 );
@@ -54,11 +40,6 @@ let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
-    console.log('🔄 [Token Queue] Processing:', {
-        queueLength: failedQueue.length,
-        success: ! error
-    });
-
     failedQueue.forEach(prom => {
         if (error) {
             prom.reject(error);
@@ -70,17 +51,11 @@ const processQueue = (error, token = null) => {
 };
 
 apiClient.interceptors.response.use(
-    (response) => {
-        console.log('✅ [API Response]', {
-            url: response.config.url,
-            status: response.status
-        });
-        return response;
-    },
+    (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        console.error('❌ [API Response] Error:', {
+        console.error('[API Response] Error:', {
             url: originalRequest?. url,
             status: error. response?.status,
             message: error.response?.data?.Message || error.message
@@ -88,17 +63,14 @@ apiClient.interceptors.response.use(
 
         // Jeśli 401 i nie jest to już retry
         if (error.response?.status === 401 && !originalRequest._retry) {
-            console.log('🔐 [Token Refresh] 401 detected, attempting refresh...');
             tokenDebugger.log('401 detected, attempting token refresh');
 
             // Jeśli to endpoint login/register/regenerate-tokens - nie próbuj refreshować
             if (originalRequest.url?.includes('/login') || originalRequest.url?.includes('/register') || originalRequest.url?.includes('/regenerate-tokens')) {
-                console. log('⚠️ [Token Refresh] Skipping refresh for auth endpoint');
                 return Promise.reject(error);
             }
 
             if (isRefreshing) {
-                console.log('⏳ [Token Refresh] Already refreshing, queuing request.. .');
                 return new Promise((resolve, reject) => {
                     failedQueue. push({ resolve, reject });
                 })
@@ -112,14 +84,13 @@ apiClient.interceptors.response.use(
             originalRequest._retry = true;
             isRefreshing = true;
 
-            // ✅ Używaj storageService
             const refreshToken = storageService.getItem('refreshToken');
 
             tokenDebugger.logStorageType(storageService.isPersistentSession());
             tokenDebugger.logRefreshTokenState(refreshToken);
 
             if (!refreshToken) {
-                console.error('❌ [Token Refresh] No refresh token, logging out...');
+                console.error('[Token Refresh] No refresh token, logging out.');
                 isRefreshing = false;
 
                 // Wyczyść storage i przekieruj do loginu
@@ -129,12 +100,9 @@ apiClient.interceptors.response.use(
                 return Promise.reject(error);
             }
 
-            console.log('🔄 [Token Refresh] Refreshing with token:', refreshToken. substring(0, 20) + '...');
-
             try {
                 // Use raw axios to avoid the request interceptor (which would add the expired access token)
-                // Use relative URL in dev (proxy) or full URL in production
-                const refreshBaseURL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || '');
+                const refreshBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://komuna.site:6901';
                 const response = await axios.post(
                     `${refreshBaseURL}/api/v1/auth/regenerate-tokens`,
                     {
@@ -147,7 +115,6 @@ apiClient.interceptors.response.use(
                     }
                 );
 
-                console.log('✅ [Token Refresh] Success!', response.data);
                 tokenDebugger.logRefreshCycle('response', response.data);
 
                 // Backend zwraca:  TokenResponseDto { AccessToken:  {Token, Expires}, RefreshToken: {Token, Expires} }
@@ -160,7 +127,6 @@ apiClient.interceptors.response.use(
 
                 tokenDebugger.inspectToken(newAccessToken, 'refreshed-accessToken');
 
-                // ✅ Zapisz nowe tokeny używając storageService
                 storageService.setItem('accessToken', newAccessToken);
 
                 if (newRefreshToken) {
@@ -175,11 +141,10 @@ apiClient.interceptors.response.use(
                 processQueue(null, newAccessToken);
                 isRefreshing = false;
 
-                console.log('🔄 [Token Refresh] Retrying original request:', originalRequest.url);
                 return apiClient(originalRequest);
 
             } catch (refreshError) {
-                console.error('❌ [Token Refresh] Failed:', {
+                console.error('[Token Refresh] Failed:', {
                     status: refreshError.response?.status,
                     message: refreshError. response?.data?.Message || refreshError.message,
                     data: refreshError.response?.data

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Bell, Search, LogOut, Settings, Menu, X } from "lucide-react";
+import { Search, LogOut, Settings, Menu, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, FolderKanban, ListTodo, Trello, UserCircle, Users } from "lucide-react";
+import { LayoutDashboard, FolderKanban, ListTodo, Trello, UserCircle, Users, Tag } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useSearchStore } from "@/store/searchStore";
 import { useProjectStore } from "@/store/projectStore";
@@ -10,7 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { GooeyInput } from "@/components/ui/GooeyInput";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,14 +23,16 @@ import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { SearchResults } from "./SearchResults";
 import { IssueDetailsModal } from "@/components/modals/IssueDetailsModal";
 import { ProjectDetailsModal } from "@/components/modals/ProjectDetailsModal";
+import { NotificationBell } from "@/components/notifications/NotificationCenter";
 
-const navItems = [
+const ALL_NAV_ITEMS = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Projects", url: "/projects", icon: FolderKanban },
     { title: "Issues", url: "/issues", icon: ListTodo },
     { title: "Board", url: "/board", icon: Trello },
-    { title: "Teams", url: "/teams", icon: Users },
-    { title: "Users", url: "/users", icon: UserCircle },
+    { title: "Teams",  url: "/teams",  icon: Users      },
+    { title: "Users",  url: "/users",  icon: UserCircle, adminOnly: true },
+    { title: "Labels", url: "/labels", icon: Tag,        adminOnly: true },
 ];
 
 export const TopBar = () => {
@@ -39,6 +41,8 @@ export const TopBar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [selectedIssueId, setSelectedIssueId] = useState(null);
     const [selectedProjectId, setSelectedProjectId] = useState(null);
+    const isAdmin = useAuthStore((state) => state.isAdmin);
+    const navItems = ALL_NAV_ITEMS.filter(item => !item.adminOnly || isAdmin());
 
     // Search state
     const { searchTerm, isSearchOpen, setSearchTerm, setSearchOpen, clearSearch } = useSearchStore();
@@ -51,7 +55,7 @@ export const TopBar = () => {
         fetchIssues();
     }, [fetchProjects, fetchIssues]);
 
-    // ✅ Pobierz user i loading z authStore
+    // Pobierz user i loading z authStore
     const user = useAuthStore((state) => state.user);
     const loading = useAuthStore((state) => state.loading);
     const logout = useAuthStore((state) => state.logout);
@@ -77,7 +81,7 @@ export const TopBar = () => {
         }
     };
 
-    // ✅ Oblicz display name i inicjały z firstName/lastName
+    // Oblicz display name i inicjały z firstName/lastName
     const getDisplayName = () => {
         if (loading) return "Loading...";
         if (!user) return "Guest";
@@ -108,11 +112,11 @@ export const TopBar = () => {
 
     return (
         <>
-            <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6 shadow-sm">
+            <header className="sticky top-0 z-50 flex h-16 min-w-0 items-center justify-between border-b border-border bg-background/90 px-3 shadow-sm backdrop-blur-xl md:px-6">
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="md:hidden"
+                    className="shrink-0 md:hidden"
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     aria-label="Toggle menu"
                     aria-expanded={mobileMenuOpen}
@@ -121,9 +125,9 @@ export const TopBar = () => {
                 </Button>
 
                 {/* Search */}
-                <div className="flex flex-1 items-center gap-4 max-w-md relative">
+                <div className="relative flex min-w-0 flex-1 items-center gap-2 md:max-w-xl md:gap-4">
                     {/* Mobile - Icon that opens overlay */}
-                    <div className="md:hidden">
+                    <div className="shrink-0 md:hidden">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -135,12 +139,10 @@ export const TopBar = () => {
                     </div>
 
                     {/* Desktop - Full search */}
-                    <div className="hidden md:block relative w-full">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
+                    <div className="relative hidden w-full md:block">
+                        <GooeyInput
                             type="search"
                             placeholder="Search projects, issues..."
-                            className="pl-10 bg-background"
                             value={searchTerm}
                             onChange={(e) => {
                                 setSearchTerm(e.target.value);
@@ -156,22 +158,19 @@ export const TopBar = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
                     {/* Theme Toggle */}
                     <ThemeToggle />
 
                     {/* Notifications */}
-                    <Button variant="ghost" size="icon" className="relative">
-                        <Bell className="h-5 w-5" />
-                        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive"></span>
-                    </Button>
+                    <NotificationBell />
 
                     {/* User Menu */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="ghost"
-                                className="relative h-10 w-10 rounded-full"
+                                className="relative h-10 w-10 shrink-0 rounded-full"
                                 disabled={loading}
                             >
                                 <Avatar className="h-10 w-10">
@@ -216,7 +215,7 @@ export const TopBar = () => {
             {/* Mobile Navigation Menu - Dropdown from top */}
             <nav
                 className={cn(
-                    "md:hidden fixed top-16 left-0 right-0 z-40 bg-card border-b border-border shadow-lg transition-all duration-300 ease-in-out",
+                    "fixed left-0 right-0 top-16 z-40 max-w-full overflow-x-hidden border-b border-border bg-background/95 shadow-lg backdrop-blur-xl transition-all duration-300 ease-in-out md:hidden",
                     mobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full pointer-events-none"
                 )}
                 aria-hidden={!mobileMenuOpen}
@@ -244,14 +243,13 @@ export const TopBar = () => {
 
             {/* Mobile Search Overlay */}
             {isSearchOpen && (
-                <div className="md:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-                    <div className="fixed top-16 left-0 right-0 p-4 bg-background border-b shadow-lg">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
+                <div className="fixed inset-0 z-50 overflow-x-hidden bg-background/80 backdrop-blur-sm md:hidden">
+                    <div className="fixed left-0 right-0 top-16 border-b bg-background p-4 shadow-lg">
+                        <div className="relative min-w-0">
+                            <GooeyInput
                                 type="search"
                                 placeholder="Search projects, issues..."
-                                className="pl-10 bg-background"
+                                className="pr-12"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 autoFocus

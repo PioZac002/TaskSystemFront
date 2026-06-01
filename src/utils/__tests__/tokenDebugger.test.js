@@ -91,11 +91,11 @@ describe('tokenDebugger', () => {
             vi.restoreAllMocks();
         });
 
-        it('log calls console.log when enabled', async () => {
+        it('log remains silent when enabled', async () => {
             const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
             const { tokenDebugger } = await import('../tokenDebugger');
             tokenDebugger.log('test message');
-            expect(consoleSpy).toHaveBeenCalledWith('🔐 [TOKEN-DEBUG]', 'test message');
+            expect(consoleSpy).not.toHaveBeenCalled();
         });
     });
 });

@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/Separator";
 import apiClient from "@/services/apiClient";
 import { useProjectStore } from "@/store/projectStore";
 import { toast } from "sonner";
-import { Plus, ExternalLink, ListTodo, CheckCircle2, Clock, AlertCircle, Calendar, FolderKanban, Trash2 } from "lucide-react";
+import { Plus, ExternalLink, ListTodo, CheckCircle2, Clock, AlertCircle, Calendar, FolderKanban } from "lucide-react";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IssueDetailsModal } from "./IssueDetailsModal";
 import { CreateIssueModal } from "./CreateIssueModal";
 
@@ -112,9 +113,7 @@ export function ProjectDetailsModal({ open, onOpenChange, projectId, onProjectUp
                                             <Plus className="h-4 w-4 md:mr-2" />
                                             <span className="hidden md:inline">Add Issue</span>
                                         </Button>
-                                        <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={handleDeleteProject}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                        <DeleteButton onClick={handleDeleteProject} />
                                     </div>
                                 </div>
                             </div>
