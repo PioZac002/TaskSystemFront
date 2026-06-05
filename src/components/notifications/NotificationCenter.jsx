@@ -5,7 +5,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
 import { useNotificationStore } from "@/store/notificationStore";
+import { useUserStore } from "@/store/userStore";
 import { cn } from "@/lib/utils";
+
+let activeBridgeInstances = 0;
+let scheduledDisconnect = null;
 
 function prettifyType(type) {
     const text = String(type || "notification").replaceAll("_", " ").toLowerCase();
@@ -13,17 +17,47 @@ function prettifyType(type) {
 }
 
 function pickProperty(properties, keys) {
+    const entries = Object.entries(properties || {});
+
     for (const key of keys) {
-        if (properties?.[key]) return properties[key];
+        const directValue = properties?.[key];
+        if (directValue !== undefined && directValue !== null && directValue !== "") return directValue;
+
+        const found = entries.find(([entryKey]) => entryKey.toLowerCase() === key.toLowerCase());
+        if (found?.[1] !== undefined && found[1] !== null && found[1] !== "") return found[1];
     }
     return null;
 }
 
-function getNotificationCopy(notification) {
+function getUserDisplayName(user) {
+    if (!user) return null;
+    const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+    return fullName || user.email || user.username || user.name || null;
+}
+
+function getUserName(users, userId) {
+    if (userId === undefined || userId === null || userId === "") return null;
+    const user = users.find((item) => String(item.id) === String(userId) || String(item.userId) === String(userId));
+    return getUserDisplayName(user);
+}
+
+function isNumericValue(value) {
+    return /^\d+$/.test(String(value || "").trim());
+}
+
+function resolveUserReference(users, value) {
+    if (value === undefined || value === null || value === "") return null;
+    if (!isNumericValue(value)) return String(value);
+    return getUserName(users, value);
+}
+
+function getNotificationCopy(notification, users = []) {
     const properties = notification.properties || {};
     const type = String(notification.type || "").toUpperCase();
     const issueKey = notification.key || pickProperty(properties, ["key", "issueKey", "IssueKey"]);
-    const author = pickProperty(properties, ["authorName", "eventAuthorName", "assignedBy", "AssignedBy"]);
+    const authorName = pickProperty(properties, ["authorName", "eventAuthorName"]);
+    const assignedBy = pickProperty(properties, ["assignedBy", "AssignedBy", "assignedById", "AssignedById"]);
+    const author = authorName || resolveUserReference(users, assignedBy) || getUserName(users, notification.eventAuthorId);
     const message = pickProperty(properties, ["message", "Message", "title", "Title", "issueTitle", "IssueTitle", "description"]);
 
     if (type.includes("ASSIGN")) {
@@ -39,6 +73,63 @@ function getNotificationCopy(notification) {
     };
 }
 
+function prettifyPropertyKey(key) {
+    return String(key || "")
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .replaceAll("_", " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function isUserReferenceKey(key) {
+    return /(user|author|assignee|assigned|recipient)/i.test(String(key || ""));
+}
+
+function shouldHideProperty(key) {
+    const normalized = String(key || "").toLowerCase();
+    return [
+        "id",
+        "key",
+        "issuekey",
+        "issueid",
+        "userid",
+        "eventauthorid",
+        "authorid",
+        "assigneeid",
+        "assignedbyid",
+        "assignedtoid",
+        "recipientuserid",
+        "projectid",
+        "teamid",
+        "message",
+        "title",
+        "issuetitle",
+        "description",
+    ].includes(normalized);
+}
+
+function getDisplayProperties(notification, users, limit) {
+    return Object.entries(notification.properties || {})
+        .map(([key, value]) => {
+            if (shouldHideProperty(key)) return null;
+
+            const resolvedValue = isUserReferenceKey(key) && isNumericValue(value)
+                ? getUserName(users, value)
+                : value;
+
+            if (resolvedValue === undefined || resolvedValue === null || resolvedValue === "") return null;
+
+            return {
+                key,
+                label: prettifyPropertyKey(key),
+                value: String(resolvedValue),
+            };
+        })
+        .filter(Boolean)
+        .slice(0, limit);
+}
+
 function formatCreatedAt(createdAt) {
     if (!createdAt) return "";
     const date = new Date(createdAt);
@@ -52,26 +143,25 @@ function formatCreatedAt(createdAt) {
     }).format(date);
 }
 
-function NotificationRow({ notification, compact = false }) {
+function NotificationRow({ notification, users = [], compact = false }) {
     const navigate = useNavigate();
     const markAsRead = useNotificationStore((state) => state.markAsRead);
-    const copy = getNotificationCopy(notification);
+    const copy = getNotificationCopy(notification, users);
     const createdAt = formatCreatedAt(notification.createdAt);
     const issueHref = notification.issueId ? `/issues/${notification.issueId}` : null;
-    const properties = Object.entries(notification.properties || {}).slice(0, compact ? 1 : 2);
+    const properties = getDisplayProperties(notification, users, compact ? 1 : 2);
 
-    const handleOpenIssue = async () => {
-        if (notification.id) await markAsRead(notification.id);
-        if (issueHref) navigate(issueHref);
+    const handleOpenIssue = () => {
+        if (!issueHref) return;
+        navigate(issueHref);
     };
 
     return (
         <article
             className={cn(
                 "notification-card group rounded-lg border border-border bg-card p-3 text-card-foreground shadow-sm transition-all",
-                issueHref && "cursor-pointer hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+                issueHref && "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
             )}
-            onClick={issueHref ? handleOpenIssue : undefined}
         >
             <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -105,9 +195,9 @@ function NotificationRow({ notification, compact = false }) {
 
                     {properties.length > 0 && (
                         <div className="mt-2 space-y-1">
-                            {properties.map(([key, value]) => (
-                                <p key={key} className="truncate text-[11px] text-muted-foreground">
-                                    <span className="font-medium text-foreground/70">{key}:</span> {String(value)}
+                            {properties.map((property) => (
+                                <p key={property.key} className="truncate text-[11px] text-muted-foreground">
+                                    <span className="font-medium text-foreground/70">{property.label}:</span> {property.value}
                                 </p>
                             ))}
                         </div>
@@ -136,7 +226,7 @@ function NotificationRow({ notification, compact = false }) {
                             className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                             onClick={(event) => {
                                 event.stopPropagation();
-                                markAsRead(notification.id);
+                                markAsRead(notification);
                             }}
                         >
                             <Check className="h-3.5 w-3.5" />
@@ -154,6 +244,12 @@ function NotificationList({ compact = false, className }) {
     const loading = useNotificationStore((state) => state.loading);
     const connected = useNotificationStore((state) => state.connected);
     const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
+    const users = useUserStore((state) => state.users);
+    const fetchUsers = useUserStore((state) => state.fetchUsers);
+
+    useEffect(() => {
+        if (users.length === 0) fetchUsers();
+    }, [fetchUsers, users.length]);
 
     const visibleNotifications = useMemo(
         () => notifications.filter((item) => !item.isRead).slice(0, compact ? 6 : 4),
@@ -210,6 +306,7 @@ function NotificationList({ compact = false, className }) {
                             <NotificationRow
                                 key={notification.id ?? `${notification.type}-${notification.createdAt}`}
                                 notification={notification}
+                                users={users}
                                 compact={compact}
                             />
                         ))}
@@ -226,11 +323,25 @@ export function NotificationRealtimeBridge() {
     const disconnectRealtime = useNotificationStore((state) => state.disconnectRealtime);
 
     useEffect(() => {
+        activeBridgeInstances += 1;
+
+        if (scheduledDisconnect) {
+            clearTimeout(scheduledDisconnect);
+            scheduledDisconnect = null;
+        }
+
         fetchNotifications({ qty: 10, unread: true });
         connectRealtime();
 
         return () => {
-            disconnectRealtime();
+            activeBridgeInstances = Math.max(0, activeBridgeInstances - 1);
+
+            scheduledDisconnect = window.setTimeout(() => {
+                if (activeBridgeInstances === 0) {
+                    disconnectRealtime();
+                }
+                scheduledDisconnect = null;
+            }, 3000);
         };
     }, [connectRealtime, disconnectRealtime, fetchNotifications]);
 
@@ -240,11 +351,6 @@ export function NotificationRealtimeBridge() {
 export function NotificationBell() {
     const [open, setOpen] = useState(false);
     const unreadCount = useNotificationStore((state) => state.notifications.filter((item) => !item.isRead).length);
-    const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
-
-    useEffect(() => {
-        if (open) fetchNotifications({ qty: 10, unread: true });
-    }, [fetchNotifications, open]);
 
     return (
         <Popover open={open} onOpenChange={setOpen}>

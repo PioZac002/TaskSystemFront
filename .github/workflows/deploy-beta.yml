@@ -1,0 +1,59 @@
+name: Build and Deploy Beta Frontend
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+concurrency:
+  group: beta-frontend
+  cancel-in-progress: true
+
+jobs:
+  deploy-beta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate beta deployment secrets
+        run: |
+          test -n "${{ secrets.BETA_VITE_API_BASE_URL }}"
+          test -n "${{ secrets.BETA_SSH_PRIVATE_KEY }}"
+          test -n "${{ secrets.BETA_SSH_HOST }}"
+          test -n "${{ secrets.BETA_SSH_USER }}"
+          test -n "${{ secrets.BETA_WORK_DIR }}"
+
+      - name: Create beta .env file
+        run: |
+          echo "VITE_API_BASE_URL=${{ secrets.BETA_VITE_API_BASE_URL }}" > .env
+          echo "VITE_TOKEN_DEBUG=false" >> .env
+
+      - name: Build
+        run: npm run build
+
+      - name: Install SSH keys
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.BETA_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.BETA_SSH_HOST }} > ~/.ssh/known_hosts
+
+      - name: Deploy via rsync
+        run: |
+          rsync -avz --delete dist/ ${{ secrets.BETA_SSH_USER }}@${{ secrets.BETA_SSH_HOST }}:${{ secrets.BETA_WORK_DIR }}/
+
+      - name: Reload Nginx
+        run: |
+          ssh ${{ secrets.BETA_SSH_USER }}@${{ secrets.BETA_SSH_HOST }} "sudo systemctl reload nginx"
+
+      - name: Cleanup
+        if: always()
+        run: rm -rf ~/.ssh
